@@ -1,0 +1,43 @@
+# Roadmap — Milestones & Dependencies
+
+This document orders **Storyteller** work into milestones (M0→M7), with their dependencies and *Definition of Done* (DoD). For the functional detail of what is covered at each stage, see [features](features.md).
+
+Framework reminder: [markdown is the sole source of truth](principles.md), the [index](glossary.md) is a disposable cache, and the GUI is designed **after** this documentation. The milestones below reflect this order.
+
+## Overview
+
+| Milestone | Content | Depends on | Definition of Done |
+|---------|---------|------------|-------------------|
+| **M0** | Specs: all design documentation (vision, principles, data model, linking, architecture, API, glossary, roadmap, usage, ADR). | — | Docs cover data model, links, and API without ambiguity; locked decisions are traced in ADR; a code agent can start M1 without blocking questions. |
+| **M1** | `storyteller-core` + index + **read-only** API: frontmatter/body parsing, type catalog, [index](glossary.md) building (`cache.sqlite`), read endpoints (list by type, entry, backlinks). | M0 | The core parses a real project without loss; the index rebuilds entirely from files; the API exposes entries, their typed fields, and backlinks in read mode; the index is rebuildable and gitignored. |
+| **M2** | Entry CRUD: **non-destructive** writing (unknown YAML keys, key order, and body preserved), creation, update, deletion, **rename** with link updates, **watcher** for file→index sync. | M1 | Create/edit/delete an entry via API modifies markdown without breaking external edits; rename updates links and/or keeps old title as [alias](glossary.md); watcher reindexes external changes. |
+| **M3** | Full links: [wikilink](glossary.md) resolution (file → title → alias), automatic [backlinks](glossary.md), [stub](glossary.md) detection, ambiguity handling, **create entry from stub**. | M1, M2 | Backlinks are exact and bidirectional; stubs are listed; resolution ambiguity is signaled; promoting a stub creates a real entry via M2 CRUD and resolves the link. |
+| **M4** | SvelteKit + Shadcn frontend: filterable list/table [views](glossary.md) by type, backlinks panel, entry editor (frontmatter + body). | M1, M2, M3 | GUI consumes a stable M1–M3 API; navigate, filter, and edit entries; links and backlinks are clickable; no API bypass on front side. |
+| **M5** | FTS search + advanced filters/sort + **saved views**. | M1 (index), M4 | Full-text search queries the index; filters and sorts combine; a view can be named, saved, and reloaded. |
+| **M6** | Packaging & self-host **MVP**: `storyteller-server` distributed via **Docker** and installable via **Nix**. | M4 | The application launches in self-host Docker and installs via Nix; index rebuilds; a reproducible release is produced. |
+| **M7** | v2+: packaged desktop (`storyteller-tauri` → AppImage/.deb), link graph, media gallery, custom types, Android APK spike. | M6 | Each v2 item is scoped (spec or spike); none blocks the M1–M6 MVP. |
+
+## Critical Path
+
+The milestone order is not arbitrary: each stage builds on invariants set by the previous one.
+
+- **M1 is the foundation.** Markdown parsing and the [index](glossary.md) condition everything else; nothing solid gets built until the core faithfully reads a project.
+- **M2 and M3 build on M1 parsing.** CRUD (M2) rewrites exactly the entries that M1 can read, and link resolution (M3) uses the same parsed model.
+- **M3 reuses M2's `create` to promote a stub.** "Create from stub" is not a parallel write path: it's M2 CRUD called to materialize a previously absent target, then re-resolve the link.
+- **M4 (GUI) starts only once M1–M3 API is stable.** Consistent with "GUI is designed after the docs": the front is a pure consumer of an API frozen for read, write, and links, with no duplicated business logic.
+- **M5 depends on the index (M1).** FTS search, filters, and sorts query the rebuildable cache; saved views are then exposed in the front (M4).
+- **M6 assumes the front (M4).** MVP packaging (Docker/Nix) packages a complete application: `storyteller-server` serves the built front. Desktop packaging via `storyteller-tauri` (AppImage/.deb), which embeds the same front in a webview, is v2 (M7).
+
+In summary, the critical path is **M1 → M2 → M3 → M4 → M6**, with **M5** grafted onto M1's index and delivered via M4's front.
+
+## Deferred to v2 / Later
+
+Outside MVP M1–M6, scheduled for **M7** or beyond:
+
+- **Packaged desktop** (`storyteller-tauri` → AppImage/.deb): the same application embedded in a Tauri webview.
+- **Interactive link graph** (network view of entries and backlinks).
+- **Media gallery** for [assets](glossary.md) (images, maps).
+- **Custom types** defined by the user beyond the ~11 default types.
+- **Android APK spike** (mobile packaging via `storyteller-tauri`).
+
+Remain **out of scope** permanently (see [features](features.md)): manuscript writing/prose editor, timeline/chronology, interactive maps and pins, real-time collaboration/multi-user/auth, AI/generation, cloud sync/SaaS, guided questionnaires and imposed templates, built-in versioning (left to Git).

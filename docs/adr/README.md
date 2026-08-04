@@ -1,0 +1,42 @@
+# Architecture Decision Records (ADR)
+
+This folder contains the **ADRs** (*Architecture Decision Records*) for the Storyteller project: a written, dated, and immutable trace of structural product and architecture decisions. Each file documents **a single decision**: its context, the chosen option, its consequences, and the alternatives considered.
+
+## What ADRs Are For
+
+- Give code agents and reviewers the **why** of a decision, not just the **what**.
+- Avoid endlessly reopening debates already settled.
+- Make the decision history visible: when a decision is superseded, the old one remains readable to understand the project's evolution.
+
+For overall product context, see [vision](../vision.md) and [principles](../principles.md). For technical details, see [data model](../data-model.md), [linking](../linking.md), and [architecture](../architecture.md).
+
+## Possible Statuses
+
+| Status | Meaning |
+| --- | --- |
+| **Proposed** | Decision under discussion, not yet enacted. |
+| **Accepted** | Decision in effect, it has authority. |
+| **Superseded** | A more recent ADR takes over (link to it is indicated). |
+| **Deprecated** | Decision abandoned without a direct replacement. |
+
+## Procedure
+
+1. **Incrementing numbering**: each ADR receives a four-digit number (`0001`, `0002`, …) assigned in creation order, never reused.
+2. **One decision per file**: name the file `NNNN-title-in-kebab-case.md`.
+3. **Immutability**: we **do not modify** an accepted ADR. To reverse a decision, we create a **new** ADR that supersedes it, then change the old one's status to "Superseded" with a link to the new one. The only allowed edits on an accepted ADR are typo fixes and status/cross-link updates.
+4. **Template**: start from [`_template.md`](_template.md) to draft a new ADR.
+
+## ADR Index
+
+| # | Title | Status |
+| --- | --- | --- |
+| [0001](0001-no-timeline.md) | No timeline or narrative chronology | Accepted |
+| [0002](0002-markdown-source-of-truth.md) | Markdown is the sole source of truth | Accepted |
+| [0003](0003-single-user-local.md) | Single-user, local / self-host | Accepted |
+| [0004](0004-one-folder-per-project.md) | One self-contained folder per project | Accepted |
+| [0005](0005-typed-modular-entities.md) | Typed, modular entities | Accepted |
+| [0006](0006-wikilinks-backlinks-stubs.md) | Wikilinks, backlinks, and stubs | Accepted |
+| [0007](0007-static-maps-no-pins.md) | Static maps without interactive pins | Accepted |
+| [0008](0008-no-graph-in-mvp.md) | No link graph in MVP | Accepted |
+| [0009](0009-rust-sveltekit-stack.md) | Rust + SvelteKit + Shadcn stack | Accepted |
+| [0010](0010-frontmatter-keys-en-content-fr.md) | Frontmatter keys in English, content in French | Accepted |
