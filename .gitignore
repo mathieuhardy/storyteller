@@ -1,0 +1,8 @@
+# Rust build artifacts
+/target
+
+# Storyteller index: disposable cache, rebuilt from the markdown files.
+# Matches any project folder, including the test fixtures.
+**/.storyteller/cache.sqlite
+**/.storyteller/cache.sqlite-shm
+**/.storyteller/cache.sqlite-wal

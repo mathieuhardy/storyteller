@@ -8,7 +8,9 @@
 
 **Storyteller** is a local, single-user tool for storing and organizing all the **context** of a novel (the "bible": characters, world, chapters, resources). It is **not** for writing the manuscript itself, and **does not have** a narrative timeline. Entries are **typed, modular entities** whose source of truth is **raw markdown** (YAML frontmatter + free-form body), linked by **wikilinks** with automatic **backlinks**.
 
-> **Docs before code.** At this stage, we produce **only documentation** (markdown, in English). No application code is written until the spec is stabilized. **The GUI will be designed AFTER** this documentation, never before.
+> **Docs before code.** The specs come first and stay authoritative: any code that deviates from them is either wrong, or must be accompanied by the doc update that makes it right. **The GUI is designed AFTER** the documentation, never before.
+
+**Current state**: M0 (specs) and M1 (`storyteller-core` + read-only API) are done; **M2** (non-destructive CRUD + watcher) is next. See the [roadmap](docs/roadmap.md) for the milestone table and [api.md](docs/api.md#implementation-status) for what the API serves today.
 
 ---
 
@@ -72,12 +74,26 @@ Rust workspace + separate frontend:
 storyteller/
   storyteller-core/     (lib) model, markdown/YAML parsing, index, links
   storyteller-server/   (bin) HTTP server, exposes the API — depends on core
-  storyteller-tauri/    (bin) desktop/mobile webview — depends on core
-  frontend/             SvelteKit + Shadcn (avoid Tailwind if possible)
+  storyteller-tauri/    (bin) desktop/mobile webview — depends on core   [M7]
+  frontend/             SvelteKit + Shadcn (avoid Tailwind if possible)  [M4]
+  tests/fixtures/       reference project, shared by both crates' tests
   docs/                 specs (see "Read First")
 ```
 
 `storyteller-core` depends on neither binary; both binaries (`server`, `tauri`) **share** `core`. See [architecture.md](docs/architecture.md) for details.
+
+Inside `storyteller-core/src/`: `parse` (frontmatter/body), `model` (entry shape), `types` (type catalog), `normalize` (match keys), `links` (extraction + resolution), `project` (reads the files), `index/` (SQLite cache), `config`, `error`.
+
+### Build & Test
+
+```sh
+cargo test                      # whole workspace
+cargo clippy --all-targets      # must be warning-free
+cargo fmt --all
+cargo run -p storyteller-server -- --project /path/to/my-novel
+```
+
+The server then serves `http://127.0.0.1:8787/api/v1/…`. `tests/fixtures/sample-project` is a ready-made project to point it at.
 
 ### Language
 

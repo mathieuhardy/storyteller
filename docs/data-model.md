@@ -78,6 +78,14 @@ Renaming an entry (changing its slug or `title`) can break incoming links. The a
 
 This safety net ensures that a rename never silently produces a [stub](glossary.md).
 
+### Filename Collision
+
+Since identity **is** the filename, two files sharing a name (e.g. `characters/aria.md` and `notes/aria.md`) claim the same identity. This is a conflict, not a supported layout, and the app resolves it by **signaling, never by hiding**:
+
+- both entries remain listed and indexed — dropping one would be data loss;
+- each carries a `duplicate_slug` diagnostic naming the other file(s);
+- [wikilinks](glossary.md) to that name resolve as **ambiguous** (see [linking](linking.md) §3.3), so the user disambiguates or renames.
+
 ### Stable `id` Path → ADR
 
 A stable `id` field (independent of filename) is a **hardening path** for identity, not imposed in MVP. The decision is deferred to an [ADR](adr/README.md); do not add an `id` until it is decided.

@@ -15,6 +15,20 @@ This document describes the **contract** between the backend ([`storyteller-core
 
 All routes are prefixed by API version: `/api/v1/…` (see [§6](#6-errors--versioning)).
 
+### Implementation Status
+
+This document is the **target contract**; it is delivered milestone by milestone (see [roadmap](roadmap.md)). What is not built answers `501 not_implemented` when it is a *parameter* of a live endpoint, and `404` when the *route* does not exist yet.
+
+| Delivered in | Surface |
+|---|---|
+| **M1** | `GET /version`, `GET /project`, `GET /types`, `GET /types/{type}`, `GET /entities`, `GET /entities/{slug}` (`?include=backlinks`), `GET /entities/{slug}/backlinks`. Filters, sort and pagination of [§4](#4-filtering-sorting-pagination) except `q`. |
+| **M2** | `POST`/`PATCH`/`DELETE /entities`, `rename`, and the SSE stream of [§5](#5-event-stream-sse) (it needs the [watcher](glossary.md)). |
+| **M3** | `GET /entities/{slug}/links`, `GET /stubs`, creation from a stub. |
+| **M4** | `/assets` endpoints, `PATCH /types/{type}`, `/projects` registry. |
+| **M5** | `GET /search`, and `q` on `/entities`. |
+
+`?render=html` stays unimplemented until markdown rendering is settled ([architecture](architecture.md) §6).
+
 ---
 
 ## 2. Entity JSON Representation
@@ -180,6 +194,7 @@ The frontend treats these events as cache invalidations (reload affected entry/v
 | `409` | Conflict (slug already taken on create, rename collision). |
 | `422` | Content refused (e.g., provided frontmatter not serializable). |
 | `500` | Internal error (disk I/O, etc.). |
+| `501` | Endpoint or parameter **documented here but not implemented yet** (code `not_implemented`, message naming the milestone). Preferred over silently ignoring a parameter, which the client cannot detect. |
 
 Normalized error body:
 
@@ -207,7 +222,18 @@ An entry with **invalid YAML does NOT fail a list**. The backend is **resilient*
 }
 ```
 
-Per-entry diagnostic codes (non-exhaustive): `yaml_parse_error`, `unknown_type`, `missing_required_field`, `invalid_field_value`. `severity ∈ error \| warning`. This ensures external editing never breaks the app and users see **where** to fix.
+Per-entry diagnostic codes (non-exhaustive): `yaml_parse_error`, `unknown_type`, `missing_required_field`, `invalid_field_value`, `duplicate_slug`, `encoding_error`. `severity ∈ error \| warning`. This ensures external editing never breaks the app and users see **where** to fix.
+
+| Code | Meaning |
+|---|---|
+| `yaml_parse_error` | Frontmatter YAML is invalid. Readable `key: value` pairs are salvaged; the body is untouched. |
+| `unknown_type` | `type` names a type outside the [catalog](data-model.md). The value is **kept as-is**, never rewritten. |
+| `missing_required_field` | `type` absent (entry treated as `note`) or `title` absent (the [slug](glossary.md#slug) is displayed instead). |
+| `invalid_field_value` | A value contradicts its declared kind (unknown `enum` value, text where a number is expected…). |
+| `duplicate_slug` | Two files share a filename, hence an identity (see [data model](data-model.md) §3). Both entries stay listed; links to that name resolve as `ambiguous`. |
+| `encoding_error` | The file is not valid UTF-8. Its content is **not** decoded lossily, so a later write can never persist mangled text. |
+
+> **Absent MVP fields are not errors.** The **MVP** tier in the [data model](data-model.md) marks a field as *in scope*, not as required. A character with only a `title` is valid; validation reports **wrong** values, not blank ones.
 
 ### API Versioning
 

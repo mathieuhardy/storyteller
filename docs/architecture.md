@@ -99,11 +99,11 @@ HTTP wrapper on top of `core`. Serves the API (see [api.md](api.md)) and, in pro
 
 ## 4. Index & Search
 
-- **Expected engine**: **SQLite + FTS5**, stored in `.storyteller/cache.sqlite`. File is **gitignored, disposable, regenerable** at any time from the markdown (never a source of truth).
+- **Engine**: **SQLite + FTS5**, stored in `.storyteller/cache.sqlite` — decided in [ADR 0011](adr/0011-index-sqlite-fts5.md). File is **gitignored, disposable, regenerable** at any time from the markdown (never a source of truth). The app writes `.storyteller/.gitignore` itself so the project folder stays committable as-is.
 - **Index contents**: entries and their frontmatter fields, outgoing links, backlinks, stubs, plus an FTS table for full-text search (title, aliases, tags, and body).
 - **Incremental reindexing**: the [watcher](glossary.md) (`notify`) triggers updates; we only reindex what changed, detected by **mtime + content hash**. Full rebuild possible cold (first launch, corrupted cache, `schema_version` change).
 
-> Alternative index (Tantivy) and SQLite schema details → see §6 and ADR; on-disk format remains defined by [data-model.md](data-model.md).
+> SQLite schema details are an implementation matter (see `storyteller-core/src/index/schema.rs`) and carry **no migration guarantee**: a cache written by another layout is dropped and rebuilt. The on-disk format remains defined by [data-model.md](data-model.md).
 
 ---
 
@@ -127,6 +127,7 @@ To be decided in [ADR](adr/README.md); do not prejudge here.
 1. **Shadcn without Tailwind** — `shadcn-svelte` depends on Tailwind, conflicting with the "avoid Tailwind" preference. Alternatives: Bits UI / Melt UI + custom CSS.
 2. **Primary target** — Tauri app vs. headless server: which one drives product/UX tradeoffs by default?
 3. **Entity identity** — filename/title/alias (current default) vs. stable `id` field (hardening path), and **link rewriting policy** on rename. See [linking](linking.md) and [data model](data-model.md).
-4. **Index engine** — SQLite FTS5 (expected) vs. Tantivy.
-5. **Markdown rendering & wikilink extraction** — Rust side (`core`) vs. front side.
-6. **Transport in Tauri mode** — local HTTP vs. Tauri IPC between front and core.
+4. **Markdown rendering** — Rust side (`core`) vs. front side. Until this is decided, `?render=html` answers `501` rather than guessing. Wikilink *extraction* is settled: it happens in `core`, since the index needs it.
+5. **Transport in Tauri mode** — local HTTP vs. Tauri IPC between front and core.
+
+Decided since this document was first written: **index engine** → [ADR 0011](adr/0011-index-sqlite-fts5.md) (SQLite + FTS5).

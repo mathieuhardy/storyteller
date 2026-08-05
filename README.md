@@ -10,7 +10,19 @@ A local tool for storing and organizing all the **context** of a novel — its "
 
 ## Status
 
-**Pre-MVP — specs in progress.** No code has been written yet; the design documentation is the current priority. See the [roadmap](docs/roadmap.md) for milestones (M0 specs → M6 packaging).
+**Pre-MVP — backend in progress.** The specs (M0) are stable and the read-only backend (M1) is in place: `storyteller-core` parses a project and builds its index, `storyteller-server` serves the read API. Next up is **M2**: non-destructive writing and the file watcher. See the [roadmap](docs/roadmap.md) for the milestone table.
+
+There is **no interface yet** (M4) and nothing to install (M6).
+
+### Trying the backend
+
+```sh
+cargo run -p storyteller-server -- --project tests/fixtures/sample-project
+curl 'http://127.0.0.1:8787/api/v1/entities?type=character'
+curl 'http://127.0.0.1:8787/api/v1/entities/aria-solane?include=backlinks'
+```
+
+Point `--project` at any folder of markdown files — a `.storyteller/` folder is created for the index, and nothing else is written. Endpoints served today are listed in [api.md](docs/api.md#implementation-status).
 
 ## Features
 
@@ -27,7 +39,7 @@ Full details in [docs/features.md](docs/features.md).
 
 - **Backend**: Rust (workspace `storyteller-core` + `storyteller-server` + `storyteller-tauri`).
 - **Frontend**: SvelteKit + Shadcn (Tailwind avoided if possible).
-- **Storage**: raw markdown = source of truth; disposable, rebuildable SQLite index.
+- **Storage**: raw markdown = source of truth; disposable, rebuildable SQLite + FTS5 index ([ADR 0011](docs/adr/0011-index-sqlite-fts5.md)).
 - **Deployment**: Docker and Nix flake(s).
 - **Packaging**: AppImage and `.deb`; Android APK path to explore.
 
@@ -35,7 +47,7 @@ See [architecture](docs/architecture.md) for details.
 
 ## Installation
 
-> Coming soon — the product is in the specs phase, there is no binary to install yet.
+> Coming soon — packaging is milestone [M6](docs/roadmap.md). Until then, build from source (see [Status](#status)).
 
 - **Docker** — coming soon (see [architecture](docs/architecture.md)).
 - **Nix** — coming soon (see [architecture](docs/architecture.md)).

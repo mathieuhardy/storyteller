@@ -1,0 +1,13 @@
+schema_version: 1
+enabled_types:
+  - project
+  - character
+  - location
+  - faction
+  - object
+  - culture
+  - system
+  - species
+  - chapter
+  - note
+  - concept
