@@ -1,15 +1,15 @@
 //! HTTP routing.
 //!
-//! M1 exposes the **read** surface of `docs/api.md`. Write endpoints (M2),
-//! link/stub endpoints (M3), search (M5) and the SSE stream (which needs the
-//! watcher, M2) are deliberately absent rather than stubbed.
+//! M1–M2 expose the **read** and **write** surface of `docs/api.md`. Link/stub
+//! endpoints (M3), search (M5) and the SSE stream (the watcher's second half of
+//! M2) are deliberately absent rather than stubbed.
 
 mod entities;
 mod meta;
 mod types;
 
 use axum::http::StatusCode;
-use axum::routing::get;
+use axum::routing::{get, post};
 use axum::Router;
 
 use crate::error::ApiError;
@@ -25,8 +25,14 @@ pub fn router(state: SharedState) -> Router {
         .route("/project", get(meta::project))
         .route("/types", get(types::list))
         .route("/types/{type_name}", get(types::get))
-        .route("/entities", get(entities::list))
-        .route("/entities/{slug}", get(entities::get))
+        .route("/entities", get(entities::list).post(entities::create))
+        .route(
+            "/entities/{slug}",
+            get(entities::get)
+                .patch(entities::update)
+                .delete(entities::delete),
+        )
+        .route("/entities/{slug}/rename", post(entities::rename))
         .route("/entities/{slug}/backlinks", get(entities::backlinks))
         .with_state(state);
 
@@ -45,7 +51,6 @@ async fn method_not_allowed(method: axum::http::Method, uri: axum::http::Uri) ->
     ApiError {
         status: StatusCode::METHOD_NOT_ALLOWED,
         code: "method_not_allowed",
-        // M1 is read-only: pointing at the milestone is more useful than a bare 405.
-        message: format!("{method} {uri} is not available: the M1 API is read-only"),
+        message: format!("{method} is not allowed on {uri}"),
     }
 }

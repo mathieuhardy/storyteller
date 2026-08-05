@@ -198,12 +198,13 @@ From a stub (in body, frontmatter, or stub list), the **create entry** action:
 
 ### 7.2 File Renaming (via the app)
 
-Renaming the file changes identity. The app can then, depending on the chosen policy:
+Renaming the file changes identity. The policy is fixed by [ADR 0012](adr/0012-rename-link-rewriting.md): the app **rewrites the incoming wikilinks that would otherwise break** to point at the new filename, and **keeps no alias**.
 
-- update wikilinks that pointed to the old name, **and/or**
-- keep the old name as an **alias** to preserve resolution.
+- Only links that would stop resolving are rewritten; a link still reaching the entry by an untouched `title` or `alias` is left as written.
+- Rewrites target the new **filename**; human-readable prose keeps its text as `[[new-slug|Displayed]]` (§3.3), and asset embeds are never touched.
+- Each rewrite is a **non-destructive** edit of the referencing file (unknown keys, key order and body preserved).
 
-The **automatic link rewriting policy** (rewrite source files vs. rely solely on aliases) is **optional** and **decided in an ADR** — see the [ADR folder](adr/README.md). Do not assume a default behavior here.
+This never silently produces a [stub](glossary.md) from an app-driven rename. The alternative safety-net (append the old name as an alias, rewrite nothing) was considered and rejected as the default — see the ADR.
 
 ### 7.3 External Editing and Broken Links
 

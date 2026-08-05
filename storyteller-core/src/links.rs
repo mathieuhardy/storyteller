@@ -250,6 +250,86 @@ fn parse_inner(inner: &str) -> Option<LinkOccurrence> {
     })
 }
 
+/// Decides, for one occurrence, the new inner text of its wikilink, or `None`
+/// to leave it untouched. The inner text is what sits between `[[` and `]]`
+/// (target, optional `#anchor`, optional `|display`).
+pub type Rewrite<'a> = dyn Fn(&LinkOccurrence) -> Option<String> + 'a;
+
+/// Rewrites wikilinks in a markdown body, returning the new body when anything
+/// changed. Asset embeds (`![[…]]`) are never rewritten — they point at media,
+/// not entries (`docs/linking.md` §1). Occurrences are replaced back-to-front so
+/// that earlier offsets stay valid.
+pub fn rewrite_body_links(body: &str, rewrite: &Rewrite) -> Option<String> {
+    let mut edits: Vec<(usize, usize, String)> = Vec::new();
+    for occurrence in extract_from_body(body) {
+        if occurrence.is_embed {
+            continue;
+        }
+        let Some(start) = occurrence.offset else {
+            continue;
+        };
+        let Some(rel_end) = body[start..].find("]]") else {
+            continue;
+        };
+        if let Some(inner) = rewrite(&occurrence) {
+            edits.push((start, start + rel_end + 2, format!("[[{inner}]]")));
+        }
+    }
+    if edits.is_empty() {
+        return None;
+    }
+
+    let mut out = body.to_string();
+    for (start, end, replacement) in edits.into_iter().rev() {
+        out.replace_range(start..end, &replacement);
+    }
+    Some(out)
+}
+
+/// Rewrites the wikilink strings carried by a frontmatter value, returning the
+/// new value when anything changed. Only whole-string wikilinks count as links
+/// (`docs/linking.md` §2), so plain text is passed through untouched.
+pub fn rewrite_value_links(value: &Value, rewrite: &Rewrite) -> Option<Value> {
+    match value {
+        Value::String(text) => {
+            let occurrence = parse_standalone(text)?;
+            let inner = rewrite(&occurrence)?;
+            Some(Value::String(format!("[[{inner}]]")))
+        }
+        Value::Array(items) => {
+            let mut changed = false;
+            let rewritten: Vec<Value> = items
+                .iter()
+                .map(|item| match rewrite_value_links(item, rewrite) {
+                    Some(new_item) => {
+                        changed = true;
+                        new_item
+                    }
+                    None => item.clone(),
+                })
+                .collect();
+            changed.then(|| Value::Array(rewritten))
+        }
+        Value::Object(map) => {
+            let mut changed = false;
+            let mut rewritten = crate::model::Frontmatter::new();
+            for (key, item) in map {
+                match rewrite_value_links(item, rewrite) {
+                    Some(new_item) => {
+                        changed = true;
+                        rewritten.insert(key.clone(), new_item);
+                    }
+                    None => {
+                        rewritten.insert(key.clone(), item.clone());
+                    }
+                }
+            }
+            changed.then(|| Value::Object(rewritten))
+        }
+        _ => None,
+    }
+}
+
 fn find_from(haystack: &[u8], from: usize, needle: &[u8; 2]) -> Option<usize> {
     if from >= haystack.len() {
         return None;

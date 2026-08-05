@@ -62,19 +62,32 @@ impl TestServer {
         body
     }
 
-    pub async fn request(&self, method: &str, uri: &str) -> StatusCode {
-        self.router
+    /// Issues a request carrying a JSON body, returning status and parsed body
+    /// (`Value::Null` for an empty response, e.g. a 204).
+    pub async fn send(&self, method: &str, uri: &str, body: &Value) -> (StatusCode, Value) {
+        let response = self
+            .router
             .clone()
             .oneshot(
                 Request::builder()
                     .method(method)
                     .uri(uri)
-                    .body(Body::empty())
+                    .header("content-type", "application/json")
+                    .body(Body::from(serde_json::to_vec(body).unwrap()))
                     .unwrap(),
             )
             .await
-            .expect("response")
-            .status()
+            .expect("response");
+
+        let status = response.status();
+        let bytes = response.into_body().collect().await.unwrap().to_bytes();
+        let json = if bytes.is_empty() {
+            Value::Null
+        } else {
+            serde_json::from_slice(&bytes)
+                .unwrap_or_else(|e| panic!("{method} {uri} returned a non-JSON body: {e}"))
+        };
+        (status, json)
     }
 }
 

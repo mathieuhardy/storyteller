@@ -22,5 +22,7 @@ rusqlite = { version = "0.40", features = ["bundled"] }
 unicode-normalization = "0.1"
 walkdir = "2"
 sha2 = "0.10"
+# App-managed `created`/`updated` timestamps (RFC 3339). Formatting only.
+time = { version = "0.3", default-features = false, features = ["std", "formatting"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }

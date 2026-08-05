@@ -22,6 +22,12 @@ pub enum Error {
     #[error("entry not found: {0}")]
     EntryNotFound(String),
 
+    #[error("an entry already claims this identity: {0}")]
+    EntryExists(String),
+
+    #[error("cannot derive a slug from title: {0}")]
+    InvalidTitle(String),
+
     #[error("unknown type: {0}")]
     UnknownType(String),
 

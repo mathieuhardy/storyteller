@@ -1,10 +1,15 @@
 //! Entry endpoints (`docs/api.md` §3, "Entities").
 
 use axum::extract::{Path, RawQuery, State};
+use axum::http::StatusCode;
+use axum::response::IntoResponse;
 use axum::Json;
+use serde::Deserialize;
 use storyteller_core::index::Page;
 use storyteller_core::links::Backlink;
-use storyteller_core::{Entry, EntrySummary};
+use storyteller_core::model::Frontmatter;
+use storyteller_core::write::{now_rfc3339, slugify};
+use storyteller_core::{types, Entry, EntrySummary};
 
 use crate::error::{ApiError, ApiResult};
 use crate::params;
@@ -49,6 +54,134 @@ pub async fn backlinks(
     // Checked first so an unknown slug is a 404 rather than an empty list.
     ensure_exists(&state, &slug)?;
     Ok(Json(state.index().backlinks(&slug)?))
+}
+
+/// Body of `POST /api/v1/entities`.
+#[derive(Deserialize)]
+pub struct CreateBody {
+    #[serde(rename = "type")]
+    type_name: String,
+    title: String,
+    /// Extra frontmatter fields; `type`/`title`/`created`/`updated` set here are
+    /// ignored in favour of the managed values.
+    #[serde(default)]
+    frontmatter: Frontmatter,
+    #[serde(default)]
+    body: String,
+}
+
+/// `POST /api/v1/entities` — create an entry (`docs/api.md` §3).
+///
+/// The type must be known and enabled for creation; the slug (derived from the
+/// title) must be free across the whole project. On success the file is written
+/// and the index rebuilt, so the entry is immediately listable.
+pub async fn create(
+    State(state): State<SharedState>,
+    Json(body): Json<CreateBody>,
+) -> ApiResult<impl IntoResponse> {
+    if types::type_schema(&body.type_name).is_none() {
+        return Err(ApiError::bad_request(format!(
+            "unknown type `{}`; create needs one of the catalog types",
+            body.type_name
+        )));
+    }
+    if !state.project().config().is_enabled(&body.type_name) {
+        return Err(ApiError::bad_request(format!(
+            "type `{}` is disabled for creation in this project",
+            body.type_name
+        )));
+    }
+    let slug = slugify(&body.title).ok_or_else(|| {
+        ApiError::unprocessable(format!(
+            "cannot derive a slug from `{}`: it has no usable characters",
+            body.title
+        ))
+    })?;
+    if state.index().path_of(&slug)?.is_some() {
+        return Err(ApiError::conflict(format!(
+            "an entry already claims the slug `{slug}`"
+        )));
+    }
+
+    let entry = state.project().create_entry(
+        &body.type_name,
+        &body.title,
+        &body.frontmatter,
+        &body.body,
+        &now_rfc3339(),
+    )?;
+    state.rebuild()?;
+    Ok((StatusCode::CREATED, Json(entry)))
+}
+
+/// Body of `PATCH /api/v1/entities/{slug}`.
+#[derive(Deserialize)]
+pub struct UpdateBody {
+    #[serde(default)]
+    frontmatter: Frontmatter,
+    /// Replaces the body when present; omit to leave it byte-for-byte.
+    body: Option<String>,
+}
+
+/// `PATCH /api/v1/entities/{slug}` — non-destructive update (`docs/api.md` §3).
+pub async fn update(
+    State(state): State<SharedState>,
+    Path(slug): Path<String>,
+    Json(body): Json<UpdateBody>,
+) -> ApiResult<Json<Entry>> {
+    let path = path_of(&state, &slug)?;
+    let entry = state.project().update_entry(
+        &path,
+        &body.frontmatter,
+        body.body.as_deref(),
+        &now_rfc3339(),
+    )?;
+    state.rebuild()?;
+    Ok(Json(entry))
+}
+
+/// `DELETE /api/v1/entities/{slug}` — remove the file (`docs/api.md` §3).
+///
+/// Links that targeted it become stubs at the next index pass; no other file is
+/// touched.
+pub async fn delete(
+    State(state): State<SharedState>,
+    Path(slug): Path<String>,
+) -> ApiResult<StatusCode> {
+    let path = path_of(&state, &slug)?;
+    state.project().delete_entry(&path)?;
+    state.rebuild()?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+/// Body of `POST /api/v1/entities/{slug}/rename`.
+#[derive(Deserialize)]
+pub struct RenameBody {
+    new_title: Option<String>,
+    new_slug: Option<String>,
+}
+
+/// `POST /api/v1/entities/{slug}/rename` — rename, rewriting breaking links
+/// ([ADR 0012](../../docs/adr/0012-rename-link-rewriting.md)).
+pub async fn rename(
+    State(state): State<SharedState>,
+    Path(slug): Path<String>,
+    Json(body): Json<RenameBody>,
+) -> ApiResult<Json<Entry>> {
+    if body.new_title.is_none() && body.new_slug.is_none() {
+        return Err(ApiError::bad_request(
+            "rename needs at least one of `new_title` or `new_slug`",
+        ));
+    }
+    let path = path_of(&state, &slug)?;
+    let outcome = state.project().rename_entry(
+        &path,
+        body.new_slug.as_deref(),
+        body.new_title.as_deref(),
+        &now_rfc3339(),
+    )?;
+    state.rebuild()?;
+    Ok(Json(outcome.entry))
 }
 
 fn read_entry(state: &SharedState, slug: &str) -> ApiResult<Entry> {

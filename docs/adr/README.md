@@ -41,3 +41,4 @@ For overall product context, see [vision](../vision.md) and [principles](../prin
 | [0009](0009-rust-sveltekit-stack.md) | Rust + SvelteKit + Shadcn stack | Accepted |
 | [0010](0010-frontmatter-keys-en-content-fr.md) | Frontmatter keys in English, content in French | Accepted |
 | [0011](0011-index-sqlite-fts5.md) | SQLite + FTS5 as the index engine | Accepted |
+| [0012](0012-rename-link-rewriting.md) | Renaming rewrites breaking links, without keeping an alias | Accepted |

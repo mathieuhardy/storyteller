@@ -5,7 +5,7 @@
 //! result. That is what keeps the server and the Tauri webview behaving
 //! identically.
 //!
-//! M1 serves the **read** surface of `docs/api.md`:
+//! M1–M2 serve the **read** and **write** surface of `docs/api.md`:
 //!
 //! | Route | Purpose |
 //! |---|---|
@@ -14,7 +14,11 @@
 //! | `GET /api/v1/types` | enabled types and their field schemas |
 //! | `GET /api/v1/types/{type}` | one type's schema |
 //! | `GET /api/v1/entities` | filtered / sorted / paginated list |
+//! | `POST /api/v1/entities` | create an entry |
 //! | `GET /api/v1/entities/{slug}` | one entry, `?include=backlinks` |
+//! | `PATCH /api/v1/entities/{slug}` | non-destructive update |
+//! | `DELETE /api/v1/entities/{slug}` | delete an entry |
+//! | `POST /api/v1/entities/{slug}/rename` | rename, rewriting breaking links |
 //! | `GET /api/v1/entities/{slug}/backlinks` | incoming links |
 
 pub mod error;

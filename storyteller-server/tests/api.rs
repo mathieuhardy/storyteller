@@ -4,6 +4,7 @@ mod common;
 
 use axum::http::StatusCode;
 use common::{error_code, slugs, TestServer};
+use serde_json::json;
 
 #[tokio::test]
 async fn version_reports_api_core_and_schema() {
@@ -315,19 +316,152 @@ async fn unbuilt_features_say_so_instead_of_lying() {
 }
 
 #[tokio::test]
-async fn write_routes_are_absent_from_the_read_only_api() {
+async fn create_writes_an_entry_and_makes_it_immediately_readable() {
+    let server = TestServer::new();
+    let (status, body) = server
+        .send(
+            "POST",
+            "/api/v1/entities",
+            &json!({
+                "type": "character",
+                "title": "Maître Orlan",
+                "frontmatter": { "role": "mentor", "factions": ["[[Ordre du Prisme]]"] },
+                "body": "Un vieux verrier.\n"
+            }),
+        )
+        .await;
+
+    assert_eq!(status, StatusCode::CREATED, "{body}");
+    assert_eq!(body["slug"], "maitre-orlan");
+    assert_eq!(body["path"], "characters/maitre-orlan.md");
+    assert_eq!(body["type"], "character");
+    assert_eq!(body["frontmatter"]["role"], "mentor");
+    assert!(body["frontmatter"]["created"]
+        .as_str()
+        .unwrap()
+        .ends_with("Z"));
+    assert_eq!(
+        body["frontmatter"]["created"], body["frontmatter"]["updated"],
+        "a fresh entry has equal created/updated"
+    );
+
+    // Reachable through the read API, so the index was rebuilt.
+    let read = server.get_ok("/api/v1/entities/maitre-orlan").await;
+    assert_eq!(read["frontmatter"]["title"], "Maître Orlan");
+    assert!(read["body"].as_str().unwrap().contains("vieux verrier"));
+}
+
+#[tokio::test]
+async fn create_rejects_a_taken_slug_a_bad_title_and_an_unknown_type() {
+    let server = TestServer::new();
+
+    let (status, body) = server
+        .send(
+            "POST",
+            "/api/v1/entities",
+            &json!({ "type": "character", "title": "Aria Solane" }),
+        )
+        .await;
+    assert_eq!(status, StatusCode::CONFLICT, "{body}");
+    assert_eq!(error_code(&body), "conflict");
+
+    let (status, _) = server
+        .send(
+            "POST",
+            "/api/v1/entities",
+            &json!({ "type": "character", "title": "   " }),
+        )
+        .await;
+    assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
+
+    let (status, _) = server
+        .send(
+            "POST",
+            "/api/v1/entities",
+            &json!({ "type": "dragon", "title": "Smaug" }),
+        )
+        .await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+}
+
+#[tokio::test]
+async fn update_merges_frontmatter_and_preserves_unknown_keys() {
+    let server = TestServer::new();
+    let (status, body) = server
+        .send(
+            "PATCH",
+            "/api/v1/entities/aria-solane",
+            &json!({ "frontmatter": { "status": "disparue" } }),
+        )
+        .await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(body["frontmatter"]["status"], "disparue");
+    // A key written by another tool survives the write (non-destructive).
+    assert_eq!(body["frontmatter"]["obsidian_note_id"], "91f3c0");
+
+    // `updated` moved forward; the file on disk kept its body.
+    let on_disk = std::fs::read_to_string(server.root().join("characters/aria-solane.md")).unwrap();
+    assert!(on_disk.contains("status: disparue\n"), "{on_disk}");
+    assert!(on_disk.contains("## Voix"), "body preserved: {on_disk}");
+}
+
+#[tokio::test]
+async fn delete_removes_the_entry_and_returns_204() {
+    let server = TestServer::new();
+    let (status, body) = server
+        .send("DELETE", "/api/v1/entities/kael-vantre", &json!({}))
+        .await;
+    assert_eq!(status, StatusCode::NO_CONTENT);
+    assert_eq!(body, serde_json::Value::Null);
+
+    let (status, _) = server.get("/api/v1/entities/kael-vantre").await;
+    assert_eq!(status, StatusCode::NOT_FOUND, "the entry is gone");
+}
+
+#[tokio::test]
+async fn rename_moves_the_entry_and_rewrites_breaking_links() {
+    let server = TestServer::new();
+    // `03-la-felure` declares `pov: "[[Aria Solane]]"` (a title link) and cites
+    // her in prose. Renaming the *title* would orphan those, so they are rewritten.
+    let (status, body) = server
+        .send(
+            "POST",
+            "/api/v1/entities/aria-solane/rename",
+            &json!({ "new_title": "Aria la Verrière" }),
+        )
+        .await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(
+        body["slug"], "aria-solane",
+        "slug unchanged on a title rename"
+    );
+    assert_eq!(body["frontmatter"]["title"], "Aria la Verrière");
+
+    let chapter = std::fs::read_to_string(server.root().join("chapters/03-la-felure.md")).unwrap();
+    assert!(
+        chapter.contains("[[aria-solane|Aria Solane]]"),
+        "the orphaned title link is rewritten to the slug: {chapter}"
+    );
+}
+
+#[tokio::test]
+async fn rename_needs_at_least_one_target() {
+    let server = TestServer::new();
+    let (status, _) = server
+        .send("POST", "/api/v1/entities/aria-solane/rename", &json!({}))
+        .await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+}
+
+#[tokio::test]
+async fn writing_to_an_unknown_slug_is_a_404() {
     let server = TestServer::new();
     for (method, uri) in [
-        ("POST", "/api/v1/entities"),
-        ("PATCH", "/api/v1/entities/aria-solane"),
-        ("DELETE", "/api/v1/entities/aria-solane"),
+        ("PATCH", "/api/v1/entities/personne"),
+        ("DELETE", "/api/v1/entities/personne"),
     ] {
-        let status = server.request(method, uri).await;
-        assert_eq!(
-            status,
-            StatusCode::METHOD_NOT_ALLOWED,
-            "{method} {uri} should not be served yet"
-        );
+        let (status, _) = server.send(method, uri, &json!({})).await;
+        assert_eq!(status, StatusCode::NOT_FOUND, "{method} {uri}");
     }
 }
 

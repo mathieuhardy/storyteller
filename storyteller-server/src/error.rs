@@ -36,6 +36,26 @@ impl ApiError {
         }
     }
 
+    /// The request collides with the current state: a slug already taken on
+    /// create, a rename target already in use (`docs/api.md` §6).
+    pub fn conflict(message: impl Into<String>) -> Self {
+        Self {
+            status: StatusCode::CONFLICT,
+            code: "conflict",
+            message: message.into(),
+        }
+    }
+
+    /// The request is well-formed but its content is refused (a title with no
+    /// sluggable characters, unserializable frontmatter).
+    pub fn unprocessable(message: impl Into<String>) -> Self {
+        Self {
+            status: StatusCode::UNPROCESSABLE_ENTITY,
+            code: "unprocessable",
+            message: message.into(),
+        }
+    }
+
     /// Documented in the API contract but not built yet: the client asked for a
     /// later milestone's feature. Saying so beats silently ignoring it.
     pub fn not_implemented(message: impl Into<String>) -> Self {
@@ -77,6 +97,12 @@ impl From<CoreError> for ApiError {
             CoreError::EntryNotFound(what) => {
                 ApiError::not_found(format!("entry not found: {what}"))
             }
+            CoreError::EntryExists(slug) => {
+                ApiError::conflict(format!("an entry already claims the slug `{slug}`"))
+            }
+            CoreError::InvalidTitle(title) => ApiError::unprocessable(format!(
+                "cannot derive a slug from `{title}`: it has no usable characters"
+            )),
             CoreError::UnknownType(name) => ApiError::not_found(format!("unknown type: {name}")),
             CoreError::ProjectNotFound(path) => {
                 ApiError::not_found(format!("project not found: {}", path.display()))

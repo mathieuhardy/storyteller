@@ -126,8 +126,8 @@ To be decided in [ADR](adr/README.md); do not prejudge here.
 
 1. **Shadcn without Tailwind** — `shadcn-svelte` depends on Tailwind, conflicting with the "avoid Tailwind" preference. Alternatives: Bits UI / Melt UI + custom CSS.
 2. **Primary target** — Tauri app vs. headless server: which one drives product/UX tradeoffs by default?
-3. **Entity identity** — filename/title/alias (current default) vs. stable `id` field (hardening path), and **link rewriting policy** on rename. See [linking](linking.md) and [data model](data-model.md).
+3. **Entity identity** — filename/title/alias (current default) vs. stable `id` field (hardening path). The **link rewriting policy** on rename is decided ([ADR 0012](adr/0012-rename-link-rewriting.md): rewrite breaking links to the new filename, keep no alias); the stable-`id` question stays open. See [linking](linking.md) and [data model](data-model.md).
 4. **Markdown rendering** — Rust side (`core`) vs. front side. Until this is decided, `?render=html` answers `501` rather than guessing. Wikilink *extraction* is settled: it happens in `core`, since the index needs it.
 5. **Transport in Tauri mode** — local HTTP vs. Tauri IPC between front and core.
 
-Decided since this document was first written: **index engine** → [ADR 0011](adr/0011-index-sqlite-fts5.md) (SQLite + FTS5).
+Decided since this document was first written: **index engine** → [ADR 0011](adr/0011-index-sqlite-fts5.md) (SQLite + FTS5); **rename link-rewriting policy** → [ADR 0012](adr/0012-rename-link-rewriting.md).

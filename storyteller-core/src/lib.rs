@@ -43,6 +43,7 @@ pub mod normalize;
 pub mod parse;
 pub mod project;
 pub mod types;
+pub mod write;
 
 pub use error::{Diagnostic, Error, Result};
 pub use model::{Entry, EntrySummary, Frontmatter};
