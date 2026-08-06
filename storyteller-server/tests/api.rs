@@ -250,6 +250,142 @@ async fn backlinks_of_an_unknown_entry_are_a_404_not_an_empty_list() {
 }
 
 #[tokio::test]
+async fn outgoing_links_carry_their_field_and_resolution_status() {
+    let server = TestServer::new();
+    let body = server
+        .get_ok("/api/v1/entities/aria-solane/links")
+        .await;
+    let links = body.as_array().unwrap();
+
+    let find = |raw: &str| {
+        links
+            .iter()
+            .find(|l| l["target_raw"] == raw)
+            .unwrap_or_else(|| panic!("link to {raw} missing: {body}"))
+            .clone()
+    };
+
+    // A resolved frontmatter link carries its field name and the matched slug.
+    let home = find("Cité de Verre");
+    assert_eq!(home["field"], "home");
+    assert_eq!(home["resolution"], "resolved");
+    assert_eq!(home["target_slug"], "cite-de-verre");
+
+    // A body link to a missing entry is a stub, with no field and no slug.
+    let orlan = find("Maître Orlan");
+    assert_eq!(orlan["resolution"], "stub");
+    assert!(orlan["field"].is_null(), "a body link has no field: {orlan}");
+    assert!(orlan.get("target_slug").is_none() || orlan["target_slug"].is_null());
+
+    // The species points at an unknown entry too.
+    assert_eq!(find("Humain")["resolution"], "stub");
+    assert_eq!(find("Humain")["field"], "species");
+}
+
+#[tokio::test]
+async fn an_ambiguous_link_lists_its_candidates() {
+    let server = TestServer::new();
+    // `objects/prisme-mere` and `concepts/transmission` both title "Le Prisme",
+    // so `[[Le Prisme]]` cannot resolve to one of them.
+    let body = server.get_ok("/api/v1/entities/heritage/links").await;
+    let prisme = body
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|l| l["target_raw"] == "Le Prisme")
+        .expect("Héritage links to Le Prisme")
+        .clone();
+    assert_eq!(prisme["resolution"], "ambiguous");
+    assert!(prisme["target_slug"].is_null());
+    let candidates: Vec<&str> = prisme["candidates"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|c| c.as_str().unwrap())
+        .collect();
+    assert_eq!(candidates, ["prisme-mere", "transmission"]);
+}
+
+#[tokio::test]
+async fn links_of_an_unknown_entry_are_a_404() {
+    let server = TestServer::new();
+    let (status, body) = server.get("/api/v1/entities/personne/links").await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+    assert_eq!(error_code(&body), "not_found");
+}
+
+#[tokio::test]
+async fn stubs_group_unresolved_targets_with_their_sources() {
+    let server = TestServer::new();
+    let body = server.get_ok("/api/v1/stubs").await;
+    let stubs = body.as_array().unwrap();
+
+    let orlan = stubs
+        .iter()
+        .find(|s| s["key"] == "maitre orlan")
+        .expect("Maître Orlan is a stub");
+    assert_eq!(orlan["labels"][0], "Maître Orlan");
+    // Cited both as the faction leader and in Aria's body.
+    assert_eq!(orlan["count"], 2);
+    let sources: Vec<&str> = orlan["sources"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|s| s.as_str().unwrap())
+        .collect();
+    assert!(sources.contains(&"aria-solane"));
+    assert!(sources.contains(&"ordre-du-prisme"));
+
+    // The ambiguous target is not a stub; the malformed `[[??` never resolves to
+    // one either (it is not a whole-string wikilink in frontmatter).
+    assert!(stubs.iter().all(|s| s["key"] != "le prisme"));
+}
+
+#[tokio::test]
+async fn creating_an_entry_from_a_stub_resolves_the_link() {
+    let server = TestServer::new();
+
+    // Aria links to the missing `[[Maître Orlan]]`.
+    let before = server.get_ok("/api/v1/entities/aria-solane/links").await;
+    assert!(before
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|l| l["target_raw"] == "Maître Orlan" && l["resolution"] == "stub"));
+
+    // Promote the stub via the ordinary create path, title pre-filled with the
+    // link text (`docs/linking.md` §6.3).
+    let (status, _) = server
+        .send(
+            "POST",
+            "/api/v1/entities",
+            &json!({ "type": "character", "title": "Maître Orlan" }),
+        )
+        .await;
+    assert_eq!(status, StatusCode::CREATED);
+
+    // No source file was rewritten, yet the link now resolves to the new entry.
+    let after = server.get_ok("/api/v1/entities/aria-solane/links").await;
+    let orlan = after
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|l| l["target_raw"] == "Maître Orlan")
+        .expect("the link is still there")
+        .clone();
+    assert_eq!(orlan["resolution"], "resolved");
+    assert_eq!(orlan["target_slug"], "maitre-orlan");
+
+    // And it has left the stub list.
+    let stubs = server.get_ok("/api/v1/stubs").await;
+    assert!(stubs
+        .as_array()
+        .unwrap()
+        .iter()
+        .all(|s| s["key"] != "maitre orlan"));
+}
+
+#[tokio::test]
 async fn a_broken_entry_is_served_with_200_and_diagnostics() {
     let server = TestServer::new();
     let body = server.get_ok("/api/v1/entities/note-cassee").await;

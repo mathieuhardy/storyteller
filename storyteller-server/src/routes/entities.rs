@@ -6,7 +6,7 @@ use axum::response::IntoResponse;
 use axum::Json;
 use serde::Deserialize;
 use storyteller_core::index::Page;
-use storyteller_core::links::Backlink;
+use storyteller_core::links::{Backlink, OutgoingLink, Stub};
 use storyteller_core::model::Frontmatter;
 use storyteller_core::write::{now_rfc3339, slugify};
 use storyteller_core::{types, Entry, EntrySummary};
@@ -54,6 +54,23 @@ pub async fn backlinks(
     // Checked first so an unknown slug is a 404 rather than an empty list.
     ensure_exists(&state, &slug)?;
     Ok(Json(state.index().backlinks(&slug)?))
+}
+
+/// `GET /api/v1/entities/{slug}/links` — outgoing links, each resolved to
+/// `resolved` / `stub` / `ambiguous` (`docs/api.md` §3, `docs/linking.md` §3).
+pub async fn links(
+    State(state): State<SharedState>,
+    Path(slug): Path<String>,
+) -> ApiResult<Json<Vec<OutgoingLink>>> {
+    // An unknown slug is a 404, not an empty list, matching `backlinks`.
+    ensure_exists(&state, &slug)?;
+    Ok(Json(state.index().outgoing_links(&slug)?))
+}
+
+/// `GET /api/v1/stubs` — every unresolved link target in the project, grouped by
+/// normalized key, for the "to create" list (`docs/linking.md` §6).
+pub async fn stubs(State(state): State<SharedState>) -> ApiResult<Json<Vec<Stub>>> {
+    Ok(Json(state.index().stubs()?))
 }
 
 /// Body of `POST /api/v1/entities`.

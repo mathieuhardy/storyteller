@@ -1,8 +1,8 @@
 //! HTTP routing.
 //!
-//! M1–M2 expose the **read** and **write** surface of `docs/api.md`. Link/stub
-//! endpoints (M3), search (M5) and the SSE stream (the watcher's second half of
-//! M2) are deliberately absent rather than stubbed.
+//! M1–M3 expose the **read**, **write** and **link** surface of `docs/api.md`.
+//! Search (M5) and the SSE stream (the watcher's second half of M2) are
+//! deliberately absent rather than stubbed.
 
 mod entities;
 mod meta;
@@ -34,6 +34,8 @@ pub fn router(state: SharedState) -> Router {
         )
         .route("/entities/{slug}/rename", post(entities::rename))
         .route("/entities/{slug}/backlinks", get(entities::backlinks))
+        .route("/entities/{slug}/links", get(entities::links))
+        .route("/stubs", get(entities::stubs))
         .with_state(state);
 
     Router::new()
