@@ -485,7 +485,7 @@ pub fn slug_of(relative_path: &str) -> String {
 /// The slug *is* the identity, so a collision is a genuine conflict: links to
 /// it resolve as ambiguous. Both files stay visible — hiding one would be data
 /// loss — and each carries a diagnostic naming the other paths.
-fn flag_duplicate_slugs(entries: &mut [Entry]) {
+pub(crate) fn flag_duplicate_slugs(entries: &mut [Entry]) {
     let mut paths_by_slug: HashMap<&str, Vec<String>> = HashMap::new();
     for entry in entries.iter() {
         paths_by_slug

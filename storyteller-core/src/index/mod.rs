@@ -107,6 +107,20 @@ impl Index {
         })
     }
 
+    /// Rebuilds from an in-memory [`Snapshot`](crate::snapshot::Snapshot),
+    /// reusing the fingerprints it already recorded so that no file is re-read.
+    ///
+    /// This is the incremental reindex path (M2 watcher): the snapshot re-parses
+    /// only what changed on disk, and the index is rebuilt from that set in one
+    /// transaction — same crash-safety as a cold rebuild, minus the full scan.
+    pub fn rebuild_from_snapshot(
+        &mut self,
+        snapshot: &crate::snapshot::Snapshot,
+    ) -> Result<RebuildReport> {
+        let entries = snapshot.indexable();
+        self.rebuild_with(&entries, |entry| snapshot.stat(&entry.path).cloned())
+    }
+
     fn rebuild_with(
         &mut self,
         entries: &[Entry],
@@ -325,7 +339,8 @@ pub struct FileStat {
 }
 
 impl FileStat {
-    fn of(path: &Path) -> Option<Self> {
+    /// Fingerprints a file on disk, or `None` when it cannot be read.
+    pub fn of(path: &Path) -> Option<Self> {
         let bytes = std::fs::read(path).ok()?;
         let metadata = std::fs::metadata(path).ok()?;
         let mtime = metadata

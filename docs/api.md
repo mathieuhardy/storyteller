@@ -23,7 +23,7 @@ This document is the **target contract**; it is delivered milestone by milestone
 |---|---|
 | **M1** ✅ | `GET /version`, `GET /project`, `GET /types`, `GET /types/{type}`, `GET /entities`, `GET /entities/{slug}` (`?include=backlinks`), `GET /entities/{slug}/backlinks`. Filters, sort and pagination of [§4](#4-filtering-sorting-pagination) except `q`. |
 | **M2** (CRUD) ✅ | `POST`/`PATCH`/`DELETE /entities` and `POST /entities/{slug}/rename` (non-destructive writing; rename per [ADR 0012](adr/0012-rename-link-rewriting.md)). After a write the index is rebuilt so the change is immediately visible. |
-| **M2** (watcher) | The SSE stream of [§5](#5-event-stream-sse) and file→index sync on external edits — pending; it needs the [watcher](glossary.md). |
+| **M2** (watcher) ✅ | `GET /events` (the SSE stream of [§5](#5-event-stream-sse)) and file→index sync on external edits, via the [watcher](glossary.md): external changes are re-parsed incrementally (mtime + content hash) and announced as `index.rebuilt`; writes through the API announce the matching `entity.*` event. `assets.changed` waits for the asset endpoints (M4). |
 | **M3** ✅ | `GET /entities/{slug}/links`, `GET /stubs`, creation from a stub (via `POST /entities` with the `title` pre-filled from the link text — no source rewrite). |
 | **M4** | `/assets` endpoints, `PATCH /types/{type}`, `/projects` registry. |
 | **M5** | `GET /search`, and `q` on `/entities`. |

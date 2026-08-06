@@ -5,7 +5,8 @@
 //! result. That is what keeps the server and the Tauri webview behaving
 //! identically.
 //!
-//! M1–M2 serve the **read** and **write** surface of `docs/api.md`:
+//! M1–M3 serve the **read**, **write** and **link** surface of `docs/api.md`,
+//! and the M2 [watcher](watcher) adds the change-event stream:
 //!
 //! | Route | Purpose |
 //! |---|---|
@@ -20,11 +21,16 @@
 //! | `DELETE /api/v1/entities/{slug}` | delete an entry |
 //! | `POST /api/v1/entities/{slug}/rename` | rename, rewriting breaking links |
 //! | `GET /api/v1/entities/{slug}/backlinks` | incoming links |
+//! | `GET /api/v1/entities/{slug}/links` | outgoing links, each resolved |
+//! | `GET /api/v1/stubs` | unresolved link targets, grouped |
+//! | `GET /api/v1/events` | SSE change stream (watcher + writes) |
 
 pub mod error;
+pub mod events;
 pub mod params;
 pub mod routes;
 pub mod state;
+pub mod watcher;
 
 pub use routes::router;
 pub use state::{AppState, SharedState};

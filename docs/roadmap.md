@@ -27,7 +27,7 @@ Two points from M3 were **necessarily** built early, because backlinks cannot be
 
 Non-destructive entry CRUD and rename: `POST`/`PATCH`/`DELETE /entities` and `POST /entities/{slug}/rename`, preserving unknown YAML keys, key order and untouched body, with rename rewriting only the links that would otherwise break ([ADR 0012](adr/0012-rename-link-rewriting.md)). After each write the index is rebuilt so the change is immediately visible.
 
-**Deferred within M2:** the [watcher](glossary.md) (file→index sync on *external* edits and the [SSE stream](api.md#5-event-stream-sse)). Writes made *through* the API already reindex; syncing edits made outside the app, and pushing change events to the GUI, remain the open half of M2 — see [api.md](api.md#implementation-status). It is not on M3's or M4's critical path (the GUI can rebuild on demand), so it is picked up alongside M4.
+**Watcher (was deferred within M2, now landed):** the [watcher](glossary.md) closes the file→index sync on *external* edits and the [SSE stream](api.md#5-event-stream-sse). An in-memory snapshot re-parses only the files whose bytes moved (mtime + content hash), so an edit from Obsidian, vim or a `git pull` reindexes incrementally and is announced as `index.rebuilt`; writes through the API announce the matching `entity.*` event. `GET /events` serves the stream. This completes M2's Definition of Done.
 
 ### M3 — What Landed
 

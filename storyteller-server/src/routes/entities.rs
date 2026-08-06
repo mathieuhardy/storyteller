@@ -12,6 +12,7 @@ use storyteller_core::write::{now_rfc3339, slugify};
 use storyteller_core::{types, Entry, EntrySummary};
 
 use crate::error::{ApiError, ApiResult};
+use crate::events::Event;
 use crate::params;
 use crate::state::SharedState;
 
@@ -127,7 +128,12 @@ pub async fn create(
         &body.body,
         &now_rfc3339(),
     )?;
-    state.rebuild()?;
+    state.reindex(std::slice::from_ref(&entry.path))?;
+    state.emit(Event::EntityCreated {
+        slug: entry.slug.clone(),
+        path: entry.path.clone(),
+        type_name: entry.type_name.clone(),
+    });
     Ok((StatusCode::CREATED, Json(entry)))
 }
 
@@ -153,7 +159,12 @@ pub async fn update(
         body.body.as_deref(),
         &now_rfc3339(),
     )?;
-    state.rebuild()?;
+    state.reindex(std::slice::from_ref(&entry.path))?;
+    state.emit(Event::EntityUpdated {
+        slug: entry.slug.clone(),
+        path: entry.path.clone(),
+        type_name: entry.type_name.clone(),
+    });
     Ok(Json(entry))
 }
 
@@ -167,7 +178,8 @@ pub async fn delete(
 ) -> ApiResult<StatusCode> {
     let path = path_of(&state, &slug)?;
     state.project().delete_entry(&path)?;
-    state.rebuild()?;
+    state.reindex(std::slice::from_ref(&path))?;
+    state.emit(Event::EntityDeleted { slug, path });
     Ok(StatusCode::NO_CONTENT)
 }
 
@@ -197,8 +209,49 @@ pub async fn rename(
         body.new_title.as_deref(),
         &now_rfc3339(),
     )?;
-    state.rebuild()?;
+
+    // The entry file plus every referencing file that was rewritten changed.
+    let mut changed = vec![path.clone(), outcome.entry.path.clone()];
+    changed.extend(outcome.rewritten_paths.iter().cloned());
+    state.reindex(&changed)?;
+
+    // A slug change moves the file: the old identity is gone, a new one appears.
+    if outcome.entry.path == path {
+        state.emit(Event::EntityUpdated {
+            slug: outcome.entry.slug.clone(),
+            path: outcome.entry.path.clone(),
+            type_name: outcome.entry.type_name.clone(),
+        });
+    } else {
+        state.emit(Event::EntityDeleted {
+            slug,
+            path: path.clone(),
+        });
+        state.emit(Event::EntityCreated {
+            slug: outcome.entry.slug.clone(),
+            path: outcome.entry.path.clone(),
+            type_name: outcome.entry.type_name.clone(),
+        });
+    }
+    // Referencing files had their links rewritten.
+    for rewritten in &outcome.rewritten_paths {
+        if let Some(event) = updated_event(&state, rewritten) {
+            state.emit(event);
+        }
+    }
     Ok(Json(outcome.entry))
+}
+
+/// Builds an `entity.updated` event for a path, reading its type from the index.
+/// Returns `None` if the path is not indexed (nothing to announce).
+fn updated_event(state: &SharedState, path: &str) -> Option<Event> {
+    let slug = storyteller_core::project::slug_of(path);
+    let summary = state.index().summary(&slug).ok().flatten()?;
+    Some(Event::EntityUpdated {
+        slug,
+        path: path.to_string(),
+        type_name: summary.type_name,
+    })
 }
 
 fn read_entry(state: &SharedState, slug: &str) -> ApiResult<Entry> {

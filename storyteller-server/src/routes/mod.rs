@@ -1,10 +1,11 @@
 //! HTTP routing.
 //!
-//! M1–M3 expose the **read**, **write** and **link** surface of `docs/api.md`.
-//! Search (M5) and the SSE stream (the watcher's second half of M2) are
+//! M1–M3 expose the **read**, **write** and **link** surface of `docs/api.md`;
+//! the M2 watcher adds the SSE change stream (`/events`). Search (M5) is
 //! deliberately absent rather than stubbed.
 
 mod entities;
+mod events;
 mod meta;
 mod types;
 
@@ -36,6 +37,7 @@ pub fn router(state: SharedState) -> Router {
         .route("/entities/{slug}/backlinks", get(entities::backlinks))
         .route("/entities/{slug}/links", get(entities::links))
         .route("/stubs", get(entities::stubs))
+        .route("/events", get(events::stream))
         .with_state(state);
 
     Router::new()

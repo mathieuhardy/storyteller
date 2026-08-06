@@ -1,5 +1,9 @@
 //! Test helpers: a throwaway copy of the reference project, served by the real
 //! router. Requests go through `oneshot`, so no port is bound.
+//!
+//! Compiled into each test binary, so a helper only one binary uses reads as
+//! dead code in the others; that is expected, not a smell.
+#![allow(dead_code)]
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -9,11 +13,15 @@ use axum::http::{Request, StatusCode};
 use axum::Router;
 use http_body_util::BodyExt;
 use serde_json::Value;
+use storyteller_server::events::Event;
+use storyteller_server::SharedState;
+use tokio::sync::broadcast;
 use tower::ServiceExt;
 
 pub struct TestServer {
     _dir: tempfile::TempDir,
     root: PathBuf,
+    state: SharedState,
     router: Router,
 }
 
@@ -27,12 +35,29 @@ impl TestServer {
         Self {
             _dir: dir,
             root,
+            state: state.clone(),
             router: storyteller_server::router(state),
         }
     }
 
     pub fn root(&self) -> &Path {
         &self.root
+    }
+
+    /// The shared state, for tests that drive the watcher or events directly.
+    pub fn state(&self) -> SharedState {
+        self.state.clone()
+    }
+
+    /// Subscribes to the change-event stream (`docs/api.md` §5).
+    pub fn subscribe(&self) -> broadcast::Receiver<Event> {
+        self.state.subscribe()
+    }
+
+    /// A clone of the router, for driving a request directly (e.g. an SSE stream
+    /// whose body must not be collected).
+    pub fn router_clone(&self) -> Router {
+        self.router.clone()
     }
 
     /// Issues a GET and returns the status plus the parsed JSON body.

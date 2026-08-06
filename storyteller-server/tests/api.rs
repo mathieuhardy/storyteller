@@ -252,9 +252,7 @@ async fn backlinks_of_an_unknown_entry_are_a_404_not_an_empty_list() {
 #[tokio::test]
 async fn outgoing_links_carry_their_field_and_resolution_status() {
     let server = TestServer::new();
-    let body = server
-        .get_ok("/api/v1/entities/aria-solane/links")
-        .await;
+    let body = server.get_ok("/api/v1/entities/aria-solane/links").await;
     let links = body.as_array().unwrap();
 
     let find = |raw: &str| {
@@ -274,7 +272,10 @@ async fn outgoing_links_carry_their_field_and_resolution_status() {
     // A body link to a missing entry is a stub, with no field and no slug.
     let orlan = find("Maître Orlan");
     assert_eq!(orlan["resolution"], "stub");
-    assert!(orlan["field"].is_null(), "a body link has no field: {orlan}");
+    assert!(
+        orlan["field"].is_null(),
+        "a body link has no field: {orlan}"
+    );
     assert!(orlan.get("target_slug").is_none() || orlan["target_slug"].is_null());
 
     // The species points at an unknown entry too.
