@@ -1,0 +1,191 @@
+@import 'tailwindcss';
+
+/*
+ * Atelier design tokens (docs/ui/foundations.md), ported verbatim from the
+ * reference mockups. Components reference only these custom properties, never a
+ * hard-coded colour (ADR 0013). Light is the default; dark applies under the
+ * system preference *unless* the user forced light, and always under an explicit
+ * `data-theme="dark"` — so the in-app theme switch wins over the OS in both
+ * directions (foundations.md §1).
+ */
+
+:root {
+	--bg: #f6f7f9;
+	--surface: #ffffff;
+	--surface-2: #f1f3f6;
+	--surface-3: #e9edf2;
+	--border: #e1e5eb;
+	--border-strong: #d2d8e0;
+	--text: #1b2027;
+	--muted: #626b78;
+	--faint: #9aa2ad;
+
+	--accent: #5b5bd6;
+	--accent-fg: #ffffff;
+	--accent-soft: #edeefc;
+	--accent-line: #c9cbf3;
+
+	--stub: #a75c11;
+	--stub-soft: #fbf0df;
+	--stub-line: #e6cfa4;
+	--amb: #b6244a;
+	--amb-soft: #fce8ed;
+	--amb-line: #f2c0cd;
+	--ok: #2f8f5b;
+	--ok-soft: #e6f4ec;
+	--warn: #a75c11;
+	--warn-soft: #fbf0df;
+	--danger: #cf3838;
+
+	--shadow: 0 1px 2px rgba(20, 25, 35, 0.05), 0 1px 3px rgba(20, 25, 35, 0.04);
+	--shadow-pop: 0 8px 30px rgba(20, 25, 35, 0.16), 0 2px 8px rgba(20, 25, 35, 0.1);
+	--shadow-lg: 0 10px 40px rgba(20, 25, 35, 0.1), 0 2px 8px rgba(20, 25, 35, 0.06);
+
+	--font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+	--font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', 'Cascadia Mono', Menlo, Consolas, monospace;
+
+	--radius: 8px;
+	--radius-sm: 6px;
+	--radius-lg: 14px;
+}
+
+/* Dark tokens, shared by the system preference (unless forced light) and the
+ * explicit dark theme. Kept identical between the two selectors on purpose. */
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme='light']) {
+		--bg: #0c0e12;
+		--surface: #14171d;
+		--surface-2: #191d24;
+		--surface-3: #20252e;
+		--border: #262c36;
+		--border-strong: #333a46;
+		--text: #e6e8ee;
+		--muted: #949ca8;
+		--faint: #656d79;
+
+		--accent: #8f90ee;
+		--accent-fg: #10121a;
+		--accent-soft: #1d2030;
+		--accent-line: #3a3d63;
+
+		--stub: #d9a35f;
+		--stub-soft: #2a2113;
+		--stub-line: #4a3a20;
+		--amb: #f0728c;
+		--amb-soft: #2c1620;
+		--amb-line: #4d2632;
+		--ok: #57b37e;
+		--ok-soft: #14241b;
+		--warn: #d9a35f;
+		--warn-soft: #2a2113;
+		--danger: #e8615f;
+
+		--shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+		--shadow-pop: 0 10px 34px rgba(0, 0, 0, 0.55);
+		--shadow-lg: 0 14px 50px rgba(0, 0, 0, 0.55);
+	}
+}
+
+:root[data-theme='dark'] {
+	--bg: #0c0e12;
+	--surface: #14171d;
+	--surface-2: #191d24;
+	--surface-3: #20252e;
+	--border: #262c36;
+	--border-strong: #333a46;
+	--text: #e6e8ee;
+	--muted: #949ca8;
+	--faint: #656d79;
+
+	--accent: #8f90ee;
+	--accent-fg: #10121a;
+	--accent-soft: #1d2030;
+	--accent-line: #3a3d63;
+
+	--stub: #d9a35f;
+	--stub-soft: #2a2113;
+	--stub-line: #4a3a20;
+	--amb: #f0728c;
+	--amb-soft: #2c1620;
+	--amb-line: #4d2632;
+	--ok: #57b37e;
+	--ok-soft: #14241b;
+	--warn: #d9a35f;
+	--warn-soft: #2a2113;
+	--danger: #e8615f;
+
+	--shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+	--shadow-pop: 0 10px 34px rgba(0, 0, 0, 0.55);
+	--shadow-lg: 0 14px 50px rgba(0, 0, 0, 0.55);
+}
+
+/* Expose the tokens to Tailwind so `bg-surface`, `text-muted`, `border-border`
+ * etc. resolve to the themed custom properties (ADR 0013: tokens drive theme). */
+@theme inline {
+	--color-bg: var(--bg);
+	--color-surface: var(--surface);
+	--color-surface-2: var(--surface-2);
+	--color-surface-3: var(--surface-3);
+	--color-border: var(--border);
+	--color-border-strong: var(--border-strong);
+	--color-text: var(--text);
+	--color-muted: var(--muted);
+	--color-faint: var(--faint);
+	--color-accent: var(--accent);
+	--color-accent-fg: var(--accent-fg);
+	--color-accent-soft: var(--accent-soft);
+	--color-accent-line: var(--accent-line);
+	--color-stub: var(--stub);
+	--color-stub-soft: var(--stub-soft);
+	--color-amb: var(--amb);
+	--color-ok: var(--ok);
+	--color-warn: var(--warn);
+	--color-danger: var(--danger);
+
+	--font-sans: var(--font-ui);
+	--font-mono: var(--font-mono);
+
+	--radius-DEFAULT: var(--radius);
+	--radius-sm: var(--radius-sm);
+	--radius-lg: var(--radius-lg);
+}
+
+html,
+body {
+	height: 100%;
+}
+
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--text);
+	font-family: var(--font-ui);
+	font-size: 14px;
+	line-height: 1.5;
+	-webkit-font-smoothing: antialiased;
+	/* The page body never scrolls sideways; wide content scrolls in its own
+	 * container (docs/ui/layout.md §3). */
+	overflow-x: hidden;
+}
+
+/* Keyboard focus is always visible (foundations.md §4). */
+:focus-visible {
+	outline: none;
+	box-shadow: 0 0 0 3px var(--accent-soft);
+	border-color: var(--accent);
+}
+
+.mono {
+	font-family: var(--font-mono);
+	font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.001ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.001ms !important;
+	}
+}

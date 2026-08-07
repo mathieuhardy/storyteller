@@ -10,7 +10,7 @@
 
 > **Docs before code.** The specs come first and stay authoritative: any code that deviates from them is either wrong, or must be accompanied by the doc update that makes it right. **The GUI is designed AFTER** the documentation, never before.
 
-**Current state**: M0 (specs) and M1 (`storyteller-core` + read-only API) are done; **M2** (non-destructive CRUD + watcher) is next. See the [roadmap](docs/roadmap.md) for the milestone table and [api.md](docs/api.md#implementation-status) for what the API serves today.
+**Current state**: M0 (specs), M1 (`storyteller-core` + read-only API), M2 (non-destructive CRUD + watcher) and M3 (links, stubs, create-from-stub) are done. **M4** (SvelteKit frontend) is in progress: the `frontend/` scaffold, app shell and launcher landed, backed by the `/projects` registry + runtime project switching; the detailed screens and the remaining M4 endpoints (`/assets`, `PATCH /types/{type}`) are next. See the [roadmap](docs/roadmap.md) for the milestone table and [api.md](docs/api.md#implementation-status) for what the API serves today.
 
 ---
 
