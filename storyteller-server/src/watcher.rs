@@ -51,7 +51,7 @@ impl Drop for Watcher {
 /// Starts watching `state`'s project folder. Failing to set up the watcher is
 /// returned to the caller, which decides whether to serve without live sync.
 pub fn spawn(state: SharedState) -> anyhow::Result<Watcher> {
-    let root = state.project().root().to_path_buf();
+    let root = state.current().project().root().to_path_buf();
 
     let (tx, rx) = mpsc::channel::<DebounceEventResult>();
     let mut debouncer = new_debouncer(DEBOUNCE, None, tx)?;

@@ -28,6 +28,7 @@
 pub mod error;
 pub mod events;
 pub mod params;
+pub mod registry;
 pub mod routes;
 pub mod state;
 pub mod watcher;

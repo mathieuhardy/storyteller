@@ -6,7 +6,8 @@
 
 mod entities;
 mod events;
-mod meta;
+pub(crate) mod meta;
+mod projects;
 mod types;
 
 use axum::http::StatusCode;
@@ -37,6 +38,8 @@ pub fn router(state: SharedState) -> Router {
         .route("/entities/{slug}/backlinks", get(entities::backlinks))
         .route("/entities/{slug}/links", get(entities::links))
         .route("/stubs", get(entities::stubs))
+        .route("/projects", get(projects::list))
+        .route("/projects/open", post(projects::open))
         .route("/events", get(events::stream))
         .with_state(state);
 

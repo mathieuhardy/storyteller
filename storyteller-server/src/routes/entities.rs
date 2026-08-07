@@ -14,7 +14,7 @@ use storyteller_core::{types, Entry, EntrySummary};
 use crate::error::{ApiError, ApiResult};
 use crate::events::Event;
 use crate::params;
-use crate::state::SharedState;
+use crate::state::{Active, SharedState};
 
 /// `GET /api/v1/entities` — filtered, sorted, paginated list.
 ///
@@ -24,7 +24,7 @@ pub async fn list(
     RawQuery(query): RawQuery,
 ) -> ApiResult<Json<Page<EntrySummary>>> {
     let params = params::parse(query.as_deref())?;
-    let page = state.index().list(&params.list)?;
+    let page = state.current().index().list(&params.list)?;
     Ok(Json(page))
 }
 
@@ -39,10 +39,11 @@ pub async fn get(
     RawQuery(query): RawQuery,
 ) -> ApiResult<Json<Entry>> {
     let params = params::parse(query.as_deref())?;
-    let mut entry = read_entry(&state, &slug)?;
+    let active = state.current();
+    let mut entry = read_entry(&active, &slug)?;
 
     if params.wants_backlinks() {
-        entry.backlinks = Some(state.index().backlinks(&slug)?);
+        entry.backlinks = Some(active.index().backlinks(&slug)?);
     }
     Ok(Json(entry))
 }
@@ -52,9 +53,11 @@ pub async fn backlinks(
     State(state): State<SharedState>,
     Path(slug): Path<String>,
 ) -> ApiResult<Json<Vec<Backlink>>> {
+    let active = state.current();
     // Checked first so an unknown slug is a 404 rather than an empty list.
-    ensure_exists(&state, &slug)?;
-    Ok(Json(state.index().backlinks(&slug)?))
+    ensure_exists(&active, &slug)?;
+    let backlinks = active.index().backlinks(&slug)?;
+    Ok(Json(backlinks))
 }
 
 /// `GET /api/v1/entities/{slug}/links` — outgoing links, each resolved to
@@ -63,15 +66,17 @@ pub async fn links(
     State(state): State<SharedState>,
     Path(slug): Path<String>,
 ) -> ApiResult<Json<Vec<OutgoingLink>>> {
+    let active = state.current();
     // An unknown slug is a 404, not an empty list, matching `backlinks`.
-    ensure_exists(&state, &slug)?;
-    Ok(Json(state.index().outgoing_links(&slug)?))
+    ensure_exists(&active, &slug)?;
+    let links = active.index().outgoing_links(&slug)?;
+    Ok(Json(links))
 }
 
 /// `GET /api/v1/stubs` — every unresolved link target in the project, grouped by
 /// normalized key, for the "to create" list (`docs/linking.md` §6).
 pub async fn stubs(State(state): State<SharedState>) -> ApiResult<Json<Vec<Stub>>> {
-    Ok(Json(state.index().stubs()?))
+    Ok(Json(state.current().index().stubs()?))
 }
 
 /// Body of `POST /api/v1/entities`.
@@ -103,7 +108,8 @@ pub async fn create(
             body.type_name
         )));
     }
-    if !state.project().config().is_enabled(&body.type_name) {
+    let active = state.current();
+    if !active.project().config().is_enabled(&body.type_name) {
         return Err(ApiError::bad_request(format!(
             "type `{}` is disabled for creation in this project",
             body.type_name
@@ -115,20 +121,20 @@ pub async fn create(
             body.title
         ))
     })?;
-    if state.index().path_of(&slug)?.is_some() {
+    if active.index().path_of(&slug)?.is_some() {
         return Err(ApiError::conflict(format!(
             "an entry already claims the slug `{slug}`"
         )));
     }
 
-    let entry = state.project().create_entry(
+    let entry = active.project().create_entry(
         &body.type_name,
         &body.title,
         &body.frontmatter,
         &body.body,
         &now_rfc3339(),
     )?;
-    state.reindex(std::slice::from_ref(&entry.path))?;
+    active.reindex(std::slice::from_ref(&entry.path))?;
     state.emit(Event::EntityCreated {
         slug: entry.slug.clone(),
         path: entry.path.clone(),
@@ -152,14 +158,15 @@ pub async fn update(
     Path(slug): Path<String>,
     Json(body): Json<UpdateBody>,
 ) -> ApiResult<Json<Entry>> {
-    let path = path_of(&state, &slug)?;
-    let entry = state.project().update_entry(
+    let active = state.current();
+    let path = path_of(&active, &slug)?;
+    let entry = active.project().update_entry(
         &path,
         &body.frontmatter,
         body.body.as_deref(),
         &now_rfc3339(),
     )?;
-    state.reindex(std::slice::from_ref(&entry.path))?;
+    active.reindex(std::slice::from_ref(&entry.path))?;
     state.emit(Event::EntityUpdated {
         slug: entry.slug.clone(),
         path: entry.path.clone(),
@@ -176,9 +183,10 @@ pub async fn delete(
     State(state): State<SharedState>,
     Path(slug): Path<String>,
 ) -> ApiResult<StatusCode> {
-    let path = path_of(&state, &slug)?;
-    state.project().delete_entry(&path)?;
-    state.reindex(std::slice::from_ref(&path))?;
+    let active = state.current();
+    let path = path_of(&active, &slug)?;
+    active.project().delete_entry(&path)?;
+    active.reindex(std::slice::from_ref(&path))?;
     state.emit(Event::EntityDeleted { slug, path });
     Ok(StatusCode::NO_CONTENT)
 }
@@ -202,8 +210,9 @@ pub async fn rename(
             "rename needs at least one of `new_title` or `new_slug`",
         ));
     }
-    let path = path_of(&state, &slug)?;
-    let outcome = state.project().rename_entry(
+    let active = state.current();
+    let path = path_of(&active, &slug)?;
+    let outcome = active.project().rename_entry(
         &path,
         body.new_slug.as_deref(),
         body.new_title.as_deref(),
@@ -213,7 +222,7 @@ pub async fn rename(
     // The entry file plus every referencing file that was rewritten changed.
     let mut changed = vec![path.clone(), outcome.entry.path.clone()];
     changed.extend(outcome.rewritten_paths.iter().cloned());
-    state.reindex(&changed)?;
+    active.reindex(&changed)?;
 
     // A slug change moves the file: the old identity is gone, a new one appears.
     if outcome.entry.path == path {
@@ -235,7 +244,7 @@ pub async fn rename(
     }
     // Referencing files had their links rewritten.
     for rewritten in &outcome.rewritten_paths {
-        if let Some(event) = updated_event(&state, rewritten) {
+        if let Some(event) = updated_event(&active, rewritten) {
             state.emit(event);
         }
     }
@@ -244,9 +253,9 @@ pub async fn rename(
 
 /// Builds an `entity.updated` event for a path, reading its type from the index.
 /// Returns `None` if the path is not indexed (nothing to announce).
-fn updated_event(state: &SharedState, path: &str) -> Option<Event> {
+fn updated_event(active: &Active, path: &str) -> Option<Event> {
     let slug = storyteller_core::project::slug_of(path);
-    let summary = state.index().summary(&slug).ok().flatten()?;
+    let summary = active.index().summary(&slug).ok().flatten()?;
     Some(Event::EntityUpdated {
         slug,
         path: path.to_string(),
@@ -254,9 +263,9 @@ fn updated_event(state: &SharedState, path: &str) -> Option<Event> {
     })
 }
 
-fn read_entry(state: &SharedState, slug: &str) -> ApiResult<Entry> {
-    let path = path_of(state, slug)?;
-    match state.project().read_entry(&path) {
+fn read_entry(active: &Active, slug: &str) -> ApiResult<Entry> {
+    let path = path_of(active, slug)?;
+    match active.project().read_entry(&path) {
         Ok(entry) => Ok(entry),
         // Indexed but gone from disk: the cache is stale, and the file is right.
         Err(storyteller_core::Error::EntryNotFound(_)) => Err(ApiError::not_found(format!(
@@ -266,12 +275,12 @@ fn read_entry(state: &SharedState, slug: &str) -> ApiResult<Entry> {
     }
 }
 
-fn ensure_exists(state: &SharedState, slug: &str) -> ApiResult<()> {
-    path_of(state, slug).map(|_| ())
+fn ensure_exists(active: &Active, slug: &str) -> ApiResult<()> {
+    path_of(active, slug).map(|_| ())
 }
 
-fn path_of(state: &SharedState, slug: &str) -> ApiResult<String> {
-    state
+fn path_of(active: &Active, slug: &str) -> ApiResult<String> {
+    active
         .index()
         .path_of(slug)?
         .ok_or_else(|| ApiError::not_found(format!("entry not found: {slug}")))

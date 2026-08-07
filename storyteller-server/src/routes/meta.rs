@@ -9,7 +9,7 @@ use storyteller_core::error::Diagnostic;
 use storyteller_core::Entry;
 
 use crate::error::ApiResult;
-use crate::state::SharedState;
+use crate::state::{Active, SharedState};
 
 /// HTTP contract version, distinct from the project's `schema_version`.
 pub const API_VERSION: &str = "v1";
@@ -26,7 +26,7 @@ pub async fn version(State(state): State<SharedState>) -> Json<VersionResponse> 
     Json(VersionResponse {
         api_version: API_VERSION,
         core_version: storyteller_core::CORE_VERSION,
-        schema_version: state.project().config().schema_version,
+        schema_version: state.current().project().config().schema_version,
     })
 }
 
@@ -53,7 +53,13 @@ pub struct Stats {
 
 /// `GET /api/v1/project` — the root entry plus project metadata.
 pub async fn project(State(state): State<SharedState>) -> ApiResult<Json<ProjectResponse>> {
-    let project = state.project();
+    Ok(Json(project_response(&state.current())?))
+}
+
+/// Builds the `GET /project` payload for an active project. Shared with
+/// `POST /projects/open`, which returns the same shape for the project it opens.
+pub fn project_response(active: &Active) -> ApiResult<ProjectResponse> {
+    let project = active.project();
     let config = project.config();
 
     let entry = match project.read_entry("project.md") {
@@ -62,8 +68,8 @@ pub async fn project(State(state): State<SharedState>) -> ApiResult<Json<Project
         Err(other) => return Err(other.into()),
     };
 
-    let index = state.index();
-    Ok(Json(ProjectResponse {
+    let index = active.index();
+    Ok(ProjectResponse {
         root: project.root().display().to_string(),
         entry,
         enabled_types: config.enabled_types.clone(),
@@ -73,5 +79,5 @@ pub async fn project(State(state): State<SharedState>) -> ApiResult<Json<Project
             by_type: index.counts_by_type()?,
         },
         errors: config.errors.clone(),
-    }))
+    })
 }

@@ -25,7 +25,8 @@ This document is the **target contract**; it is delivered milestone by milestone
 | **M2** (CRUD) ✅ | `POST`/`PATCH`/`DELETE /entities` and `POST /entities/{slug}/rename` (non-destructive writing; rename per [ADR 0012](adr/0012-rename-link-rewriting.md)). After a write the index is rebuilt so the change is immediately visible. |
 | **M2** (watcher) ✅ | `GET /events` (the SSE stream of [§5](#5-event-stream-sse)) and file→index sync on external edits, via the [watcher](glossary.md): external changes are re-parsed incrementally (mtime + content hash) and announced as `index.rebuilt`; writes through the API announce the matching `entity.*` event. `assets.changed` waits for the asset endpoints (M4). |
 | **M3** ✅ | `GET /entities/{slug}/links`, `GET /stubs`, creation from a stub (via `POST /entities` with the `title` pre-filled from the link text — no source rewrite). |
-| **M4** | `/assets` endpoints, `PATCH /types/{type}`, `/projects` registry. |
+| **M4** (registry) ✅ | `GET /projects`, `POST /projects/open` — the recent-projects registry (a machine preference, stored outside any project folder) and **runtime switching** of the active project (rescan + index rebuild + rewatch). |
+| **M4** (remaining) | `/assets` endpoints, `PATCH /types/{type}`, `?render=html`. |
 | **M5** | `GET /search`, and `q` on `/entities`. |
 
 `?render=html` stays unimplemented until markdown rendering is settled ([architecture](architecture.md) §6).
@@ -86,6 +87,8 @@ An [entry](glossary.md) is serialized as follows (the `frontmatter` keys are **i
 | `GET` | `/api/v1/projects` | List known projects (recently opened/registered folders). |
 | `POST` | `/api/v1/projects/open` | Open a project by folder path; becomes the active project, triggers scan + index (re)build. |
 | `GET` | `/api/v1/project` | `project.md` entry + metadata: `enabled_types`, `schema_version` (from `.storyteller/config.yaml`), stats (entry count per type). |
+
+`POST /projects/open` takes `{ path }`, an **absolute folder path on the server machine**. In browser / self-host mode the launcher supplies it as text: a browser cannot hand a server-side folder path to a separate process, so there is no native OS folder picker there. A real picker arrives with the desktop shell (`storyteller-tauri`, M7). The recent-projects registry is a **local machine preference** (like the UI theme/language): it lives in the OS config directory, never inside a project folder, so projects stay portable.
 
 ### Entities (entries)
 

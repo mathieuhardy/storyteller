@@ -44,7 +44,8 @@ pub async fn list(
     State(state): State<SharedState>,
     axum::extract::Query(query): axum::extract::Query<ListTypesQuery>,
 ) -> Json<Vec<TypeResponse>> {
-    let config = state.project().config();
+    let active = state.current();
+    let config = active.project().config();
     let types = types::catalog()
         .iter()
         .map(|schema| (schema, config.is_enabled(schema.name)))
@@ -67,6 +68,6 @@ pub async fn get(
 ) -> ApiResult<Json<TypeResponse>> {
     let schema = types::type_schema(&type_name)
         .ok_or_else(|| ApiError::not_found(format!("unknown type: {type_name}")))?;
-    let enabled = state.project().config().is_enabled(schema.name);
+    let enabled = state.current().project().config().is_enabled(schema.name);
     Ok(Json(TypeResponse::build(schema, enabled)))
 }

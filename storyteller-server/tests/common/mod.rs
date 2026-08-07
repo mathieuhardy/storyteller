@@ -6,7 +6,6 @@
 #![allow(dead_code)]
 
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
 
 use axum::body::Body;
 use axum::http::{Request, StatusCode};
@@ -14,6 +13,7 @@ use axum::Router;
 use http_body_util::BodyExt;
 use serde_json::Value;
 use storyteller_server::events::Event;
+use storyteller_server::registry::Registry;
 use storyteller_server::SharedState;
 use tokio::sync::broadcast;
 use tower::ServiceExt;
@@ -31,7 +31,12 @@ impl TestServer {
         let root = dir.path().join("la-felure");
         copy_dir(&fixture_source(), &root);
 
-        let state = Arc::new(storyteller_server::AppState::open(&root).expect("open project"));
+        // Registry lives inside the throwaway dir, so tests never read or write
+        // the developer's real `~/.config/storyteller` and stay isolated from
+        // each other.
+        let registry = Registry::load_from(Some(dir.path().join("projects.json")));
+        let state = storyteller_server::AppState::bootstrap_with_registry(&root, registry)
+            .expect("open project");
         Self {
             _dir: dir,
             root,
@@ -118,6 +123,16 @@ impl TestServer {
 
 fn fixture_source() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../tests/fixtures/sample-project")
+}
+
+/// A throwaway copy of the reference project under a fresh temp dir, for tests
+/// that need a *second* project to switch to (`POST /projects/open`). The
+/// returned `TempDir` must be kept alive for the copy to survive.
+pub fn make_project(name: &str) -> (tempfile::TempDir, PathBuf) {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let root = dir.path().join(name);
+    copy_dir(&fixture_source(), &root);
+    (dir, root)
 }
 
 fn copy_dir(from: &Path, to: &Path) {

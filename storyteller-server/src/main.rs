@@ -7,7 +7,6 @@
 
 use std::net::SocketAddr;
 use std::path::PathBuf;
-use std::sync::Arc;
 
 use anyhow::{bail, Context};
 use storyteller_server::{router, AppState};
@@ -57,20 +56,13 @@ fn main() -> anyhow::Result<()> {
 }
 
 async fn serve(options: Options) -> anyhow::Result<()> {
-    let state = Arc::new(
-        AppState::open(&options.project)
-            .with_context(|| format!("opening project {}", options.project.display()))?,
-    );
+    let state = AppState::bootstrap(&options.project)
+        .with_context(|| format!("opening project {}", options.project.display()))?;
 
     // Live file→index sync (M2). A failure here is not fatal: the API still
     // serves and reindexes its own writes; only external edits go unnoticed.
-    let _watcher = match storyteller_server::watcher::spawn(state.clone()) {
-        Ok(watcher) => Some(watcher),
-        Err(err) => {
-            tracing::warn!("file watcher disabled: {err:#}");
-            None
-        }
-    };
+    // The watcher follows the active project across `POST /projects/open`.
+    state.start_watcher();
 
     let app = router(state).layer(TraceLayer::new_for_http());
     let listener = tokio::net::TcpListener::bind(options.bind)
