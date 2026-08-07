@@ -1,8 +1,9 @@
 # Components — Catalogue
 
 Briques réutilisables de la direction **Atelier**. Elles s'appuient sur les [tokens](foundations.md). La
-colonne *Shadcn* indique la correspondance visée côté implémentation (sous réserve du point ouvert
-Shadcn/Tailwind — [ADR 0009](../adr/0009-rust-sveltekit-stack.md)).
+colonne *Shadcn* indique le composant **shadcn-svelte** visé côté implémentation — sur Tailwind, chaque
+primitive **encapsulant ses utilitaires** pour éviter la soupe de classes
+([ADR 0013](../adr/0013-tailwind-with-component-classes.md)).
 
 ## 1. Chrome & actions
 

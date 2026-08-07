@@ -6,8 +6,10 @@ l'implémentation SvelteKit. Il complète [usage.md](../usage.md) (guide utilisa
 s'appuie sur [data-model.md](../data-model.md), [linking.md](../linking.md) et [api.md](../api.md).
 
 > **Statut : conception.** Rien n'est encore implémenté. Les maquettes de [`mockups/`](mockups/) sont des
-> pages HTML autonomes servant de **référence visuelle**, pas de code de production. Le point ouvert
-> Shadcn/Tailwind ([ADR 0009](../adr/0009-rust-sveltekit-stack.md)) reste à trancher dans un ADR dédié.
+> pages HTML autonomes servant de **référence visuelle**, pas de code de production. Les points de styling et
+> d'i18n sont tranchés : Tailwind + shadcn-svelte contenu par des classes de composants
+> ([ADR 0013](../adr/0013-tailwind-with-component-classes.md)) et catalogue i18n côté front
+> ([ADR 0014](../adr/0014-ui-i18n-front-catalog.md)).
 
 ## Direction retenue — « Atelier »
 

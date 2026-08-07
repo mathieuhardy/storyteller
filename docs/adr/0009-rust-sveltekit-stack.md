@@ -30,6 +30,8 @@ The business core (non-destructive markdown parsing, index, link resolution) dem
 
 The [context](../principles.md) asks to **avoid Tailwind if possible**. Yet the Shadcn ecosystem is traditionally coupled to Tailwind. This point is **not decided** here: feasibility of Shadcn (or a Svelte variant) without Tailwind must be confirmed, or another styling approach chosen. This choice must be **re-decided in a later ADR** before GUI design. See open questions in [architecture](../architecture.md).
 
+> **Resolved** by [ADR 0013](0013-tailwind-with-component-classes.md): Tailwind is kept (with shadcn-svelte), contained by component classes and `@apply`-based semantic classes so utilities do not sprawl across markup.
+
 ## Alternatives Considered
 
 - **Backend in a managed language** (Node, Go, Python): faster to start but fewer safety/performance guarantees on file/index processing, and no webview shared path as good as Tauri for desktop/mobile. Rejected.
