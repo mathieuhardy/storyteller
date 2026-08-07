@@ -6,3 +6,6 @@
 **/.storyteller/cache.sqlite
 **/.storyteller/cache.sqlite-shm
 **/.storyteller/cache.sqlite-wal
+# The server writes this itself to keep the cache out of git; it is generated,
+# not part of the fixture.
+**/.storyteller/.gitignore
