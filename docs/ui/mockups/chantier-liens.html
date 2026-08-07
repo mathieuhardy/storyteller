@@ -1,0 +1,475 @@
+<title>Storyteller — Atelier · Chantier des liens</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --surface: #ffffff; --surface-2: #f1f3f6; --surface-3: #e9edf2;
+    --border: #e1e5eb; --border-strong: #d2d8e0; --text: #1b2027; --muted: #626b78; --faint: #9aa2ad;
+    --accent: #5b5bd6; --accent-fg: #ffffff; --accent-soft: #edeefc; --accent-line: #c9cbf3;
+    --stub: #a75c11; --stub-soft: #fbf0df; --stub-line: #e6cfa4;
+    --amb: #b6244a; --amb-soft: #fce8ed; --amb-line: #f2c0cd;
+    --warn: #a75c11; --warn-soft: #fbf0df; --danger: #cf3838;
+    --shadow: 0 1px 2px rgba(20,25,35,.05), 0 1px 3px rgba(20,25,35,.04);
+    --shadow-pop: 0 12px 44px rgba(20,25,35,.20), 0 3px 10px rgba(20,25,35,.12);
+    --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+    --radius: 8px; --radius-sm: 6px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0c0e12; --surface: #14171d; --surface-2: #191d24; --surface-3: #20252e;
+      --border: #262c36; --border-strong: #333a46; --text: #e6e8ee; --muted: #949ca8; --faint: #656d79;
+      --accent: #8f90ee; --accent-fg: #10121a; --accent-soft: #1d2030; --accent-line: #3a3d63;
+      --stub: #d9a35f; --stub-soft: #2a2113; --stub-line: #4a3a20;
+      --amb: #f0728c; --amb-soft: #2c1620; --amb-line: #4d2632;
+      --warn: #d9a35f; --warn-soft: #2a2113; --danger: #e8615f;
+      --shadow: 0 1px 2px rgba(0,0,0,.4);
+      --shadow-pop: 0 14px 50px rgba(0,0,0,.6), 0 3px 10px rgba(0,0,0,.5);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #f6f7f9; --surface: #ffffff; --surface-2: #f1f3f6; --surface-3: #e9edf2;
+    --border: #e1e5eb; --border-strong: #d2d8e0; --text: #1b2027; --muted: #626b78; --faint: #9aa2ad;
+    --accent: #5b5bd6; --accent-fg: #ffffff; --accent-soft: #edeefc; --accent-line: #c9cbf3;
+    --stub: #a75c11; --stub-soft: #fbf0df; --stub-line: #e6cfa4; --amb: #b6244a; --amb-soft: #fce8ed; --amb-line: #f2c0cd;
+    --warn: #a75c11; --warn-soft: #fbf0df; --danger: #cf3838;
+    --shadow: 0 1px 2px rgba(20,25,35,.05), 0 1px 3px rgba(20,25,35,.04);
+    --shadow-pop: 0 12px 44px rgba(20,25,35,.20), 0 3px 10px rgba(20,25,35,.12);
+  }
+  :root[data-theme="dark"] {
+    --bg: #0c0e12; --surface: #14171d; --surface-2: #191d24; --surface-3: #20252e;
+    --border: #262c36; --border-strong: #333a46; --text: #e6e8ee; --muted: #949ca8; --faint: #656d79;
+    --accent: #8f90ee; --accent-fg: #10121a; --accent-soft: #1d2030; --accent-line: #3a3d63;
+    --stub: #d9a35f; --stub-soft: #2a2113; --stub-line: #4a3a20; --amb: #f0728c; --amb-soft: #2c1620; --amb-line: #4d2632;
+    --warn: #d9a35f; --warn-soft: #2a2113; --danger: #e8615f;
+    --shadow: 0 1px 2px rgba(0,0,0,.4);
+    --shadow-pop: 0 14px 50px rgba(0,0,0,.6), 0 3px 10px rgba(0,0,0,.5);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-ui); font-size: 14px;
+    line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; text-decoration: none; }
+  ::selection { background: var(--accent-soft); }
+
+  .app { display: grid; grid-template-columns: 244px minmax(0,1fr); grid-template-rows: 48px 1fr;
+    grid-template-areas: "topbar topbar" "nav main"; height: 100vh; min-height: 640px; }
+
+  .topbar { grid-area: topbar; display: flex; align-items: center; gap: 14px; padding: 0 14px;
+    background: var(--surface); border-bottom: 1px solid var(--border); z-index: 5; }
+  .brand { display: flex; align-items: center; gap: 9px; font-weight: 600; letter-spacing: -.01em; }
+  .brand .glyph { width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(140deg, var(--accent), #8b5cf6);
+    display: grid; place-items: center; color: #fff; font-size: 13px; }
+  .crumbs { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 12.5px; }
+  .crumbs .sep { color: var(--faint); } .crumbs .here { color: var(--text); font-weight: 500; }
+  .spacer { flex: 1; }
+  .iconbtn { width: 30px; height: 30px; display: grid; place-items: center; border: 1px solid var(--border);
+    background: var(--surface-2); border-radius: var(--radius-sm); color: var(--muted); cursor: pointer; }
+  .iconbtn:hover { color: var(--text); border-color: var(--border-strong); }
+  .btn { height: 30px; padding: 0 13px; display: inline-flex; align-items: center; gap: 6px; border-radius: var(--radius-sm);
+    font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid transparent; }
+  .btn.primary { background: var(--accent); color: var(--accent-fg); box-shadow: var(--shadow); }
+  .btn.primary:hover { filter: brightness(1.06); }
+  .btn.ghost { background: var(--surface-2); border-color: var(--border); color: var(--text); }
+  .btn.ghost:hover { border-color: var(--border-strong); }
+  .btn.stub { background: var(--stub-soft); border-color: var(--stub-line); color: var(--stub); }
+  .btn.sm { height: 27px; padding: 0 10px; font-size: 12.5px; }
+
+  .nav { grid-area: nav; background: var(--surface); border-right: 1px solid var(--border); overflow-y: auto;
+    padding: 12px 8px; display: flex; flex-direction: column; gap: 2px; }
+  .proj { display: flex; align-items: center; gap: 10px; padding: 8px 8px 10px; margin-bottom: 4px; border-bottom: 1px solid var(--border); }
+  .proj .cover { width: 30px; height: 30px; border-radius: 7px; background: radial-gradient(120% 120% at 20% 10%, #cdd3fb, #8b8ce8 55%, #5b5bd6); flex: none; }
+  .proj .name { font-weight: 600; font-size: 13.5px; } .proj .sub { font-size: 11.5px; color: var(--muted); }
+  .navlabel { font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); padding: 12px 10px 4px; }
+  .navitem { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: var(--radius-sm); color: var(--muted); cursor: pointer; }
+  .navitem:hover { background: var(--surface-2); color: var(--text); }
+  .navitem.active { background: var(--accent-soft); color: var(--text); font-weight: 500; }
+  .navitem.active .ico { color: var(--accent); }
+  .navitem .ico { width: 15px; color: var(--faint); flex: none; text-align: center; } .navitem .lab { flex: 1; }
+  .navitem .count { font-family: var(--font-mono); font-size: 11.5px; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .navitem.stubs .count { color: var(--stub); background: var(--stub-soft); border-radius: 20px; padding: 0 7px; }
+  .navitem.stubs.active .count { color: var(--stub); }
+
+  .main { grid-area: main; overflow-y: auto; }
+  .main-inner { max-width: 840px; margin: 0 auto; padding: 22px 28px 80px; }
+
+  .head h1 { font-size: 21px; letter-spacing: -.02em; margin: 0; font-weight: 660; display: flex; align-items: center; gap: 10px; }
+  .head .sub { color: var(--muted); font-size: 13px; margin-top: 6px; max-width: 62ch; }
+
+  .seg { display: inline-flex; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 2px; gap: 2px; margin: 20px 0 18px; }
+  .seg button { height: 28px; padding: 0 13px; border: 0; background: transparent; color: var(--muted); border-radius: 5px;
+    font-size: 13px; cursor: pointer; font-family: var(--font-ui); display: inline-flex; align-items: center; gap: 7px; }
+  .seg button.on { background: var(--surface); color: var(--text); box-shadow: var(--shadow); font-weight: 500; }
+  .seg button .b { font-family: var(--font-mono); font-size: 11px; border-radius: 20px; padding: 0 6px; }
+  .seg button[data-p=stubs] .b { background: var(--stub-soft); color: var(--stub); }
+  .seg button[data-p=amb] .b { background: var(--amb-soft); color: var(--amb); }
+
+  .pane { display: none; } .pane.on { display: block; }
+
+  /* stub rows */
+  .srow { display: flex; align-items: center; gap: 16px; padding: 14px 16px; border: 1px solid var(--border);
+    border-radius: var(--radius); background: var(--surface); margin-bottom: 8px; }
+  .srow:hover { border-color: var(--border-strong); }
+  .sicon { width: 34px; height: 34px; border-radius: 8px; flex: none; display: grid; place-items: center;
+    background: var(--stub-soft); color: var(--stub); border: 1px solid var(--stub-line); }
+  .sbody { flex: 1; min-width: 0; }
+  .sname { font-weight: 650; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+  .sname .alt { font-weight: 400; color: var(--faint); font-size: 12.5px; }
+  .smeta { color: var(--muted); font-size: 12.5px; margin-top: 4px; display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+  .smeta .cnt { font-family: var(--font-mono); color: var(--stub); }
+  .srcchip { display: inline-flex; align-items: center; gap: 5px; height: 21px; padding: 0 8px; border-radius: 20px;
+    background: var(--surface-2); border: 1px solid var(--border); font-size: 11.5px; color: var(--text); }
+  .srcchip .f { font-family: var(--font-mono); font-size: 10px; color: var(--faint); }
+
+  /* ambiguous rows */
+  .arow { padding: 14px 16px; border: 1px solid var(--amb-line); border-radius: var(--radius); background: var(--surface); margin-bottom: 8px; }
+  .arow .atop { display: flex; align-items: center; gap: 12px; }
+  .aicon { width: 34px; height: 34px; border-radius: 8px; flex: none; display: grid; place-items: center;
+    background: var(--amb-soft); color: var(--amb); border: 1px solid var(--amb-line); }
+  .alink { font-family: var(--font-mono); font-size: 14px; color: var(--amb); }
+  .acand { color: var(--muted); font-size: 12.5px; margin-top: 8px; padding-left: 46px; }
+  .acand b { color: var(--text); font-weight: 600; }
+
+  /* modal */
+  .modal-wrap { position: fixed; inset: 0; display: none; z-index: 60; align-items: center; justify-content: center; padding: 24px; }
+  .modal-wrap.open { display: flex; }
+  .modal-back { position: absolute; inset: 0; background: rgba(15,18,24,.45); }
+  .modal { position: relative; width: 560px; max-width: 100%; max-height: 90vh; overflow-y: auto; background: var(--surface);
+    border: 1px solid var(--border-strong); border-radius: 14px; box-shadow: var(--shadow-pop); }
+  .modal .mhead { padding: 18px 20px 14px; border-bottom: 1px solid var(--border); }
+  .modal .mhead .k { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--stub); font-weight: 600; display: flex; align-items: center; gap: 7px; }
+  .modal .mhead.amb .k { color: var(--amb); }
+  .modal .mhead h3 { margin: 6px 0 0; font-size: 20px; letter-spacing: -.01em; }
+  .modal .mbody { padding: 18px 20px; }
+  .modal .mfoot { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 10px; background: var(--surface-2); border-radius: 0 0 14px 14px; }
+  .modal .mfoot .sp { flex: 1; }
+  .modal .close { position: absolute; top: 14px; right: 14px; color: var(--faint); cursor: pointer; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 6px; }
+  .modal .close:hover { background: var(--surface-2); color: var(--text); }
+
+  .flabel { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--faint); margin: 0 0 6px; display: block; }
+  .tin { width: 100%; height: 36px; padding: 0 11px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    color: var(--text); font-family: inherit; font-size: 15px; outline: none; }
+  .tin:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .slugprev { font-family: var(--font-mono); font-size: 12px; color: var(--muted); margin-top: 7px; }
+  .slugprev b { color: var(--text); }
+
+  .typegrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 6px; }
+  .tcard { border: 1px solid var(--border); border-radius: var(--radius); padding: 11px 12px; cursor: pointer; background: var(--surface); }
+  .tcard:hover { border-color: var(--border-strong); }
+  .tcard.sel { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 1px var(--accent); }
+  .tcard .ti { font-size: 17px; } .tcard .tn { font-weight: 600; font-size: 13px; margin-top: 5px; }
+  .tcard .tf { font-family: var(--font-mono); font-size: 10.5px; color: var(--faint); margin-top: 2px; }
+  .tcard.sel .tf { color: var(--accent); }
+  .suggest { font-size: 11px; color: var(--accent); margin-left: auto; }
+
+  .resolvebox { margin-top: 16px; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .resolvebox .rh { padding: 9px 12px; background: var(--surface-2); font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--border); }
+  .resolvebox .rh b { color: var(--accent); }
+  .rl { display: flex; align-items: center; gap: 9px; padding: 8px 12px; border-top: 1px solid var(--border); font-size: 13px; }
+  .rl:first-child { border-top: 0; }
+  .rl .a2 { width: 22px; height: 22px; border-radius: 5px; background: var(--surface-3); display: grid; place-items: center; font-size: 10px; color: var(--muted); flex: none; }
+  .rl .fld { margin-left: auto; font-family: var(--font-mono); font-size: 10.5px; color: var(--faint); }
+  .rl .arrow { color: var(--accent); }
+
+  /* disambiguation */
+  .cand { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius);
+    margin-bottom: 8px; cursor: pointer; }
+  .cand:hover { border-color: var(--border-strong); }
+  .cand.sel { border-color: var(--accent); background: var(--accent-soft); }
+  .cand .radio { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border-strong); flex: none; position: relative; }
+  .cand.sel .radio { border-color: var(--accent); } .cand.sel .radio::after { content: ""; position: absolute; inset: 3px; border-radius: 50%; background: var(--accent); }
+  .cand .cn { font-weight: 600; } .cand .cw { color: var(--muted); font-size: 12px; }
+  .cand .ct { margin-left: auto; font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; color: var(--faint); }
+  .rewrite { font-family: var(--font-mono); font-size: 13px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 11px 12px; margin-top: 6px; color: var(--muted); }
+  .rewrite .old { color: var(--amb); text-decoration: line-through; opacity: .7; }
+  .rewrite .new { color: var(--accent); }
+  .scope { display: flex; gap: 8px; margin-top: 14px; }
+  .scopeopt { flex: 1; border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; cursor: pointer; font-size: 12.5px; }
+  .scopeopt.sel { border-color: var(--accent); background: var(--accent-soft); }
+  .scopeopt .so-t { font-weight: 600; color: var(--text); } .scopeopt .so-s { color: var(--muted); margin-top: 2px; }
+
+  @media (max-width: 900px) {
+    .app { grid-template-columns: 60px minmax(0,1fr); }
+    .nav .lab, .nav .navlabel, .nav .proj .name, .nav .proj .sub, .navitem .count { display: none; }
+    .nav { align-items: center; } .navitem { justify-content: center; } .proj { justify-content: center; }
+    .typegrid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+
+<div class="app" id="app">
+  <header class="topbar">
+    <div class="brand"><span class="glyph">✦</span><span>Storyteller</span></div>
+    <nav class="crumbs"><a>Cité de Verre</a><span class="sep">/</span><span class="here">Chantier</span></nav>
+    <div class="spacer"></div>
+    <button class="iconbtn langbtn" title="Langue d'interface (FR/EN)" style="width:auto;padding:0 10px;gap:5px;font-family:var(--font-mono);font-size:12px;font-weight:600" onclick="var s=this.querySelector('span');s.textContent=s.textContent==='FR'?'EN':'FR'"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg><span>FR</span></button>
+    <button class="iconbtn" id="themeBtn" title="Thème"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+  </header>
+
+  <aside class="nav">
+    <div class="proj"><div class="cover"></div><div><div class="name">Cité de Verre</div><div class="sub">32 entrées · fantasy</div></div></div>
+    <div class="navlabel">Types</div>
+    <div class="navitem"><span class="ico">◆</span><span class="lab">Projet</span><span class="count">1</span></div>
+    <div class="navitem"><span class="ico">☺</span><span class="lab">Personnages</span><span class="count">6</span></div>
+    <div class="navitem"><span class="ico">⌂</span><span class="lab">Lieux</span><span class="count">5</span></div>
+    <div class="navitem"><span class="ico">⚑</span><span class="lab">Factions</span><span class="count">3</span></div>
+    <div class="navitem"><span class="ico">◈</span><span class="lab">Objets</span><span class="count">4</span></div>
+    <div class="navitem"><span class="ico">⚙</span><span class="lab">Systèmes</span><span class="count">2</span></div>
+    <div class="navitem"><span class="ico">▤</span><span class="lab">Chapitres</span><span class="count">5</span></div>
+    <div class="navitem"><span class="ico">✎</span><span class="lab">Notes</span><span class="count">2</span></div>
+    <div class="navlabel">Chantier</div>
+    <div class="navitem stubs active"><span class="ico">⌦</span><span class="lab">À créer (stubs)</span><span class="count">7</span></div>
+  </aside>
+
+  <main class="main">
+    <div class="main-inner">
+      <div class="head">
+        <h1><span>⌦</span>Chantier des liens</h1>
+        <p class="sub">Les cibles de wikiliens qui ne pointent encore vers aucune entrée — votre liste de choses à créer — et les liens qui désignent plusieurs entrées, à lever.</p>
+      </div>
+
+      <div class="seg" id="paneSeg">
+        <button class="on" data-p="stubs"><span>À créer</span><span class="b">7</span></button>
+        <button data-p="amb"><span>Liens ambigus</span><span class="b">2</span></button>
+      </div>
+
+      <!-- STUBS -->
+      <div class="pane on" data-pane="stubs">
+        <div class="srow">
+          <div class="sicon">＋</div>
+          <div class="sbody">
+            <div class="sname">Maître Orlan</div>
+            <div class="smeta"><span class="cnt">3 mentions</span> ·
+              <span class="srcchip">Aria Solane <span class="f">corps</span></span>
+              <span class="srcchip">Ordre du Prisme <span class="f">leader</span></span>
+              <span class="srcchip">La Fêlure <span class="f">corps</span></span>
+            </div>
+          </div>
+          <button class="btn stub sm create-btn" data-name="Maître Orlan" data-type="character">Créer</button>
+        </div>
+
+        <div class="srow">
+          <div class="sicon">＋</div>
+          <div class="sbody">
+            <div class="sname">Humain <span class="alt">aussi écrit&nbsp;: « humains »</span></div>
+            <div class="smeta"><span class="cnt">4 mentions</span> ·
+              <span class="srcchip">Aria Solane <span class="f">species</span></span>
+              <span class="srcchip">Kael Vantre <span class="f">species</span></span>
+              <span class="srcchip">+2</span>
+            </div>
+          </div>
+          <button class="btn stub sm create-btn" data-name="Humain" data-type="species">Créer</button>
+        </div>
+
+        <div class="srow">
+          <div class="sicon">＋</div>
+          <div class="sbody">
+            <div class="sname">Guilde des Fondeurs</div>
+            <div class="smeta"><span class="cnt">1 mention</span> ·
+              <span class="srcchip">Sénac le Fondeur <span class="f">factions</span></span>
+            </div>
+          </div>
+          <button class="btn stub sm create-btn" data-name="Guilde des Fondeurs" data-type="faction">Créer</button>
+        </div>
+
+        <div class="srow">
+          <div class="sicon">＋</div>
+          <div class="sbody">
+            <div class="sname">Verre Vivant</div>
+            <div class="smeta"><span class="cnt">2 mentions</span> ·
+              <span class="srcchip">La Fêlure <span class="f">corps</span></span>
+              <span class="srcchip">Prisme-Mère <span class="f">system</span></span>
+            </div>
+          </div>
+          <button class="btn stub sm create-btn" data-name="Verre Vivant" data-type="system">Créer</button>
+        </div>
+      </div>
+
+      <!-- AMBIGUOUS -->
+      <div class="pane" data-pane="amb">
+        <div class="arow">
+          <div class="atop">
+            <div class="aicon">⚟</div>
+            <div style="flex:1">
+              <div><span class="alink">[[Solane]]</span></div>
+              <div class="smeta" style="margin-top:3px">2 entrées correspondent · 1 occurrence dans <span class="srcchip">Le Four <span class="f">corps</span></span></div>
+            </div>
+            <button class="btn ghost sm disamb-btn" data-link="Solane">Lever l'ambiguïté</button>
+          </div>
+          <div class="acand">Candidats&nbsp;: <b>Aria Solane</b> (via alias « Solane ») · <b>Mara Solane</b> (via alias « Solane »)</div>
+        </div>
+
+        <div class="arow">
+          <div class="atop">
+            <div class="aicon">⚟</div>
+            <div style="flex:1">
+              <div><span class="alink">[[Prisme]]</span></div>
+              <div class="smeta" style="margin-top:3px">2 entrées correspondent · 1 occurrence dans <span class="srcchip">Kael Vantre <span class="f">corps</span></span></div>
+            </div>
+            <button class="btn ghost sm disamb-btn" data-link="Prisme">Lever l'ambiguïté</button>
+          </div>
+          <div class="acand">Candidats&nbsp;: <b>Ordre du Prisme</b> (via alias « Le Prisme ») · <b>Prisme-Mère</b> (titre)</div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- CREATE-FROM-STUB MODAL -->
+<div class="modal-wrap" id="createModal">
+  <div class="modal-back" data-close></div>
+  <div class="modal">
+    <div class="close" data-close>✕</div>
+    <div class="mhead">
+      <div class="k">⌦ Créer depuis un stub</div>
+      <h3>Donner corps à un lien</h3>
+    </div>
+    <div class="mbody">
+      <label class="flabel">Titre</label>
+      <input class="tin" id="createTitle" value="Maître Orlan">
+      <div class="slugprev">identité dérivée&nbsp;: <b id="slugPrev">characters/maitre-orlan.md</b></div>
+
+      <label class="flabel" style="margin-top:18px">Type</label>
+      <div class="typegrid" id="typeGrid">
+        <div class="tcard sel" data-t="character" data-folder="characters"><div class="ti">☺</div><div class="tn">Personnage</div><div class="tf">characters/</div></div>
+        <div class="tcard" data-t="location" data-folder="locations"><div class="ti">⌂</div><div class="tn">Lieu</div><div class="tf">locations/</div></div>
+        <div class="tcard" data-t="faction" data-folder="factions"><div class="ti">⚑</div><div class="tn">Faction</div><div class="tf">factions/</div></div>
+        <div class="tcard" data-t="object" data-folder="objects"><div class="ti">◈</div><div class="tn">Objet</div><div class="tf">objects/</div></div>
+        <div class="tcard" data-t="species" data-folder="species"><div class="ti">✦</div><div class="tn">Espèce</div><div class="tf">species/</div></div>
+        <div class="tcard" data-t="note" data-folder="notes"><div class="ti">✎</div><div class="tn">Note</div><div class="tf">notes/</div></div>
+      </div>
+
+      <div class="resolvebox">
+        <div class="rh"><b id="resolveCount">3 liens</b> seront résolus dès la création (le watcher réindexe) — aucun fichier source réécrit.</div>
+        <div class="rl"><span class="a2">AS</span>Aria Solane <span class="fld">corps</span> <span class="arrow">→ résolu</span></div>
+        <div class="rl"><span class="a2">OP</span>Ordre du Prisme <span class="fld">leader</span> <span class="arrow">→ résolu</span></div>
+        <div class="rl"><span class="a2">LF</span>La Fêlure <span class="fld">corps</span> <span class="arrow">→ résolu</span></div>
+      </div>
+    </div>
+    <div class="mfoot">
+      <span style="font-size:12px;color:var(--muted)">Ouvrira l'éditeur après création.</span>
+      <div class="sp"></div>
+      <button class="btn ghost" data-close>Annuler</button>
+      <button class="btn primary" data-close><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>Créer l'entrée</button>
+    </div>
+  </div>
+</div>
+
+<!-- DISAMBIGUATION MODAL -->
+<div class="modal-wrap" id="disambModal">
+  <div class="modal-back" data-close></div>
+  <div class="modal">
+    <div class="close" data-close>✕</div>
+    <div class="mhead amb">
+      <div class="k">⚟ Lien ambigu</div>
+      <h3><span style="font-family:var(--font-mono)" id="disambLink">[[Solane]]</span></h3>
+    </div>
+    <div class="mbody">
+      <p style="margin:0 0 14px;color:var(--muted);font-size:13px">Ce lien désigne plusieurs entrées. Choisissez la cible&nbsp;: Storyteller réécrira le lien vers son <b style="color:var(--text)">identité de fichier</b> (unique), en conservant le texte affiché.</p>
+      <div class="cand sel" data-slug="aria-solane"><span class="radio"></span><div><div class="cn">Aria Solane</div><div class="cw">correspond via l'alias « Solane »</div></div><span class="ct">Personnage</span></div>
+      <div class="cand" data-slug="mara-solane"><span class="radio"></span><div><div class="cn">Mara Solane</div><div class="cw">correspond via l'alias « Solane »</div></div><span class="ct">Personnage</span></div>
+
+      <label class="flabel" style="margin-top:16px">Réécriture</label>
+      <div class="rewrite"><span class="old">[[Solane]]</span> &nbsp;→&nbsp; <span class="new" id="rewritePrev">[[aria-solane|Solane]]</span></div>
+
+      <div class="scope">
+        <div class="scopeopt sel"><div class="so-t">Cette occurrence</div><div class="so-s">1 lien dans « Le Four »</div></div>
+        <div class="scopeopt"><div class="so-t">Toutes les occurrences</div><div class="so-s">réécrit partout où « Solane » est ambigu</div></div>
+      </div>
+    </div>
+    <div class="mfoot">
+      <span style="font-size:12px;color:var(--muted)">Édition non destructive du fichier source.</span>
+      <div class="sp"></div>
+      <button class="btn ghost" data-close>Annuler</button>
+      <button class="btn primary" data-close>Réécrire le lien</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var order = ['system', 'light', 'dark'], i = 0;
+    var root = document.documentElement, btn = document.getElementById('themeBtn');
+    btn.addEventListener('click', function () {
+      i = (i + 1) % order.length;
+      if (order[i] === 'system') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', order[i]);
+    });
+  })();
+
+  // pane toggle
+  document.querySelectorAll('#paneSeg button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll('#paneSeg button').forEach(function (x) { x.classList.remove('on'); });
+      b.classList.add('on');
+      document.querySelectorAll('.pane').forEach(function (p) { p.classList.toggle('on', p.dataset.pane === b.dataset.p); });
+    });
+  });
+
+  function slugify(s) {
+    return s.toLowerCase().normalize('NFD').replace(new RegExp('[\\u0300-\\u036f]', 'g'), '')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  }
+
+  // create modal
+  var createModal = document.getElementById('createModal');
+  var titleIn = document.getElementById('createTitle');
+  var slugPrev = document.getElementById('slugPrev');
+  var curFolder = 'characters';
+  function refreshSlug() { slugPrev.innerHTML = curFolder + '/' + (slugify(titleIn.value) || '…') + '.md'; }
+  document.querySelectorAll('.create-btn').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var name = b.dataset.name, type = b.dataset.type;
+      titleIn.value = name;
+      document.querySelectorAll('#typeGrid .tcard').forEach(function (c) {
+        var on = c.dataset.t === type; c.classList.toggle('sel', on);
+        if (on) curFolder = c.dataset.folder;
+      });
+      var cnt = b.closest('.srow').querySelector('.cnt').textContent;
+      document.getElementById('resolveCount').textContent = cnt.replace('mentions', 'liens').replace('mention', 'lien');
+      refreshSlug();
+      createModal.classList.add('open');
+    });
+  });
+  titleIn.addEventListener('input', refreshSlug);
+  document.querySelectorAll('#typeGrid .tcard').forEach(function (c) {
+    c.addEventListener('click', function () {
+      document.querySelectorAll('#typeGrid .tcard').forEach(function (x) { x.classList.remove('sel'); });
+      c.classList.add('sel'); curFolder = c.dataset.folder; refreshSlug();
+    });
+  });
+
+  // disamb modal
+  var disambModal = document.getElementById('disambModal');
+  var rewritePrev = document.getElementById('rewritePrev');
+  var curDisplay = 'Solane';
+  document.querySelectorAll('.disamb-btn').forEach(function (b) {
+    b.addEventListener('click', function () {
+      curDisplay = b.dataset.link;
+      document.getElementById('disambLink').textContent = '[[' + curDisplay + ']]';
+      // reset selection to first
+      var cands = disambModal.querySelectorAll('.cand');
+      cands.forEach(function (c, idx) { c.classList.toggle('sel', idx === 0); });
+      rewritePrev.textContent = '[[' + cands[0].dataset.slug + '|' + curDisplay + ']]';
+      disambModal.querySelector('.rewrite .old').textContent = '[[' + curDisplay + ']]';
+      disambModal.classList.add('open');
+    });
+  });
+  document.querySelectorAll('#disambModal .cand').forEach(function (c) {
+    c.addEventListener('click', function () {
+      document.querySelectorAll('#disambModal .cand').forEach(function (x) { x.classList.remove('sel'); });
+      c.classList.add('sel');
+      rewritePrev.textContent = '[[' + c.dataset.slug + '|' + curDisplay + ']]';
+    });
+  });
+  document.querySelectorAll('#disambModal .scopeopt').forEach(function (s) {
+    s.addEventListener('click', function () {
+      document.querySelectorAll('#disambModal .scopeopt').forEach(function (x) { x.classList.remove('sel'); });
+      s.classList.add('sel');
+    });
+  });
+
+  // close handlers
+  document.querySelectorAll('[data-close]').forEach(function (el) {
+    el.addEventListener('click', function () { el.closest('.modal-wrap').classList.remove('open'); });
+  });
+</script>

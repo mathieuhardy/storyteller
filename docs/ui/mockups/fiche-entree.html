@@ -1,0 +1,600 @@
+<title>Storyteller — Proposition A · Atelier</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --surface: #ffffff;
+    --surface-2: #f1f3f6;
+    --surface-3: #e9edf2;
+    --border: #e1e5eb;
+    --border-strong: #d2d8e0;
+    --text: #1b2027;
+    --muted: #626b78;
+    --faint: #9aa2ad;
+    --accent: #5b5bd6;
+    --accent-fg: #ffffff;
+    --accent-soft: #edeefc;
+    --accent-line: #c9cbf3;
+    --stub: #a75c11;
+    --stub-soft: #fbf0df;
+    --stub-line: #e6cfa4;
+    --amb: #b6244a;
+    --amb-soft: #fce8ed;
+    --amb-line: #f2c0cd;
+    --warn: #a75c11;
+    --warn-soft: #fbf0df;
+    --danger: #cf3838;
+    --shadow: 0 1px 2px rgba(20,25,35,.05), 0 1px 3px rgba(20,25,35,.04);
+    --shadow-pop: 0 8px 30px rgba(20,25,35,.16), 0 2px 8px rgba(20,25,35,.10);
+    --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+    --radius: 8px;
+    --radius-sm: 6px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0c0e12;
+      --surface: #14171d;
+      --surface-2: #191d24;
+      --surface-3: #20252e;
+      --border: #262c36;
+      --border-strong: #333a46;
+      --text: #e6e8ee;
+      --muted: #949ca8;
+      --faint: #656d79;
+      --accent: #8f90ee;
+      --accent-fg: #10121a;
+      --accent-soft: #1d2030;
+      --accent-line: #3a3d63;
+      --stub: #d9a35f;
+      --stub-soft: #2a2113;
+      --stub-line: #4a3a20;
+      --amb: #f0728c;
+      --amb-soft: #2c1620;
+      --amb-line: #4d2632;
+      --warn: #d9a35f;
+      --warn-soft: #2a2113;
+      --danger: #e8615f;
+      --shadow: 0 1px 2px rgba(0,0,0,.4);
+      --shadow-pop: 0 10px 34px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #f6f7f9; --surface: #ffffff; --surface-2: #f1f3f6; --surface-3: #e9edf2;
+    --border: #e1e5eb; --border-strong: #d2d8e0; --text: #1b2027; --muted: #626b78; --faint: #9aa2ad;
+    --accent: #5b5bd6; --accent-fg: #ffffff; --accent-soft: #edeefc; --accent-line: #c9cbf3;
+    --stub: #a75c11; --stub-soft: #fbf0df; --stub-line: #e6cfa4;
+    --amb: #b6244a; --amb-soft: #fce8ed; --amb-line: #f2c0cd;
+    --warn: #a75c11; --warn-soft: #fbf0df; --danger: #cf3838;
+    --shadow: 0 1px 2px rgba(20,25,35,.05), 0 1px 3px rgba(20,25,35,.04);
+    --shadow-pop: 0 8px 30px rgba(20,25,35,.16), 0 2px 8px rgba(20,25,35,.10);
+  }
+  :root[data-theme="dark"] {
+    --bg: #0c0e12; --surface: #14171d; --surface-2: #191d24; --surface-3: #20252e;
+    --border: #262c36; --border-strong: #333a46; --text: #e6e8ee; --muted: #949ca8; --faint: #656d79;
+    --accent: #8f90ee; --accent-fg: #10121a; --accent-soft: #1d2030; --accent-line: #3a3d63;
+    --stub: #d9a35f; --stub-soft: #2a2113; --stub-line: #4a3a20;
+    --amb: #f0728c; --amb-soft: #2c1620; --amb-line: #4d2632;
+    --warn: #d9a35f; --warn-soft: #2a2113; --danger: #e8615f;
+    --shadow: 0 1px 2px rgba(0,0,0,.4);
+    --shadow-pop: 0 10px 34px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.4);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; text-decoration: none; }
+  ::selection { background: var(--accent-soft); }
+
+  .app {
+    display: grid;
+    grid-template-columns: 244px minmax(0,1fr) 0;
+    grid-template-rows: 48px 1fr;
+    grid-template-areas: "topbar topbar topbar" "nav main rail";
+    height: 100vh;
+    min-height: 640px;
+    transition: grid-template-columns .18s ease;
+  }
+  .app.rail-open { grid-template-columns: 244px minmax(0,1fr) 312px; }
+
+  /* ---------- Top bar ---------- */
+  .topbar {
+    grid-area: topbar;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 0 14px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    z-index: 5;
+  }
+  .brand { display: flex; align-items: center; gap: 9px; font-weight: 600; letter-spacing: -.01em; }
+  .brand .glyph {
+    width: 22px; height: 22px; border-radius: 6px;
+    background: linear-gradient(140deg, var(--accent), #8b5cf6);
+    display: grid; place-items: center; color: #fff; font-size: 13px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.35);
+  }
+  .crumbs { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 12.5px; min-width: 0; }
+  .crumbs .sep { color: var(--faint); }
+  .crumbs .here { color: var(--text); font-weight: 500; }
+  .crumbs a:hover { color: var(--text); }
+  .spacer { flex: 1; }
+  .search {
+    display: flex; align-items: center; gap: 8px;
+    width: 260px; height: 30px; padding: 0 10px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--faint); font-size: 13px; cursor: text;
+  }
+  .search .kbd {
+    margin-left: auto; font-size: 11px; font-family: var(--font-mono);
+    background: var(--surface); border: 1px solid var(--border); border-radius: 4px;
+    padding: 1px 5px; color: var(--muted);
+  }
+  .search .soon { margin-left: auto; font-size: 10.5px; color: var(--faint); text-transform: uppercase; letter-spacing: .06em; }
+  .iconbtn {
+    width: 30px; height: 30px; display: grid; place-items: center;
+    border: 1px solid var(--border); background: var(--surface-2);
+    border-radius: var(--radius-sm); color: var(--muted); cursor: pointer;
+  }
+  .iconbtn:hover { color: var(--text); border-color: var(--border-strong); }
+  .btn {
+    height: 30px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px;
+    border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; cursor: pointer;
+    border: 1px solid transparent;
+  }
+  .btn.primary { background: var(--accent); color: var(--accent-fg); box-shadow: var(--shadow); }
+  .btn.primary:hover { filter: brightness(1.06); }
+  .btn.ghost { background: var(--surface-2); border-color: var(--border); color: var(--text); }
+  .btn.ghost:hover { border-color: var(--border-strong); }
+  .btn.ghost[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent-line); color: var(--accent); }
+  .railn { font-family: var(--font-mono); font-size: 11px; font-variant-numeric: tabular-nums;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 0 6px; color: var(--muted); }
+  .btn.ghost[aria-pressed="true"] .railn { background: var(--surface); color: var(--accent); border-color: var(--accent-line); }
+
+  /* ---------- Nav ---------- */
+  .nav {
+    grid-area: nav;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 12px 8px;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .proj {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 8px 10px; margin-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+  }
+  .proj .cover { width: 30px; height: 30px; border-radius: 7px; background:
+      radial-gradient(120% 120% at 20% 10%, #cdd3fb, #8b8ce8 55%, #5b5bd6); flex: none; }
+  .proj .meta { min-width: 0; }
+  .proj .name { font-weight: 600; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .proj .sub { font-size: 11.5px; color: var(--muted); }
+  .navlabel { font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--faint);
+    padding: 12px 10px 4px; }
+  .navitem {
+    display: flex; align-items: center; gap: 10px;
+    padding: 6px 10px; border-radius: var(--radius-sm); color: var(--muted); cursor: pointer;
+  }
+  .navitem:hover { background: var(--surface-2); color: var(--text); }
+  .navitem.active { background: var(--accent-soft); color: var(--text); font-weight: 500; }
+  .navitem.active .ico { color: var(--accent); }
+  .navitem .ico { width: 15px; color: var(--faint); flex: none; display: grid; place-items: center; }
+  .navitem.active .ico svg, .navitem .ico svg { width: 15px; height: 15px; }
+  .navitem .lab { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .navitem .count { font-family: var(--font-mono); font-size: 11.5px; color: var(--faint);
+    font-variant-numeric: tabular-nums; }
+  .navitem.stubs .count { color: var(--stub); background: var(--stub-soft); border-radius: 20px; padding: 0 7px; }
+
+  /* ---------- Main ---------- */
+  .main { grid-area: main; overflow-y: auto; }
+  .main-inner { max-width: 780px; margin: 0 auto; padding: 22px 28px 80px; }
+
+  .diag {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 9px 12px; margin-bottom: 18px;
+    background: var(--warn-soft); border: 1px solid var(--stub-line);
+    border-radius: var(--radius); color: var(--text); font-size: 12.5px;
+  }
+  .diag .dico { color: var(--warn); flex: none; margin-top: 1px; }
+  .diag b { font-weight: 600; }
+  .diag code { font-family: var(--font-mono); font-size: 11.5px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; }
+  .diag .x { margin-left: auto; color: var(--faint); cursor: pointer; flex: none; }
+
+  .entry-head { display: flex; gap: 18px; align-items: flex-start; margin-bottom: 6px; }
+  .portrait {
+    width: 76px; height: 76px; border-radius: 12px; flex: none; position: relative;
+    background: var(--surface-2); border: 1px solid var(--border);
+    display: grid; place-items: center; overflow: hidden;
+  }
+  .portrait .ph { text-align: center; color: var(--faint); font-size: 10px; line-height: 1.3; padding: 4px; }
+  .portrait .broken { color: var(--warn); }
+  .eh-body { min-width: 0; flex: 1; padding-top: 2px; }
+  .type-badge {
+    display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px;
+    background: var(--accent-soft); color: var(--accent); border-radius: 20px;
+    font-size: 12px; font-weight: 600;
+  }
+  h1.title { font-size: 27px; line-height: 1.15; letter-spacing: -.02em; margin: 8px 0 6px;
+    font-weight: 680; text-wrap: balance; }
+  .aliases { color: var(--muted); font-size: 13px; }
+  .aliases .a { color: var(--text); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .chip {
+    height: 22px; padding: 0 9px; display: inline-flex; align-items: center; gap: 5px;
+    border-radius: 6px; font-size: 12px; background: var(--surface-2);
+    border: 1px solid var(--border); color: var(--muted);
+  }
+  .chip .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .chip.tag { color: var(--text); }
+
+  .toolbar { display: flex; gap: 8px; margin: 16px 0 22px; padding-bottom: 18px;
+    border-bottom: 1px solid var(--border); }
+
+  .section-h { display: flex; align-items: center; gap: 8px; margin: 26px 0 12px; }
+  .section-h h2 { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted);
+    margin: 0; font-weight: 600; }
+  .section-h .line { flex: 1; height: 1px; background: var(--border); }
+
+  /* frontmatter grid */
+  .fm { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: var(--surface); }
+  .fm-row { display: grid; grid-template-columns: 148px 1fr; border-top: 1px solid var(--border); }
+  .fm-row:first-child { border-top: 0; }
+  .fm-k {
+    padding: 9px 12px; background: var(--surface-2); color: var(--muted);
+    font-family: var(--font-mono); font-size: 12px; display: flex; align-items: center; gap: 6px;
+    border-right: 1px solid var(--border);
+  }
+  .fm-k .req { color: var(--accent); font-size: 10px; }
+  .fm-v { padding: 9px 12px; min-width: 0; }
+  .fm-v.text { color: var(--text); }
+  .fm-num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  .fm-sub { font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--faint);
+    margin: 18px 0 7px; display: flex; align-items: center; gap: 8px; }
+  .fm-sub .info { color: var(--faint); cursor: help; border: 1px solid var(--border); border-radius: 50%;
+    width: 14px; height: 14px; display: inline-grid; place-items: center; font-size: 9px; }
+
+  /* wikilinks */
+  .wl { cursor: pointer; border-radius: 3px; padding: 0 1px; white-space: nowrap; }
+  .wl.res { color: var(--accent); box-shadow: inset 0 -1px 0 var(--accent-line); }
+  .wl.res:hover { background: var(--accent-soft); box-shadow: inset 0 -1px 0 var(--accent); }
+  .wl.stub { color: var(--stub); box-shadow: inset 0 -1px 0 transparent;
+    border-bottom: 1px dashed var(--stub-line); }
+  .wl.stub::after { content: "+"; font-size: 10px; vertical-align: super; margin-left: 1px; opacity: .8; }
+  .wl.stub:hover { background: var(--stub-soft); }
+  .wl.amb { color: var(--amb); border-bottom: 1px dashed var(--amb-line); }
+  .wl.amb::after { content: "?"; font-size: 10px; vertical-align: super; margin-left: 1px; }
+  .wl.amb:hover { background: var(--amb-soft); }
+  .linklist { display: flex; flex-wrap: wrap; gap: 6px; }
+  .linklist .wl { padding: 2px 8px; border-radius: 6px; }
+  .linklist .wl.res { background: var(--accent-soft); box-shadow: none; }
+  .linklist .wl.stub { background: var(--stub-soft); border-bottom: 0; }
+
+  /* body markdown */
+  .body { font-size: 14.5px; line-height: 1.72; color: var(--text); }
+  .body p { margin: 0 0 14px; }
+  .body h2 { font-size: 15px; margin: 24px 0 10px; font-weight: 650; letter-spacing: -.01em; }
+  .body ul { margin: 0 0 14px; padding-left: 20px; }
+  .body li { margin: 4px 0; }
+  .embed {
+    margin: 6px 0 16px; border: 1px dashed var(--stub-line); background: var(--stub-soft);
+    border-radius: var(--radius); padding: 14px; display: flex; align-items: center; gap: 12px;
+    color: var(--warn); font-size: 12.5px;
+  }
+  .embed .ei { flex: none; }
+  .embed code { font-family: var(--font-mono); font-size: 11.5px; }
+
+  /* ---------- Rail ---------- */
+  .rail { grid-area: rail; background: var(--surface); border-left: 1px solid var(--border);
+    overflow-y: auto; padding: 0 14px 60px; display: none; }
+  .app.rail-open .rail { display: block; }
+  .rail-head { position: sticky; top: 0; background: var(--surface); display: flex; align-items: center;
+    gap: 8px; padding: 12px 0 10px; margin-bottom: 6px; border-bottom: 1px solid var(--border); z-index: 2; }
+  .rail-head .t { font-size: 11px; letter-spacing: .07em; text-transform: uppercase; color: var(--muted);
+    font-weight: 600; }
+  .rail-head .close { margin-left: auto; color: var(--faint); cursor: pointer; width: 24px; height: 24px;
+    display: grid; place-items: center; border-radius: 5px; }
+  .rail-head .close:hover { background: var(--surface-2); color: var(--text); }
+  .rail h3 { font-size: 11px; letter-spacing: .07em; text-transform: uppercase; color: var(--muted);
+    margin: 0 0 10px; font-weight: 600; display: flex; align-items: center; gap: 7px; }
+  .rail h3 .n { font-family: var(--font-mono); font-size: 11px; color: var(--faint);
+    background: var(--surface-2); border-radius: 20px; padding: 1px 7px; }
+  .rail .block { margin-bottom: 24px; }
+
+  .bl { display: block; padding: 9px 10px; border: 1px solid var(--border); border-radius: var(--radius);
+    margin-bottom: 8px; cursor: pointer; background: var(--surface); }
+  .bl:hover { border-color: var(--border-strong); background: var(--surface-2); }
+  .bl .top { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; }
+  .bl .ttype { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--faint); }
+  .bl .via { margin-left: auto; font-family: var(--font-mono); font-size: 10.5px;
+    color: var(--accent); background: var(--accent-soft); border-radius: 4px; padding: 0 5px; }
+  .bl .btitle { font-weight: 600; font-size: 13px; }
+  .bl .ctx { color: var(--muted); font-size: 12px; line-height: 1.45; margin-top: 3px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+  .lk { display: flex; align-items: center; gap: 8px; padding: 6px 4px; font-size: 12.5px; }
+  .lk .st { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+  .lk .st.res { background: var(--accent); }
+  .lk .st.stub { background: var(--stub); }
+  .lk .nm { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lk .fld { font-family: var(--font-mono); font-size: 10.5px; color: var(--faint); }
+
+  .metatable { font-size: 12px; color: var(--muted); }
+  .metatable .mr { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0;
+    border-top: 1px solid var(--border); }
+  .metatable .mr:first-child { border-top: 0; }
+  .metatable .mv { font-family: var(--font-mono); color: var(--text); font-variant-numeric: tabular-nums; }
+
+  /* popover */
+  .pop-wrap { position: fixed; inset: 0; display: none; z-index: 40; }
+  .pop-wrap.open { display: block; }
+  .pop-back { position: absolute; inset: 0; background: rgba(15,18,24,.28); }
+  .pop {
+    position: absolute; width: 320px; background: var(--surface); border: 1px solid var(--border-strong);
+    border-radius: 12px; box-shadow: var(--shadow-pop); padding: 14px; }
+  .pop h4 { margin: 0 0 3px; font-size: 14px; }
+  .pop .psub { color: var(--muted); font-size: 12px; margin-bottom: 12px; }
+  .pop .psub b { color: var(--stub); }
+  .pop label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--faint); }
+  .pop select, .pop input {
+    width: 100%; margin: 5px 0 12px; height: 32px; padding: 0 9px;
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    color: var(--text); font-family: var(--font-ui); font-size: 13px;
+  }
+  .pop .prow { display: flex; gap: 8px; justify-content: flex-end; }
+
+  .theme-cycle { font-size: 11px; color: var(--muted); font-family: var(--font-mono); }
+
+  @media (max-width: 1080px) {
+    .app, .app.rail-open { grid-template-columns: 64px minmax(0,1fr) 0; }
+    .nav .lab, .nav .navlabel, .nav .proj .meta, .navitem .count { display: none; }
+    .nav { align-items: center; }
+    .navitem { justify-content: center; }
+    .proj { justify-content: center; }
+    /* open rail overlays instead of squeezing the entry */
+    .app.rail-open .rail { position: fixed; top: 48px; right: 0; bottom: 0; width: 320px;
+      z-index: 20; box-shadow: var(--shadow-pop); }
+  }
+  @media (max-width: 720px) {
+    .search { width: 40px; } .search .txt, .search .soon { display: none; }
+    .crumbs .c-hide { display: none; }
+  }
+</style>
+
+<div class="app">
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="brand"><span class="glyph">✦</span><span>Storyteller</span></div>
+    <nav class="crumbs">
+      <a class="c-hide">Cité de Verre</a><span class="sep c-hide">/</span>
+      <a>Personnages</a><span class="sep">/</span>
+      <span class="here">Aria Solane</span>
+    </nav>
+    <div class="spacer"></div>
+    <div class="search" title="Recherche plein-texte — jalon M5">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <span class="txt">Rechercher…</span>
+      <span class="soon">à venir</span>
+    </div>
+    <button class="btn ghost" id="railBtn" title="Rétroliens et liens sortants" aria-pressed="false">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 17H7A5 5 0 0 1 7 7h2m6 0h2a5 5 0 0 1 0 10h-2M8 12h8"/></svg>
+      Liens <span class="railn">3</span>
+    </button>
+    <button class="btn primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>Nouvelle entrée</button>
+    <button class="iconbtn langbtn" title="Langue d'interface (FR/EN)" style="width:auto;padding:0 10px;gap:5px;font-family:var(--font-mono);font-size:12px;font-weight:600" onclick="var s=this.querySelector('span');s.textContent=s.textContent==='FR'?'EN':'FR'"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg><span>FR</span></button>
+    <button class="iconbtn" id="themeBtn" title="Thème">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+    </button>
+  </header>
+
+  <!-- NAV -->
+  <aside class="nav">
+    <div class="proj">
+      <div class="cover"></div>
+      <div class="meta">
+        <div class="name">Cité de Verre</div>
+        <div class="sub">32 entrées · fantasy</div>
+      </div>
+    </div>
+    <div class="navlabel">Types</div>
+    <div class="navitem"><span class="ico">◆</span><span class="lab">Projet</span><span class="count">1</span></div>
+    <div class="navitem active"><span class="ico">☺</span><span class="lab">Personnages</span><span class="count">6</span></div>
+    <div class="navitem"><span class="ico">⌂</span><span class="lab">Lieux</span><span class="count">5</span></div>
+    <div class="navitem"><span class="ico">⚑</span><span class="lab">Factions</span><span class="count">3</span></div>
+    <div class="navitem"><span class="ico">◈</span><span class="lab">Objets</span><span class="count">4</span></div>
+    <div class="navitem"><span class="ico">❧</span><span class="lab">Cultures</span><span class="count">2</span></div>
+    <div class="navitem"><span class="ico">⚙</span><span class="lab">Systèmes</span><span class="count">2</span></div>
+    <div class="navitem"><span class="ico">✦</span><span class="lab">Espèces</span><span class="count">2</span></div>
+    <div class="navitem"><span class="ico">▤</span><span class="lab">Chapitres</span><span class="count">5</span></div>
+    <div class="navitem"><span class="ico">✎</span><span class="lab">Notes</span><span class="count">2</span></div>
+    <div class="navitem"><span class="ico">✧</span><span class="lab">Concepts</span><span class="count">2</span></div>
+    <div class="navlabel">Chantier</div>
+    <div class="navitem stubs"><span class="ico">⌦</span><span class="lab">À créer (stubs)</span><span class="count">7</span></div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="main-inner">
+
+      <div class="diag" id="diag">
+        <span class="dico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></span>
+        <div><b>Illustration introuvable.</b> Le fichier <code>assets/images/aria-solane.jpg</code> est référencé (couverture &amp; corps) mais absent du projet. La fiche reste éditable — Storyteller ne bloque pas.</div>
+        <span class="x" onclick="this.parentElement.style.display='none'">✕</span>
+      </div>
+
+      <div class="entry-head">
+        <div class="portrait">
+          <div class="ph broken">portrait<br>introuvable<br><span style="opacity:.7">aria-solane.jpg</span></div>
+        </div>
+        <div class="eh-body">
+          <span class="type-badge">☺ Personnage</span>
+          <h1 class="title">Aria Solane</h1>
+          <div class="aliases">Alias&nbsp;: <span class="a">La Verrière</span>, <span class="a">Aria</span></div>
+          <div class="chips">
+            <span class="chip tag">protagoniste</span>
+            <span class="chip tag">pov</span>
+            <span class="chip"><span class="dot" style="background:var(--stub)"></span>vivante</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <button class="btn ghost"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4v16h16v-7M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4z"/></svg>Éditer</button>
+        <button class="btn ghost">Renommer</button>
+        <button class="btn ghost">Ouvrir le .md</button>
+      </div>
+
+      <div class="section-h"><h2>Attributs</h2><span class="line"></span></div>
+      <div class="fm">
+        <div class="fm-row"><div class="fm-k">role <span class="req">★</span></div><div class="fm-v text">protagoniste</div></div>
+        <div class="fm-row"><div class="fm-k">desire <span class="req">★</span></div><div class="fm-v text">retrouver l'atelier disparu de sa mère</div></div>
+        <div class="fm-row"><div class="fm-k">wound <span class="req">★</span></div><div class="fm-v text">abandonnée enfant après l'incendie de la verrerie</div></div>
+        <div class="fm-row"><div class="fm-k">fear <span class="req">★</span></div><div class="fm-v text">perdre à nouveau ceux qu'elle aime</div></div>
+        <div class="fm-row"><div class="fm-k">motivation <span class="req">★</span></div><div class="fm-v text">prouver qu'elle mérite l'héritage familial</div></div>
+        <div class="fm-row"><div class="fm-k">species</div><div class="fm-v"><span class="wl stub" data-name="Humain">Humain</span></div></div>
+        <div class="fm-row"><div class="fm-k">factions</div><div class="fm-v"><div class="linklist"><span class="wl res">Ordre du Prisme</span></div></div></div>
+        <div class="fm-row"><div class="fm-k">home</div><div class="fm-v"><span class="wl res">Cité de Verre</span></div></div>
+        <div class="fm-row"><div class="fm-k">age</div><div class="fm-v fm-num">24</div></div>
+      </div>
+
+      <div class="fm-sub">Champs conservés <span class="info" title="Clés YAML non gérées par Storyteller (ajoutées à la main ou par un autre outil). Préservées à l'octet près.">i</span></div>
+      <div class="fm">
+        <div class="fm-row"><div class="fm-k" style="color:var(--faint)">obsidian_note_id</div><div class="fm-v" style="font-family:var(--font-mono);font-size:12px;color:var(--muted)">91f3c0</div></div>
+      </div>
+
+      <div class="section-h"><h2>Corps</h2><span class="line"></span></div>
+      <div class="body">
+        <p>Aria a grandi dans les ruelles de <span class="wl res">Cité de Verre</span>, recueillie par l'<span class="wl res">Ordre du Prisme</span> après l'incendie qui a emporté sa mère.</p>
+        <div class="embed">
+          <span class="ei"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg></span>
+          <div>Embed d'illustration <code>![[aria-solane.jpg]]</code> — <b>asset introuvable</b></div>
+        </div>
+        <h2>Voix</h2>
+        <p>Sèche, ironique, ne finit pas ses phrases quand elle est émue.</p>
+        <h2>Relations</h2>
+        <ul>
+          <li>Rivalité méfiante avec <span class="wl res">Kael Vantre</span>.</li>
+          <li>Doit tout, sans l'admettre, à <span class="wl stub" data-name="Maître Orlan">Maître Orlan</span>.</li>
+          <li>Revient toujours à l'<span class="wl res">atelier-solane</span>.</li>
+        </ul>
+      </div>
+    </div>
+  </main>
+
+  <!-- RAIL -->
+  <aside class="rail">
+    <div class="rail-head">
+      <span class="t">Liens</span>
+      <span class="close" id="railClose" title="Fermer">✕</span>
+    </div>
+    <div class="block">
+      <h3>Mentionné dans <span class="n">3</span></h3>
+      <a class="bl">
+        <div class="top"><span class="ttype">Chapitre</span><span class="via">pov</span></div>
+        <div class="btitle">3 · La Fêlure</div>
+        <div class="ctx">Aria inspecte les pièces laissées par sa mère et repère une fêlure qui n'aurait jamais dû exister.</div>
+      </a>
+      <a class="bl">
+        <div class="top"><span class="ttype">Chapitre</span><span class="via">personnages</span></div>
+        <div class="btitle">4 · Le Four</div>
+        <div class="ctx">Confrontation au sommet du four ; <b>[[Aria Solane]]</b> refuse l'aide de l'Ordre.</div>
+      </a>
+      <a class="bl">
+        <div class="top"><span class="ttype">Lieu</span><span class="via">corps</span></div>
+        <div class="btitle">Atelier Solane</div>
+        <div class="ctx">…l'atelier scellé attend le retour d'<b>[[Aria]]</b> depuis l'incendie.</div>
+      </a>
+    </div>
+
+    <div class="block">
+      <h3>Liens sortants <span class="n">6</span></h3>
+      <div class="lk"><span class="st res"></span><span class="nm">Cité de Verre</span><span class="fld">home</span></div>
+      <div class="lk"><span class="st res"></span><span class="nm">Ordre du Prisme</span><span class="fld">factions</span></div>
+      <div class="lk"><span class="st stub"></span><span class="nm" style="color:var(--stub)">Humain</span><span class="fld">species</span></div>
+      <div class="lk"><span class="st res"></span><span class="nm">Kael Vantre</span><span class="fld">corps</span></div>
+      <div class="lk"><span class="st stub"></span><span class="nm" style="color:var(--stub)">Maître Orlan</span><span class="fld">corps</span></div>
+      <div class="lk"><span class="st res"></span><span class="nm">Atelier Solane</span><span class="fld">corps</span></div>
+    </div>
+
+    <div class="block">
+      <h3>Métadonnées</h3>
+      <div class="metatable">
+        <div class="mr"><span>identité</span><span class="mv">aria-solane</span></div>
+        <div class="mr"><span>chemin</span><span class="mv">characters/…</span></div>
+        <div class="mr"><span>créé</span><span class="mv">2026-07-12</span></div>
+        <div class="mr"><span>modifié</span><span class="mv">2026-08-01</span></div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<!-- STUB POPOVER -->
+<div class="pop-wrap" id="popWrap">
+  <div class="pop-back" onclick="closePop()"></div>
+  <div class="pop" id="pop">
+    <h4>Créer l'entrée</h4>
+    <div class="psub">Cible non résolue&nbsp;: <b id="popName">…</b> — 1 mention</div>
+    <label>Titre</label>
+    <input id="popTitle" value="">
+    <label>Type</label>
+    <select>
+      <option>Personnage</option><option>Lieu</option><option>Faction</option>
+      <option>Objet</option><option>Espèce</option><option>Note</option><option>Concept</option>
+    </select>
+    <div class="prow">
+      <button class="btn ghost" onclick="closePop()">Annuler</button>
+      <button class="btn primary" onclick="closePop()">Créer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // theme cycle: system -> light -> dark
+  (function () {
+    var order = ['system', 'light', 'dark'], i = 0;
+    var root = document.documentElement, btn = document.getElementById('themeBtn');
+    btn.addEventListener('click', function () {
+      i = (i + 1) % order.length;
+      if (order[i] === 'system') root.removeAttribute('data-theme');
+      else root.setAttribute('data-theme', order[i]);
+      btn.title = 'Thème : ' + order[i];
+    });
+  })();
+
+  // escamotable backlinks rail
+  (function () {
+    var app = document.querySelector('.app');
+    var btn = document.getElementById('railBtn');
+    function set(open) { app.classList.toggle('rail-open', open); btn.setAttribute('aria-pressed', open ? 'true' : 'false'); }
+    btn.addEventListener('click', function () { set(!app.classList.contains('rail-open')); });
+    document.getElementById('railClose').addEventListener('click', function () { set(false); });
+  })();
+
+  // stub popover
+  var wrap = document.getElementById('popWrap'), pop = document.getElementById('pop');
+  function closePop() { wrap.classList.remove('open'); }
+  document.querySelectorAll('.wl.stub').forEach(function (el) {
+    el.addEventListener('click', function (e) {
+      var name = el.getAttribute('data-name');
+      document.getElementById('popName').textContent = name;
+      document.getElementById('popTitle').value = name;
+      var r = el.getBoundingClientRect();
+      wrap.classList.add('open');
+      var top = Math.min(r.bottom + 8, window.innerHeight - 260);
+      var left = Math.min(r.left, window.innerWidth - 340);
+      pop.style.top = top + 'px'; pop.style.left = Math.max(12, left) + 'px';
+    });
+  });
+  // resolved links: gentle feedback only (mockup)
+  document.querySelectorAll('.wl.res').forEach(function (el) {
+    el.addEventListener('click', function () { el.animate([{opacity:.4},{opacity:1}], {duration:220}); });
+  });
+</script>

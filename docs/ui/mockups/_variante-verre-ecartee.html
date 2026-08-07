@@ -1,0 +1,458 @@
+<title>Storyteller — Proposition B · Verre</title>
+<style>
+  :root {
+    --bg: #e9edec;
+    --paper: #fbfcfb;
+    --paper-2: #f2f5f4;
+    --edge: #d6dddb;
+    --edge-soft: #e3e8e7;
+    --ink: #1a2732;
+    --ink-2: #46555d;
+    --ink-faint: #7d8b8f;
+    --accent: #2f6b70;
+    --accent-2: #3f868b;
+    --accent-soft: #dde9e8;
+    --accent-line: #a9cbca;
+    --brass: #916a24;
+    --brass-soft: #f0e8d7;
+    --brass-line: #d8c39a;
+    --rose: #9c4550;
+    --rose-soft: #f3e2e3;
+    --rose-line: #dcb7bb;
+    --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+    --shadow: 0 1px 0 rgba(26,39,50,.03), 0 6px 22px rgba(26,39,50,.06);
+    --shadow-pop: 0 18px 50px rgba(26,39,50,.22);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0c1211; --paper: #131b1a; --paper-2: #182120; --edge: #26302e; --edge-soft: #1f2827;
+      --ink: #e7edeb; --ink-2: #a9b6b3; --ink-faint: #71807c;
+      --accent: #7bc0c0; --accent-2: #93cfce; --accent-soft: #172524; --accent-line: #2f4746;
+      --brass: #cca866; --brass-soft: #241d10; --brass-line: #453619;
+      --rose: #dd8b93; --rose-soft: #271518; --rose-line: #4a2a2e;
+      --shadow: 0 1px 0 rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.5);
+      --shadow-pop: 0 22px 60px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #e9edec; --paper: #fbfcfb; --paper-2: #f2f5f4; --edge: #d6dddb; --edge-soft: #e3e8e7;
+    --ink: #1a2732; --ink-2: #46555d; --ink-faint: #7d8b8f;
+    --accent: #2f6b70; --accent-2: #3f868b; --accent-soft: #dde9e8; --accent-line: #a9cbca;
+    --brass: #916a24; --brass-soft: #f0e8d7; --brass-line: #d8c39a;
+    --rose: #9c4550; --rose-soft: #f3e2e3; --rose-line: #dcb7bb;
+    --shadow: 0 1px 0 rgba(26,39,50,.03), 0 6px 22px rgba(26,39,50,.06);
+    --shadow-pop: 0 18px 50px rgba(26,39,50,.22);
+  }
+  :root[data-theme="dark"] {
+    --bg: #0c1211; --paper: #131b1a; --paper-2: #182120; --edge: #26302e; --edge-soft: #1f2827;
+    --ink: #e7edeb; --ink-2: #a9b6b3; --ink-faint: #71807c;
+    --accent: #7bc0c0; --accent-2: #93cfce; --accent-soft: #172524; --accent-line: #2f4746;
+    --brass: #cca866; --brass-soft: #241d10; --brass-line: #453619;
+    --rose: #dd8b93; --rose-soft: #271518; --rose-line: #4a2a2e;
+    --shadow: 0 1px 0 rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.5);
+    --shadow-pop: 0 22px 60px rgba(0,0,0,.6);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: var(--font-serif); font-size: 16px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; text-decoration: none; }
+  ::selection { background: var(--accent-soft); }
+  .sans { font-family: var(--font-sans); }
+  .label { font-family: var(--font-sans); text-transform: uppercase; letter-spacing: .13em;
+    font-size: 10.5px; color: var(--ink-faint); font-weight: 600; }
+
+  .shell { display: grid; grid-template-columns: 236px minmax(0,1fr); min-height: 100vh; }
+
+  /* ---------- Aside nav ---------- */
+  .side {
+    background: var(--bg); border-right: 1px solid var(--edge);
+    padding: 22px 18px; position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+  .brand .mark {
+    width: 26px; height: 26px; flex: none; position: relative;
+    background: conic-gradient(from 210deg, #7bc0c0, #2f6b70, #3f868b, #7bc0c0);
+    clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+  .brand .nm { font-family: var(--font-sans); font-weight: 600; letter-spacing: .01em; font-size: 15px; }
+  .side .proj { font-size: 13px; color: var(--ink-2); font-family: var(--font-sans);
+    padding: 2px 0 18px; border-bottom: 1px solid var(--edge); margin-bottom: 8px; }
+  .side .proj b { color: var(--ink); font-weight: 600; }
+
+  .navsec { margin-top: 16px; }
+  .navsec > .label { padding: 0 6px 8px; display: block; }
+  .ni { display: flex; align-items: baseline; gap: 8px; padding: 5px 6px; border-radius: 5px;
+    color: var(--ink-2); cursor: pointer; font-family: var(--font-sans); font-size: 13.5px; }
+  .ni:hover { color: var(--ink); }
+  .ni.active { color: var(--ink); font-weight: 600; }
+  .ni .k { flex: none; width: 3px; height: 15px; border-radius: 2px; background: transparent; align-self: center; }
+  .ni.active .k { background: var(--accent); }
+  .ni .l { flex: 1; }
+  .ni .c { font-family: var(--font-mono); font-size: 11px; color: var(--ink-faint);
+    font-variant-numeric: tabular-nums; }
+  .ni.stub .c { color: var(--brass); }
+
+  .side .foot { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--edge);
+    display: flex; align-items: center; gap: 10px; font-family: var(--font-sans); font-size: 12px; color: var(--ink-2); }
+  .tbtn { margin-left: auto; width: 30px; height: 30px; display: grid; place-items: center;
+    border: 1px solid var(--edge); border-radius: 50%; background: var(--paper); color: var(--ink-2); cursor: pointer; }
+  .tbtn:hover { color: var(--ink); }
+
+  /* ---------- Reading area ---------- */
+  .read { padding: 0; }
+  .readbar {
+    position: sticky; top: 0; z-index: 4; height: 54px; display: flex; align-items: center; gap: 14px;
+    padding: 0 34px; background: color-mix(in srgb, var(--bg) 78%, transparent);
+    backdrop-filter: blur(8px); border-bottom: 1px solid var(--edge);
+  }
+  .crumbs { font-family: var(--font-sans); font-size: 12.5px; color: var(--ink-2); }
+  .crumbs .sep { color: var(--ink-faint); margin: 0 7px; }
+  .crumbs .here { color: var(--ink); }
+  .readbar .sp { flex: 1; }
+  .search { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px;
+    background: var(--paper); border: 1px solid var(--edge); border-radius: 18px;
+    font-family: var(--font-sans); font-size: 12.5px; color: var(--ink-faint); cursor: text; }
+  .search .soon { font-size: 9.5px; text-transform: uppercase; letter-spacing: .1em; color: var(--ink-faint);
+    border-left: 1px solid var(--edge); padding-left: 8px; }
+  .newbtn { font-family: var(--font-sans); font-size: 13px; height: 32px; padding: 0 14px; border: 0;
+    border-radius: 18px; background: var(--accent); color: #fff; cursor: pointer; display: inline-flex;
+    align-items: center; gap: 6px; }
+  .newbtn:hover { background: var(--accent-2); }
+
+  .page { max-width: 720px; margin: 0 auto; padding: 40px 34px 120px; }
+
+  .notice { display: flex; gap: 12px; align-items: flex-start; font-family: var(--font-sans);
+    font-size: 12.5px; color: var(--ink-2); background: var(--brass-soft); border: 1px solid var(--brass-line);
+    border-radius: 3px; padding: 11px 14px; margin-bottom: 34px; }
+  .notice .ni2 { color: var(--brass); flex: none; margin-top: 1px; }
+  .notice b { color: var(--ink); }
+  .notice code { font-family: var(--font-mono); font-size: 11.5px; }
+  .notice .x { margin-left: auto; cursor: pointer; color: var(--ink-faint); }
+
+  .kicker { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .kicker .type { font-family: var(--font-sans); font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--accent); font-weight: 600; }
+  .kicker .rule { flex: 1; height: 1px; background: linear-gradient(90deg, var(--accent-line), transparent); }
+  .kicker .status { font-family: var(--font-sans); font-size: 11px; color: var(--ink-faint);
+    display: flex; align-items: center; gap: 6px; }
+  .kicker .status .d { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+
+  h1.title { font-size: 46px; line-height: 1.04; letter-spacing: -.015em; font-weight: 600;
+    margin: 0 0 10px; text-wrap: balance; }
+  .subline { font-style: italic; color: var(--ink-2); font-size: 18px; margin-bottom: 18px; }
+  .subline .alias { color: var(--ink); font-style: normal; }
+  .tagrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .tag { font-family: var(--font-sans); font-size: 12px; color: var(--ink-2);
+    border: 1px solid var(--edge); border-radius: 14px; padding: 2px 11px; background: var(--paper); }
+
+  /* portrait band */
+  .portrait {
+    margin: 30px 0; height: 150px; border-radius: 4px; border: 1px solid var(--edge);
+    background:
+      repeating-linear-gradient(135deg, var(--paper-2), var(--paper-2) 11px, var(--paper) 11px, var(--paper) 22px);
+    display: grid; place-items: center; position: relative; overflow: hidden;
+  }
+  .portrait .msg { font-family: var(--font-sans); font-size: 12px; color: var(--brass);
+    display: flex; align-items: center; gap: 8px; background: var(--paper); padding: 7px 13px;
+    border: 1px solid var(--brass-line); border-radius: 20px; }
+
+  /* fiche — aired definition list */
+  .fiche { margin: 40px 0; }
+  .fiche .lead { display: flex; align-items: baseline; gap: 14px; margin-bottom: 8px; }
+  .fiche .lead .label { flex: none; }
+  .fiche .lead .rule { flex: 1; height: 1px; background: var(--edge); }
+  .drow { display: grid; grid-template-columns: 150px 1fr; gap: 18px; padding: 12px 0;
+    border-bottom: 1px solid var(--edge-soft); }
+  .drow:last-child { border-bottom: 0; }
+  .drow .dt { font-family: var(--font-sans); font-size: 12px; color: var(--ink-faint); padding-top: 2px;
+    display: flex; align-items: baseline; gap: 6px; }
+  .drow .dt .req { color: var(--accent); font-size: 8px; }
+  .drow .dd { font-size: 16.5px; color: var(--ink); }
+  .drow .dd.q { font-style: italic; }
+  .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 15px; }
+  .preserved { margin-top: 14px; font-family: var(--font-sans); font-size: 11.5px; color: var(--ink-faint);
+    display: flex; align-items: center; gap: 8px; }
+  .preserved code { font-family: var(--font-mono); background: var(--paper-2); border: 1px solid var(--edge);
+    border-radius: 3px; padding: 1px 6px; color: var(--ink-2); }
+
+  /* wikilinks */
+  .wl { cursor: pointer; }
+  .wl.res { color: var(--accent); background-image: linear-gradient(var(--accent-line), var(--accent-line));
+    background-size: 100% 1px; background-repeat: no-repeat; background-position: 0 1.08em; }
+  .wl.res:hover { background-image: linear-gradient(var(--accent), var(--accent));
+    background-size: 100% 1.5px; background-position: 0 1.06em; }
+  .wl.stub { color: var(--brass); border-bottom: 1px dashed var(--brass-line); }
+  .wl.stub::after { content: "◦ à créer"; font-family: var(--font-sans); font-size: 9.5px;
+    letter-spacing: .04em; vertical-align: 1px; margin-left: 3px; color: var(--brass); opacity: .85; }
+  .wl.stub:hover { background: var(--brass-soft); }
+  .wl.amb { color: var(--rose); border-bottom: 1px dashed var(--rose-line); }
+  .linkset { display: inline; }
+
+  .fiche .linkchip { font-family: var(--font-serif); }
+
+  /* body prose */
+  .prose { font-size: 18px; line-height: 1.74; margin-top: 8px; }
+  .prose p { margin: 0 0 20px; }
+  .prose .drop::first-letter { }
+  .prose h2 { font-family: var(--font-sans); font-size: 12px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-faint); font-weight: 600; margin: 34px 0 12px; }
+  .prose ul { list-style: none; padding: 0; margin: 0 0 20px; }
+  .prose li { padding: 6px 0 6px 22px; position: relative; border-bottom: 1px solid var(--edge-soft); }
+  .prose li:last-child { border-bottom: 0; }
+  .prose li::before { content: ""; position: absolute; left: 4px; top: 15px; width: 6px; height: 6px;
+    transform: rotate(45deg); border: 1px solid var(--accent); }
+  .embed { margin: 4px 0 22px; border-left: 3px solid var(--brass-line); background: var(--brass-soft);
+    padding: 12px 16px; font-family: var(--font-sans); font-size: 12.5px; color: var(--brass);
+    display: flex; align-items: center; gap: 10px; }
+  .embed code { font-size: 11.5px; }
+
+  /* appendix: mentioned-in */
+  .appendix { margin-top: 56px; padding-top: 26px; border-top: 2px solid var(--ink); }
+  .appendix .ttl { display: flex; align-items: baseline; gap: 10px; margin-bottom: 18px; }
+  .appendix h3 { font-size: 20px; font-weight: 600; margin: 0; }
+  .appendix .n { font-family: var(--font-mono); font-size: 13px; color: var(--ink-faint); }
+  .cite { display: grid; grid-template-columns: 1fr; gap: 4px; padding: 16px 0;
+    border-bottom: 1px solid var(--edge-soft); cursor: pointer; }
+  .cite:hover .ch { color: var(--accent); }
+  .cite .meta { display: flex; align-items: center; gap: 10px; font-family: var(--font-sans); font-size: 11px; }
+  .cite .meta .ty { text-transform: uppercase; letter-spacing: .1em; color: var(--ink-faint); }
+  .cite .meta .via { color: var(--accent); border: 1px solid var(--accent-line); border-radius: 12px;
+    padding: 0 8px; }
+  .cite .ch { font-size: 19px; font-weight: 600; margin-top: 2px; }
+  .cite .ex { color: var(--ink-2); font-style: italic; font-size: 15.5px; }
+
+  .outbound { margin-top: 40px; }
+  .outbound .grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .obl { font-family: var(--font-sans); font-size: 12.5px; display: inline-flex; align-items: center; gap: 7px;
+    padding: 5px 12px 5px 10px; border: 1px solid var(--edge); border-radius: 16px; background: var(--paper); }
+  .obl .s { width: 7px; height: 7px; border-radius: 50%; }
+  .obl .s.res { background: var(--accent); }
+  .obl .s.stub { background: var(--brass); }
+  .obl .f { color: var(--ink-faint); font-family: var(--font-mono); font-size: 10.5px; }
+
+  .colophon { margin-top: 40px; font-family: var(--font-sans); font-size: 11.5px; color: var(--ink-faint);
+    display: flex; flex-wrap: wrap; gap: 4px 22px; }
+  .colophon .v { color: var(--ink-2); font-family: var(--font-mono); }
+
+  /* popover */
+  .pop-wrap { position: fixed; inset: 0; display: none; z-index: 40; }
+  .pop-wrap.open { display: block; }
+  .pop-back { position: absolute; inset: 0; background: rgba(12,18,17,.34); }
+  .pop { position: absolute; width: 330px; background: var(--paper); border: 1px solid var(--edge);
+    border-radius: 6px; box-shadow: var(--shadow-pop); padding: 20px; }
+  .pop h4 { margin: 0 0 4px; font-size: 20px; font-weight: 600; }
+  .pop .ps { font-family: var(--font-sans); font-size: 12px; color: var(--ink-2); margin-bottom: 16px; }
+  .pop .ps b { color: var(--brass); }
+  .pop .label { display: block; margin-bottom: 6px; }
+  .pop select, .pop input { width: 100%; margin-bottom: 15px; height: 36px; padding: 0 11px;
+    background: var(--paper-2); border: 1px solid var(--edge); border-radius: 5px; color: var(--ink);
+    font-family: var(--font-serif); font-size: 15px; }
+  .pop .prow { display: flex; gap: 10px; justify-content: flex-end; font-family: var(--font-sans); }
+  .pop .prow button { height: 34px; padding: 0 16px; border-radius: 18px; font-size: 13px; cursor: pointer; border: 1px solid var(--edge); background: var(--paper); color: var(--ink); }
+  .pop .prow .go { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  @media (max-width: 940px) {
+    .shell { grid-template-columns: 1fr; }
+    .side { position: static; height: auto; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 24px;
+      border-right: 0; border-bottom: 1px solid var(--edge); }
+    .brand, .side .proj, .side .foot { grid-column: 1 / -1; }
+  }
+  @media (max-width: 600px) {
+    h1.title { font-size: 34px; } .page { padding: 28px 20px 90px; } .readbar { padding: 0 20px; }
+    .search .txt { display: none; } .drow { grid-template-columns: 1fr; gap: 3px; }
+  }
+</style>
+
+<div class="shell">
+  <!-- SIDE -->
+  <aside class="side">
+    <div class="brand"><span class="mark"></span><span class="nm">Storyteller</span></div>
+    <div class="proj"><b>Cité de Verre</b> — 32 entrées</div>
+
+    <div class="navsec">
+      <span class="label">La bible</span>
+      <div class="ni"><span class="k"></span><span class="l">Projet</span><span class="c">1</span></div>
+      <div class="ni active"><span class="k"></span><span class="l">Personnages</span><span class="c">6</span></div>
+      <div class="ni"><span class="k"></span><span class="l">Lieux</span><span class="c">5</span></div>
+      <div class="ni"><span class="k"></span><span class="l">Factions</span><span class="c">3</span></div>
+      <div class="ni"><span class="k"></span><span class="l">Objets</span><span class="c">4</span></div>
+      <div class="ni"><span class="k"></span><span class="l">Cultures</span><span class="c">2</span></div>
+      <div class="ni"><span class="k"></span><span class="l">Systèmes</span><span class="c">2</span></div>
+      <div class="ni"><span class="k"></span><span class="l">Espèces</span><span class="c">2</span></div>
+      <div class="ni"><span class="k"></span><span class="l">Chapitres</span><span class="c">5</span></div>
+      <div class="ni"><span class="k"></span><span class="l">Notes</span><span class="c">2</span></div>
+      <div class="ni"><span class="k"></span><span class="l">Concepts</span><span class="c">2</span></div>
+    </div>
+    <div class="navsec">
+      <span class="label">Chantier</span>
+      <div class="ni stub"><span class="k"></span><span class="l">À créer</span><span class="c">7</span></div>
+    </div>
+
+    <div class="foot">
+      <span>Local · markdown</span>
+      <button class="tbtn" id="themeBtn" title="Thème">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- READING -->
+  <main class="read">
+    <div class="readbar">
+      <nav class="crumbs">Personnages <span class="sep">›</span> <span class="here">Aria Solane</span></nav>
+      <span class="sp"></span>
+      <div class="search"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg><span class="txt">Rechercher</span><span class="soon">M5</span></div>
+      <button class="newbtn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>Nouvelle</button>
+    </div>
+
+    <article class="page">
+      <div class="notice" id="notice">
+        <span class="ni2"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></span>
+        <div><b>Illustration manquante.</b> <code>assets/images/aria-solane.jpg</code> est référencée mais absente. Rien n'est bloqué — le texte prime.</div>
+        <span class="x" onclick="this.parentElement.style.display='none'">✕</span>
+      </div>
+
+      <header>
+        <div class="kicker">
+          <span class="type">Personnage</span>
+          <span class="rule"></span>
+          <span class="status"><span class="d"></span>vivante</span>
+        </div>
+        <h1 class="title">Aria Solane</h1>
+        <p class="subline">dite <span class="alias">La Verrière</span> — ou simplement <span class="alias">Aria</span></p>
+        <div class="tagrow">
+          <span class="tag">protagoniste</span>
+          <span class="tag">pov</span>
+        </div>
+      </header>
+
+      <div class="portrait">
+        <div class="msg"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>Portrait à venir · aria-solane.jpg</div>
+      </div>
+
+      <!-- Fiche -->
+      <section class="fiche">
+        <div class="lead"><span class="label">Fiche</span><span class="rule"></span></div>
+        <div class="drow"><div class="dt">Rôle <span class="req">●</span></div><div class="dd">Protagoniste</div></div>
+        <div class="drow"><div class="dt">Désir <span class="req">●</span></div><div class="dd q">retrouver l'atelier disparu de sa mère</div></div>
+        <div class="drow"><div class="dt">Blessure <span class="req">●</span></div><div class="dd q">abandonnée enfant après l'incendie de la verrerie</div></div>
+        <div class="drow"><div class="dt">Peur <span class="req">●</span></div><div class="dd q">perdre à nouveau ceux qu'elle aime</div></div>
+        <div class="drow"><div class="dt">Motivation <span class="req">●</span></div><div class="dd q">prouver qu'elle mérite l'héritage familial</div></div>
+        <div class="drow"><div class="dt">Espèce</div><div class="dd"><span class="wl stub" data-name="Humain">Humain</span></div></div>
+        <div class="drow"><div class="dt">Factions</div><div class="dd"><span class="wl res linkchip">Ordre du Prisme</span></div></div>
+        <div class="drow"><div class="dt">Foyer</div><div class="dd"><span class="wl res linkchip">Cité de Verre</span></div></div>
+        <div class="drow"><div class="dt">Âge</div><div class="dd"><span class="num">24</span> ans</div></div>
+        <div class="preserved"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>Champ externe conservé&nbsp;: <code>obsidian_note_id: 91f3c0</code></div>
+      </section>
+
+      <!-- Body -->
+      <section class="prose">
+        <p class="drop">Aria a grandi dans les ruelles de <span class="wl res">Cité de Verre</span>, recueillie par l'<span class="wl res">Ordre du Prisme</span> après l'incendie qui a emporté sa mère.</p>
+        <div class="embed"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg>Embed <code>![[aria-solane.jpg]]</code> — asset introuvable</div>
+        <h2>Voix</h2>
+        <p>Sèche, ironique, ne finit pas ses phrases quand elle est émue.</p>
+        <h2>Relations</h2>
+        <ul>
+          <li>Rivalité méfiante avec <span class="wl res">Kael Vantre</span>.</li>
+          <li>Doit tout, sans l'admettre, à <span class="wl stub" data-name="Maître Orlan">Maître Orlan</span>.</li>
+          <li>Revient toujours à l'<span class="wl res">atelier-solane</span>.</li>
+        </ul>
+      </section>
+
+      <!-- Outbound -->
+      <section class="outbound">
+        <div class="lead"><span class="label">Ce qu'elle relie</span></div>
+        <div class="grid">
+          <span class="obl"><span class="s res"></span>Cité de Verre <span class="f">home</span></span>
+          <span class="obl"><span class="s res"></span>Ordre du Prisme <span class="f">factions</span></span>
+          <span class="obl"><span class="s stub"></span>Humain <span class="f">species</span></span>
+          <span class="obl"><span class="s res"></span>Kael Vantre <span class="f">corps</span></span>
+          <span class="obl"><span class="s stub"></span>Maître Orlan <span class="f">corps</span></span>
+          <span class="obl"><span class="s res"></span>Atelier Solane <span class="f">corps</span></span>
+        </div>
+      </section>
+
+      <!-- Appendix: mentioned in -->
+      <section class="appendix">
+        <div class="ttl"><h3>Mentionnée dans</h3><span class="n">3 entrées</span></div>
+        <div class="cite">
+          <div class="meta"><span class="ty">Chapitre 3</span><span class="via">point de vue</span></div>
+          <div class="ch">La Fêlure</div>
+          <div class="ex">« Aria inspecte les pièces laissées par sa mère et repère une fêlure qui n'aurait jamais dû exister. »</div>
+        </div>
+        <div class="cite">
+          <div class="meta"><span class="ty">Chapitre 4</span><span class="via">personnages</span></div>
+          <div class="ch">Le Four</div>
+          <div class="ex">« Au sommet du four, Aria refuse une dernière fois l'aide de l'Ordre. »</div>
+        </div>
+        <div class="cite">
+          <div class="meta"><span class="ty">Lieu</span><span class="via">corps</span></div>
+          <div class="ch">Atelier Solane</div>
+          <div class="ex">« …l'atelier scellé attend le retour d'Aria depuis l'incendie. »</div>
+        </div>
+      </section>
+
+      <div class="colophon">
+        <span>identité <span class="v">aria-solane</span></span>
+        <span>créé <span class="v">2026-07-12</span></span>
+        <span>modifié <span class="v">2026-08-01</span></span>
+        <span>characters/aria-solane.md</span>
+      </div>
+    </article>
+  </main>
+</div>
+
+<!-- STUB POPOVER -->
+<div class="pop-wrap" id="popWrap">
+  <div class="pop-back" onclick="closePop()"></div>
+  <div class="pop" id="pop">
+    <h4>Donner corps à…</h4>
+    <div class="ps">Cible encore vide&nbsp;: <b id="popName">…</b>. Créer l'entrée résoudra le lien.</div>
+    <span class="label">Titre</span>
+    <input id="popTitle" value="">
+    <span class="label">Type</span>
+    <select>
+      <option>Personnage</option><option>Lieu</option><option>Faction</option>
+      <option>Objet</option><option>Espèce</option><option>Note</option><option>Concept</option>
+    </select>
+    <div class="prow">
+      <button onclick="closePop()">Annuler</button>
+      <button class="go" onclick="closePop()">Créer l'entrée</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var order = ['system', 'light', 'dark'], i = 0;
+    var root = document.documentElement, btn = document.getElementById('themeBtn');
+    btn.addEventListener('click', function () {
+      i = (i + 1) % order.length;
+      if (order[i] === 'system') root.removeAttribute('data-theme');
+      else root.setAttribute('data-theme', order[i]);
+      btn.title = 'Thème : ' + order[i];
+    });
+  })();
+
+  var wrap = document.getElementById('popWrap'), pop = document.getElementById('pop');
+  function closePop() { wrap.classList.remove('open'); }
+  window.closePop = closePop;
+  document.querySelectorAll('.wl.stub').forEach(function (el) {
+    el.addEventListener('click', function () {
+      var name = el.getAttribute('data-name');
+      document.getElementById('popName').textContent = name;
+      document.getElementById('popTitle').value = name;
+      var r = el.getBoundingClientRect();
+      wrap.classList.add('open');
+      var top = Math.min(r.bottom + 8, window.innerHeight - 300);
+      var left = Math.min(r.left, window.innerWidth - 350);
+      pop.style.top = Math.max(12, top) + 'px'; pop.style.left = Math.max(12, left) + 'px';
+    });
+  });
+</script>

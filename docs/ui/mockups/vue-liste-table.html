@@ -1,0 +1,475 @@
+<title>Storyteller — Atelier · Vue liste/table</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --surface: #ffffff; --surface-2: #f1f3f6; --surface-3: #e9edf2;
+    --border: #e1e5eb; --border-strong: #d2d8e0; --text: #1b2027; --muted: #626b78; --faint: #9aa2ad;
+    --accent: #5b5bd6; --accent-fg: #ffffff; --accent-soft: #edeefc; --accent-line: #c9cbf3;
+    --stub: #a75c11; --stub-soft: #fbf0df; --stub-line: #e6cfa4;
+    --amb: #b6244a; --amb-soft: #fce8ed; --amb-line: #f2c0cd;
+    --warn: #a75c11; --warn-soft: #fbf0df; --danger: #cf3838; --danger-soft: #fbe9e9;
+    --shadow: 0 1px 2px rgba(20,25,35,.05), 0 1px 3px rgba(20,25,35,.04);
+    --shadow-pop: 0 8px 30px rgba(20,25,35,.16), 0 2px 8px rgba(20,25,35,.10);
+    --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+    --radius: 8px; --radius-sm: 6px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0c0e12; --surface: #14171d; --surface-2: #191d24; --surface-3: #20252e;
+      --border: #262c36; --border-strong: #333a46; --text: #e6e8ee; --muted: #949ca8; --faint: #656d79;
+      --accent: #8f90ee; --accent-fg: #10121a; --accent-soft: #1d2030; --accent-line: #3a3d63;
+      --stub: #d9a35f; --stub-soft: #2a2113; --stub-line: #4a3a20;
+      --amb: #f0728c; --amb-soft: #2c1620; --amb-line: #4d2632;
+      --warn: #d9a35f; --warn-soft: #2a2113; --danger: #e8615f; --danger-soft: #2a1414;
+      --shadow: 0 1px 2px rgba(0,0,0,.4);
+      --shadow-pop: 0 10px 34px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #f6f7f9; --surface: #ffffff; --surface-2: #f1f3f6; --surface-3: #e9edf2;
+    --border: #e1e5eb; --border-strong: #d2d8e0; --text: #1b2027; --muted: #626b78; --faint: #9aa2ad;
+    --accent: #5b5bd6; --accent-fg: #ffffff; --accent-soft: #edeefc; --accent-line: #c9cbf3;
+    --stub: #a75c11; --stub-soft: #fbf0df; --stub-line: #e6cfa4;
+    --amb: #b6244a; --amb-soft: #fce8ed; --amb-line: #f2c0cd;
+    --warn: #a75c11; --warn-soft: #fbf0df; --danger: #cf3838; --danger-soft: #fbe9e9;
+    --shadow: 0 1px 2px rgba(20,25,35,.05), 0 1px 3px rgba(20,25,35,.04);
+    --shadow-pop: 0 8px 30px rgba(20,25,35,.16), 0 2px 8px rgba(20,25,35,.10);
+  }
+  :root[data-theme="dark"] {
+    --bg: #0c0e12; --surface: #14171d; --surface-2: #191d24; --surface-3: #20252e;
+    --border: #262c36; --border-strong: #333a46; --text: #e6e8ee; --muted: #949ca8; --faint: #656d79;
+    --accent: #8f90ee; --accent-fg: #10121a; --accent-soft: #1d2030; --accent-line: #3a3d63;
+    --stub: #d9a35f; --stub-soft: #2a2113; --stub-line: #4a3a20;
+    --amb: #f0728c; --amb-soft: #2c1620; --amb-line: #4d2632;
+    --warn: #d9a35f; --warn-soft: #2a2113; --danger: #e8615f; --danger-soft: #2a1414;
+    --shadow: 0 1px 2px rgba(0,0,0,.4);
+    --shadow-pop: 0 10px 34px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.4);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-ui); font-size: 14px;
+    line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; text-decoration: none; }
+  ::selection { background: var(--accent-soft); }
+
+  .app { display: grid; grid-template-columns: 244px minmax(0,1fr); grid-template-rows: 48px 1fr;
+    grid-template-areas: "topbar topbar" "nav main"; height: 100vh; min-height: 640px; }
+
+  /* topbar */
+  .topbar { grid-area: topbar; display: flex; align-items: center; gap: 14px; padding: 0 14px;
+    background: var(--surface); border-bottom: 1px solid var(--border); z-index: 5; }
+  .brand { display: flex; align-items: center; gap: 9px; font-weight: 600; letter-spacing: -.01em; }
+  .brand .glyph { width: 22px; height: 22px; border-radius: 6px;
+    background: linear-gradient(140deg, var(--accent), #8b5cf6); display: grid; place-items: center;
+    color: #fff; font-size: 13px; box-shadow: inset 0 1px 0 rgba(255,255,255,.35); }
+  .crumbs { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 12.5px; }
+  .crumbs .sep { color: var(--faint); } .crumbs .here { color: var(--text); font-weight: 500; }
+  .crumbs a:hover { color: var(--text); }
+  .spacer { flex: 1; }
+  .search { display: flex; align-items: center; gap: 8px; width: 260px; height: 30px; padding: 0 10px;
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    color: var(--faint); font-size: 13px; cursor: text; }
+  .search .soon { margin-left: auto; font-size: 10.5px; color: var(--faint); text-transform: uppercase; letter-spacing: .06em; }
+  .iconbtn { width: 30px; height: 30px; display: grid; place-items: center; border: 1px solid var(--border);
+    background: var(--surface-2); border-radius: var(--radius-sm); color: var(--muted); cursor: pointer; }
+  .iconbtn:hover { color: var(--text); border-color: var(--border-strong); }
+  .btn { height: 30px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px;
+    border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid transparent; }
+  .btn.primary { background: var(--accent); color: var(--accent-fg); box-shadow: var(--shadow); }
+  .btn.primary:hover { filter: brightness(1.06); }
+  .btn.ghost { background: var(--surface-2); border-color: var(--border); color: var(--text); }
+  .btn.ghost:hover { border-color: var(--border-strong); }
+
+  /* nav */
+  .nav { grid-area: nav; background: var(--surface); border-right: 1px solid var(--border);
+    overflow-y: auto; padding: 12px 8px; display: flex; flex-direction: column; gap: 2px; }
+  .proj { display: flex; align-items: center; gap: 10px; padding: 8px 8px 10px; margin-bottom: 4px;
+    border-bottom: 1px solid var(--border); }
+  .proj .cover { width: 30px; height: 30px; border-radius: 7px;
+    background: radial-gradient(120% 120% at 20% 10%, #cdd3fb, #8b8ce8 55%, #5b5bd6); flex: none; }
+  .proj .name { font-weight: 600; font-size: 13.5px; }
+  .proj .sub { font-size: 11.5px; color: var(--muted); }
+  .navlabel { font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); padding: 12px 10px 4px; }
+  .navitem { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: var(--radius-sm);
+    color: var(--muted); cursor: pointer; }
+  .navitem:hover { background: var(--surface-2); color: var(--text); }
+  .navitem.active { background: var(--accent-soft); color: var(--text); font-weight: 500; }
+  .navitem.active .ico { color: var(--accent); }
+  .navitem .ico { width: 15px; color: var(--faint); flex: none; text-align: center; }
+  .navitem .lab { flex: 1; }
+  .navitem .count { font-family: var(--font-mono); font-size: 11.5px; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .navitem.stubs .count { color: var(--stub); background: var(--stub-soft); border-radius: 20px; padding: 0 7px; }
+
+  /* main */
+  .main { grid-area: main; overflow-y: auto; display: flex; flex-direction: column; }
+  .head { padding: 20px 26px 0; }
+  .head .row1 { display: flex; align-items: center; gap: 12px; }
+  .head h1 { font-size: 21px; letter-spacing: -.02em; margin: 0; font-weight: 660; }
+  .head .kind { color: var(--accent); }
+  .head .total { font-family: var(--font-mono); font-size: 12px; color: var(--muted);
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: 20px; padding: 1px 9px;
+    font-variant-numeric: tabular-nums; }
+  .head .sub { color: var(--muted); font-size: 12.5px; margin-top: 4px; }
+
+  /* toolbar */
+  .toolbar { display: flex; align-items: center; gap: 8px; padding: 14px 26px 12px; flex-wrap: wrap; }
+  .seg { display: inline-flex; background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 2px; gap: 2px; }
+  .seg button { height: 24px; padding: 0 10px; border: 0; background: transparent; color: var(--muted);
+    border-radius: 4px; font-size: 12.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-ui); }
+  .seg button.on { background: var(--surface); color: var(--text); box-shadow: var(--shadow); font-weight: 500; }
+  .tsep { width: 1px; height: 22px; background: var(--border); margin: 0 2px; }
+  .selectish, .filterbtn { height: 28px; padding: 0 10px; display: inline-flex; align-items: center; gap: 7px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    color: var(--text); font-size: 12.5px; cursor: pointer; }
+  .selectish:hover, .filterbtn:hover { border-color: var(--border-strong); }
+  .selectish .k { color: var(--faint); }
+  .selectish .v { font-weight: 500; }
+  .filterbtn { color: var(--muted); border-style: dashed; }
+  .filterbtn .plus { color: var(--faint); }
+  .tspacer { flex: 1; }
+
+  /* active filter chips */
+  .filters { display: flex; align-items: center; gap: 7px; padding: 0 26px 12px; flex-wrap: wrap; }
+  .filters .lbl { font-size: 11px; color: var(--faint); text-transform: uppercase; letter-spacing: .06em; }
+  .fchip { height: 24px; padding: 0 6px 0 9px; display: inline-flex; align-items: center; gap: 7px;
+    background: var(--accent-soft); border: 1px solid var(--accent-line); color: var(--accent);
+    border-radius: 20px; font-size: 12px; }
+  .fchip .fk { opacity: .75; font-family: var(--font-mono); font-size: 11px; }
+  .fchip .x { cursor: pointer; opacity: .7; } .fchip .x:hover { opacity: 1; }
+  .clearall { font-size: 12px; color: var(--muted); cursor: pointer; } .clearall:hover { color: var(--text); }
+
+  /* TABLE VIEW */
+  .tablewrap { margin: 0 26px; border: 1px solid var(--border); border-radius: var(--radius);
+    overflow: hidden; background: var(--surface); }
+  .tscroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  thead th { text-align: left; font-weight: 600; color: var(--muted); font-size: 11px; letter-spacing: .04em;
+    text-transform: uppercase; padding: 9px 12px; background: var(--surface-2); border-bottom: 1px solid var(--border);
+    white-space: nowrap; position: sticky; top: 0; cursor: pointer; user-select: none; }
+  thead th .ar { color: var(--accent); margin-left: 3px; }
+  thead th.state { width: 34px; padding-left: 14px; }
+  tbody td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover td { background: var(--surface-2); }
+  td.state { padding-left: 14px; }
+  .state .ok { color: var(--faint); } .state .err { color: var(--danger); }
+  .cell-name { display: flex; align-items: center; gap: 10px; }
+  .av { width: 26px; height: 26px; border-radius: 6px; flex: none; display: grid; place-items: center;
+    background: var(--surface-3); color: var(--muted); font-size: 12px; font-weight: 600; }
+  .cell-name .nm { font-weight: 600; } .cell-name .al { color: var(--faint); font-size: 11.5px; }
+  .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--muted); font-size: 12px; }
+  .pill { display: inline-flex; align-items: center; gap: 5px; height: 20px; padding: 0 8px; border-radius: 20px;
+    font-size: 11.5px; background: var(--surface-2); border: 1px solid var(--border); color: var(--muted); }
+  .pill .d { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+  .tagcell { display: flex; gap: 4px; flex-wrap: wrap; }
+  .tg { height: 19px; padding: 0 7px; border-radius: 5px; font-size: 11px; background: var(--surface-2);
+    border: 1px solid var(--border); color: var(--text); display: inline-flex; align-items: center; }
+  .wl { cursor: pointer; border-radius: 3px; padding: 0 1px; white-space: nowrap; }
+  .wl.res { color: var(--accent); box-shadow: inset 0 -1px 0 var(--accent-line); }
+  .wl.res:hover { background: var(--accent-soft); }
+  .wl.stub { color: var(--stub); border-bottom: 1px dashed var(--stub-line); }
+  .wl.stub::after { content: "+"; font-size: 10px; vertical-align: super; margin-left: 1px; opacity: .8; }
+  .muted { color: var(--faint); }
+
+  /* LIST VIEW */
+  .listwrap { margin: 0 26px; display: none; flex-direction: column; gap: 8px; }
+  .lcard { display: flex; gap: 14px; padding: 14px 16px; background: var(--surface);
+    border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; }
+  .lcard:hover { border-color: var(--border-strong); background: var(--surface-2); }
+  .lcard .av { width: 40px; height: 40px; border-radius: 8px; font-size: 15px; }
+  .lcard .lc-body { min-width: 0; flex: 1; }
+  .lcard .lc-top { display: flex; align-items: center; gap: 10px; }
+  .lcard .lc-title { font-weight: 650; font-size: 15px; }
+  .lcard .lc-role { color: var(--muted); font-size: 12.5px; }
+  .lcard .lc-ex { color: var(--muted); font-size: 13px; margin-top: 3px;
+    display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+  .lcard .lc-meta { display: flex; align-items: center; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .lcard .warnflag { color: var(--danger); display: inline-flex; align-items: center; gap: 5px; font-size: 12px; }
+
+  .app.list .tablewrap { display: none; }
+  .app.list .listwrap { display: flex; }
+
+  /* pagination */
+  .pager { display: flex; align-items: center; gap: 10px; padding: 16px 26px 40px; color: var(--muted); font-size: 12.5px; }
+  .pager .pspacer { flex: 1; }
+  .pgbtn { height: 28px; min-width: 28px; padding: 0 8px; border: 1px solid var(--border); background: var(--surface);
+    border-radius: var(--radius-sm); color: var(--text); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+  .pgbtn.on { background: var(--accent-soft); border-color: var(--accent-line); color: var(--accent); font-weight: 600; }
+  .pgbtn:disabled { color: var(--faint); cursor: default; }
+  .perpage { font-family: var(--font-mono); }
+
+  /* dropdown menu (sort/filter) */
+  .menu-wrap { position: fixed; inset: 0; display: none; z-index: 40; }
+  .menu-wrap.open { display: block; }
+  .menu-back { position: absolute; inset: 0; }
+  .menu { position: absolute; min-width: 190px; background: var(--surface); border: 1px solid var(--border-strong);
+    border-radius: var(--radius); box-shadow: var(--shadow-pop); padding: 5px; }
+  .menu .mi { padding: 7px 9px; border-radius: 5px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 9px; }
+  .menu .mi:hover { background: var(--surface-2); }
+  .menu .mi .ck { margin-left: auto; color: var(--accent); }
+  .menu .mlabel { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--faint); padding: 7px 9px 4px; }
+
+  @media (max-width: 900px) {
+    .app { grid-template-columns: 60px minmax(0,1fr); }
+    .nav .lab, .nav .navlabel, .nav .proj .name, .nav .proj .sub, .navitem .count { display: none; }
+    .nav { align-items: center; } .navitem { justify-content: center; } .proj { justify-content: center; }
+    .search { width: 40px; } .search .txt, .search .soon { display: none; }
+  }
+</style>
+
+<div class="app" id="app">
+  <header class="topbar">
+    <div class="brand"><span class="glyph">✦</span><span>Storyteller</span></div>
+    <nav class="crumbs"><a>Cité de Verre</a><span class="sep">/</span><span class="here">Personnages</span></nav>
+    <div class="spacer"></div>
+    <div class="search" title="Recherche plein-texte — jalon M5">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <span class="txt">Rechercher…</span><span class="soon">à venir</span>
+    </div>
+    <button class="btn primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>Nouveau personnage</button>
+    <button class="iconbtn langbtn" title="Langue d'interface (FR/EN)" style="width:auto;padding:0 10px;gap:5px;font-family:var(--font-mono);font-size:12px;font-weight:600" onclick="var s=this.querySelector('span');s.textContent=s.textContent==='FR'?'EN':'FR'"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg><span>FR</span></button>
+    <button class="iconbtn" id="themeBtn" title="Thème"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+  </header>
+
+  <aside class="nav">
+    <div class="proj"><div class="cover"></div><div><div class="name">Cité de Verre</div><div class="sub">32 entrées · fantasy</div></div></div>
+    <div class="navlabel">Types</div>
+    <div class="navitem"><span class="ico">◆</span><span class="lab">Projet</span><span class="count">1</span></div>
+    <div class="navitem active"><span class="ico">☺</span><span class="lab">Personnages</span><span class="count">6</span></div>
+    <div class="navitem"><span class="ico">⌂</span><span class="lab">Lieux</span><span class="count">5</span></div>
+    <div class="navitem"><span class="ico">⚑</span><span class="lab">Factions</span><span class="count">3</span></div>
+    <div class="navitem"><span class="ico">◈</span><span class="lab">Objets</span><span class="count">4</span></div>
+    <div class="navitem"><span class="ico">❧</span><span class="lab">Cultures</span><span class="count">2</span></div>
+    <div class="navitem"><span class="ico">⚙</span><span class="lab">Systèmes</span><span class="count">2</span></div>
+    <div class="navitem"><span class="ico">✦</span><span class="lab">Espèces</span><span class="count">2</span></div>
+    <div class="navitem"><span class="ico">▤</span><span class="lab">Chapitres</span><span class="count">5</span></div>
+    <div class="navitem"><span class="ico">✎</span><span class="lab">Notes</span><span class="count">2</span></div>
+    <div class="navitem"><span class="ico">✧</span><span class="lab">Concepts</span><span class="count">2</span></div>
+    <div class="navlabel">Chantier</div>
+    <div class="navitem stubs"><span class="ico">⌦</span><span class="lab">À créer (stubs)</span><span class="count">7</span></div>
+  </aside>
+
+  <main class="main">
+    <div class="head">
+      <div class="row1"><h1><span class="kind">Personnages</span></h1><span class="total">6</span></div>
+      <div class="sub">Toutes les entrées de type <code style="font-family:var(--font-mono)">character</code> du projet.</div>
+    </div>
+
+    <div class="toolbar">
+      <div class="seg" id="viewSeg">
+        <button class="on" data-v="table"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9h18M3 15h18M9 4v16"/><rect x="3" y="4" width="18" height="16" rx="1.5"/></svg>Table</button>
+        <button data-v="list"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>Liste</button>
+      </div>
+      <div class="tsep"></div>
+      <button class="selectish" id="sortBtn"><span class="k">Trier&nbsp;:</span><span class="v">Modifié</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 8 4-4 4 4M7 4v12M21 16l-4 4-4-4M17 20V8"/></svg></button>
+      <button class="filterbtn" id="filterBtn"><span class="plus">+</span> Ajouter un filtre</button>
+      <div class="tspacer"></div>
+      <button class="iconbtn" title="Colonnes"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M9 4v16M15 4v16"/></svg></button>
+    </div>
+
+    <div class="filters">
+      <span class="lbl">Filtres</span>
+      <span class="fchip"><span class="fk">tag</span> protagoniste <span class="x">✕</span></span>
+      <span class="fchip"><span class="fk">status</span> vivante <span class="x">✕</span></span>
+      <span class="clearall">Tout effacer</span>
+    </div>
+
+    <!-- TABLE -->
+    <div class="tablewrap">
+      <div class="tscroll">
+        <table>
+          <thead>
+            <tr>
+              <th class="state"></th>
+              <th>Nom</th>
+              <th>Rôle</th>
+              <th>Statut</th>
+              <th>Factions</th>
+              <th>Foyer</th>
+              <th>Étiquettes</th>
+              <th>Modifié <span class="ar">▾</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="state"><span class="ok" title="Aucun problème">●</span></td>
+              <td><div class="cell-name"><span class="av">AS</span><span><span class="nm">Aria Solane</span> <span class="al">· La Verrière</span></span></div></td>
+              <td>protagoniste</td>
+              <td><span class="pill"><span class="d"></span>vivante</span></td>
+              <td><span class="wl res">Ordre du Prisme</span></td>
+              <td><span class="wl res">Cité de Verre</span></td>
+              <td><div class="tagcell"><span class="tg">protagoniste</span><span class="tg">pov</span></div></td>
+              <td class="mono">01 août 2026</td>
+            </tr>
+            <tr>
+              <td class="state"><span class="ok">●</span></td>
+              <td><div class="cell-name"><span class="av">KV</span><span class="nm">Kael Vantre</span></div></td>
+              <td>rival</td>
+              <td><span class="pill"><span class="d"></span>vivant</span></td>
+              <td><span class="wl res">Ordre du Prisme</span></td>
+              <td><span class="wl res">Cité de Verre</span></td>
+              <td><div class="tagcell"><span class="tg">antagoniste</span></div></td>
+              <td class="mono">29 juil. 2026</td>
+            </tr>
+            <tr>
+              <td class="state"><span class="err" title="1 problème : champ requis manquant (motivation)">▲</span></td>
+              <td><div class="cell-name"><span class="av">LB</span><span class="nm">Livia Brande</span></div></td>
+              <td><span class="muted">—</span></td>
+              <td><span class="pill" style="color:var(--muted)">disparue</span></td>
+              <td><span class="muted">—</span></td>
+              <td><span class="wl res">Cité de Verre</span></td>
+              <td><div class="tagcell"><span class="tg">mentore</span></div></td>
+              <td class="mono">22 juil. 2026</td>
+            </tr>
+            <tr>
+              <td class="state"><span class="ok">●</span></td>
+              <td><div class="cell-name"><span class="av">Sé</span><span class="nm">Sénac le Fondeur</span></div></td>
+              <td>allié</td>
+              <td><span class="pill"><span class="d"></span>vivant</span></td>
+              <td><span class="wl stub" style="color:var(--stub)">Guilde des Fondeurs</span></td>
+              <td><span class="wl res">Port-Franc</span></td>
+              <td><div class="tagcell"><span class="tg">secondaire</span></div></td>
+              <td class="mono">18 juil. 2026</td>
+            </tr>
+            <tr>
+              <td class="state"><span class="ok">●</span></td>
+              <td><div class="cell-name"><span class="av">Ma</span><span class="nm">Mara Solane</span></div></td>
+              <td>fantôme du passé</td>
+              <td><span class="pill" style="color:var(--muted)">décédée</span></td>
+              <td><span class="muted">—</span></td>
+              <td><span class="wl res">Atelier Solane</span></td>
+              <td><div class="tagcell"><span class="tg">backstory</span></div></td>
+              <td class="mono">15 juil. 2026</td>
+            </tr>
+            <tr>
+              <td class="state"><span class="ok">●</span></td>
+              <td><div class="cell-name"><span class="av">Th</span><span class="nm">Thane d'Osier</span></div></td>
+              <td>garde</td>
+              <td><span class="pill"><span class="d"></span>vivant</span></td>
+              <td><span class="wl res">Ordre du Prisme</span></td>
+              <td><span class="wl res">Cité de Verre</span></td>
+              <td><div class="tagcell"><span class="tg">figurant+</span></div></td>
+              <td class="mono">12 juil. 2026</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- LIST -->
+    <div class="listwrap">
+      <div class="lcard">
+        <span class="av">AS</span>
+        <div class="lc-body">
+          <div class="lc-top"><span class="lc-title">Aria Solane</span><span class="lc-role">· protagoniste</span></div>
+          <div class="lc-ex">Aria a grandi dans les ruelles de Cité de Verre, recueillie par l'Ordre du Prisme après l'incendie…</div>
+          <div class="lc-meta"><span class="tg">protagoniste</span><span class="tg">pov</span><span class="pill"><span class="d"></span>vivante</span></div>
+        </div>
+      </div>
+      <div class="lcard">
+        <span class="av">KV</span>
+        <div class="lc-body">
+          <div class="lc-top"><span class="lc-title">Kael Vantre</span><span class="lc-role">· rival</span></div>
+          <div class="lc-ex">Souffleur ambitieux de l'Ordre, il voit dans la fêlure de Mara une occasion, pas une menace…</div>
+          <div class="lc-meta"><span class="tg">antagoniste</span><span class="pill"><span class="d"></span>vivant</span></div>
+        </div>
+      </div>
+      <div class="lcard">
+        <span class="av">LB</span>
+        <div class="lc-body">
+          <div class="lc-top"><span class="lc-title">Livia Brande</span><span class="warnflag"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>champ requis manquant</span></div>
+          <div class="lc-ex">Ancienne maîtresse-verrière, disparue le soir de l'incendie. Reste à documenter sa motivation.</div>
+          <div class="lc-meta"><span class="tg">mentore</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pager">
+      <span>6 entrées</span>
+      <div class="pspacer"></div>
+      <button class="pgbtn" disabled>‹</button>
+      <button class="pgbtn on">1</button>
+      <button class="pgbtn">2</button>
+      <button class="pgbtn">›</button>
+      <span style="margin-left:10px">·</span>
+      <span class="selectish" style="height:28px"><span class="k">Par page&nbsp;:</span><span class="v perpage">50</span></span>
+    </div>
+  </main>
+</div>
+
+<!-- sort menu -->
+<div class="menu-wrap" id="sortMenu">
+  <div class="menu-back" data-close></div>
+  <div class="menu">
+    <div class="mlabel">Trier par</div>
+    <div class="mi">Nom (titre)</div>
+    <div class="mi">Rôle</div>
+    <div class="mi">Créé</div>
+    <div class="mi">Modifié <span class="ck">✓</span></div>
+    <div class="mlabel">Ordre</div>
+    <div class="mi">Croissant</div>
+    <div class="mi">Décroissant <span class="ck">✓</span></div>
+  </div>
+</div>
+
+<!-- filter menu -->
+<div class="menu-wrap" id="filterMenu">
+  <div class="menu-back" data-close></div>
+  <div class="menu">
+    <div class="mlabel">Filtrer par champ</div>
+    <div class="mi">Étiquette (tag)</div>
+    <div class="mi">Statut</div>
+    <div class="mi">Rôle</div>
+    <div class="mi">Faction</div>
+    <div class="mi">Foyer</div>
+    <div class="mi">Espèce</div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var order = ['system', 'light', 'dark'], i = 0;
+    var root = document.documentElement, btn = document.getElementById('themeBtn');
+    btn.addEventListener('click', function () {
+      i = (i + 1) % order.length;
+      if (order[i] === 'system') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', order[i]);
+    });
+  })();
+
+  // view toggle
+  var app = document.getElementById('app');
+  document.querySelectorAll('#viewSeg button').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll('#viewSeg button').forEach(function (x) { x.classList.remove('on'); });
+      b.classList.add('on');
+      app.classList.toggle('list', b.dataset.v === 'list');
+    });
+  });
+
+  // menus
+  function wireMenu(btnId, menuId) {
+    var b = document.getElementById(btnId), m = document.getElementById(menuId);
+    b.addEventListener('click', function () {
+      var r = b.getBoundingClientRect();
+      m.classList.add('open');
+      var mm = m.querySelector('.menu');
+      mm.style.top = (r.bottom + 6) + 'px';
+      mm.style.left = Math.min(r.left, window.innerWidth - 220) + 'px';
+    });
+    m.querySelector('[data-close]').addEventListener('click', function () { m.classList.remove('open'); });
+    m.querySelectorAll('.mi').forEach(function (mi) { mi.addEventListener('click', function () { m.classList.remove('open'); }); });
+  }
+  wireMenu('sortBtn', 'sortMenu');
+  wireMenu('filterBtn', 'filterMenu');
+
+  // chip removal
+  document.querySelectorAll('.fchip .x').forEach(function (x) {
+    x.addEventListener('click', function () { x.closest('.fchip').remove(); });
+  });
+  document.querySelector('.clearall').addEventListener('click', function () {
+    document.querySelectorAll('.fchip').forEach(function (c) { c.remove(); });
+  });
+</script>

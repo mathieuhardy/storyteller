@@ -1,0 +1,367 @@
+<title>Storyteller — Atelier · Accueil & tableau de bord</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --surface: #ffffff; --surface-2: #f1f3f6; --surface-3: #e9edf2;
+    --border: #e1e5eb; --border-strong: #d2d8e0; --text: #1b2027; --muted: #626b78; --faint: #9aa2ad;
+    --accent: #5b5bd6; --accent-fg: #ffffff; --accent-soft: #edeefc; --accent-line: #c9cbf3;
+    --stub: #a75c11; --stub-soft: #fbf0df; --stub-line: #e6cfa4;
+    --ok: #2f8f5b; --ok-soft: #e6f4ec; --amb: #b6244a;
+    --warn: #a75c11; --warn-soft: #fbf0df; --danger: #cf3838;
+    --shadow: 0 1px 2px rgba(20,25,35,.05), 0 1px 3px rgba(20,25,35,.04);
+    --shadow-lg: 0 10px 40px rgba(20,25,35,.10), 0 2px 8px rgba(20,25,35,.06);
+    --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+    --radius: 8px; --radius-sm: 6px; --radius-lg: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0c0e12; --surface: #14171d; --surface-2: #191d24; --surface-3: #20252e;
+      --border: #262c36; --border-strong: #333a46; --text: #e6e8ee; --muted: #949ca8; --faint: #656d79;
+      --accent: #8f90ee; --accent-fg: #10121a; --accent-soft: #1d2030; --accent-line: #3a3d63;
+      --stub: #d9a35f; --stub-soft: #2a2113; --stub-line: #4a3a20; --ok: #57b37e; --ok-soft: #14241b; --amb: #f0728c;
+      --warn: #d9a35f; --warn-soft: #2a2113; --danger: #e8615f;
+      --shadow: 0 1px 2px rgba(0,0,0,.4); --shadow-lg: 0 14px 50px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #f6f7f9; --surface: #ffffff; --surface-2: #f1f3f6; --surface-3: #e9edf2;
+    --border: #e1e5eb; --border-strong: #d2d8e0; --text: #1b2027; --muted: #626b78; --faint: #9aa2ad;
+    --accent: #5b5bd6; --accent-fg: #ffffff; --accent-soft: #edeefc; --accent-line: #c9cbf3;
+    --stub: #a75c11; --stub-soft: #fbf0df; --stub-line: #e6cfa4; --ok: #2f8f5b; --ok-soft: #e6f4ec; --amb: #b6244a;
+    --warn: #a75c11; --warn-soft: #fbf0df; --danger: #cf3838;
+    --shadow: 0 1px 2px rgba(20,25,35,.05), 0 1px 3px rgba(20,25,35,.04); --shadow-lg: 0 10px 40px rgba(20,25,35,.10), 0 2px 8px rgba(20,25,35,.06);
+  }
+  :root[data-theme="dark"] {
+    --bg: #0c0e12; --surface: #14171d; --surface-2: #191d24; --surface-3: #20252e;
+    --border: #262c36; --border-strong: #333a46; --text: #e6e8ee; --muted: #949ca8; --faint: #656d79;
+    --accent: #8f90ee; --accent-fg: #10121a; --accent-soft: #1d2030; --accent-line: #3a3d63;
+    --stub: #d9a35f; --stub-soft: #2a2113; --stub-line: #4a3a20; --ok: #57b37e; --ok-soft: #14241b; --amb: #f0728c;
+    --warn: #d9a35f; --warn-soft: #2a2113; --danger: #e8615f;
+    --shadow: 0 1px 2px rgba(0,0,0,.4); --shadow-lg: 0 14px 50px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.4);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-ui); font-size: 14px;
+    line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; text-decoration: none; }
+  ::selection { background: var(--accent-soft); }
+  .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+  .stage { display: none; } .stage.on { display: block; }
+
+  /* ============ LAUNCHER ============ */
+  .launch { min-height: 100vh; display: grid; grid-template-columns: 1.05fr 1fr; }
+  .lc-left { padding: 64px 56px; display: flex; flex-direction: column; }
+  .lc-brand { display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 17px; letter-spacing: -.01em; }
+  .lc-brand .glyph { width: 30px; height: 30px; border-radius: 8px; background: linear-gradient(140deg, var(--accent), #8b5cf6);
+    display: grid; place-items: center; color: #fff; font-size: 17px; box-shadow: inset 0 1px 0 rgba(255,255,255,.35); }
+  .lc-hero { margin-top: auto; margin-bottom: auto; max-width: 30ch; }
+  .lc-hero h1 { font-size: 40px; line-height: 1.08; letter-spacing: -.03em; font-weight: 700; margin: 0 0 16px; text-wrap: balance; }
+  .lc-hero p { color: var(--muted); font-size: 15.5px; line-height: 1.6; margin: 0; }
+  .lc-actions { display: flex; gap: 10px; margin-top: 28px; }
+  .lc-foot { color: var(--faint); font-size: 12px; display: flex; align-items: center; gap: 8px; }
+  .lc-foot .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--ok); }
+  .bigbtn { height: 42px; padding: 0 18px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 9px; border: 1px solid transparent; }
+  .bigbtn.primary { background: var(--accent); color: var(--accent-fg); box-shadow: var(--shadow); }
+  .bigbtn.primary:hover { filter: brightness(1.06); }
+  .bigbtn.ghost { background: var(--surface); border-color: var(--border-strong); color: var(--text); }
+  .bigbtn.ghost:hover { background: var(--surface-2); }
+
+  .lc-right { background: var(--surface-2); border-left: 1px solid var(--border); padding: 56px 48px; overflow-y: auto; }
+  .lc-right .rt { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--faint); font-weight: 600; margin: 0 0 16px; display: flex; align-items: center; gap: 8px; }
+  .lc-right .rt .cnt { color: var(--muted); }
+  .recent { display: flex; align-items: center; gap: 14px; padding: 13px 14px; border-radius: var(--radius);
+    border: 1px solid transparent; cursor: pointer; }
+  .recent:hover { background: var(--surface); border-color: var(--border); box-shadow: var(--shadow); }
+  .recent .cov { width: 42px; height: 42px; border-radius: 9px; flex: none; }
+  .recent .cov.v { background: radial-gradient(120% 120% at 20% 10%, #cdd3fb, #8b8ce8 55%, #5b5bd6); }
+  .recent .cov.o { background: radial-gradient(120% 120% at 20% 10%, #ffe0b8, #e0a35f 55%, #a75c11); }
+  .recent .cov.g { background: radial-gradient(120% 120% at 20% 10%, #bfe7d6, #57b37e 55%, #2f8f5b); }
+  .recent .rb { flex: 1; min-width: 0; }
+  .recent .rn { font-weight: 600; font-size: 14.5px; }
+  .recent .rp { font-family: var(--font-mono); font-size: 11.5px; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .recent .rmeta { text-align: right; color: var(--muted); font-size: 11.5px; } .recent .rmeta .m2 { color: var(--faint); }
+  .recent .go { color: var(--faint); } .recent:hover .go { color: var(--accent); }
+
+  /* ============ APP SHELL / DASHBOARD ============ */
+  .app { display: grid; grid-template-columns: 244px minmax(0,1fr); grid-template-rows: 48px 1fr;
+    grid-template-areas: "topbar topbar" "nav main"; height: 100vh; min-height: 640px; }
+  .topbar { grid-area: topbar; display: flex; align-items: center; gap: 14px; padding: 0 14px;
+    background: var(--surface); border-bottom: 1px solid var(--border); z-index: 5; }
+  .brand { display: flex; align-items: center; gap: 9px; font-weight: 600; letter-spacing: -.01em; }
+  .brand .glyph { width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(140deg, var(--accent), #8b5cf6);
+    display: grid; place-items: center; color: #fff; font-size: 13px; }
+  .crumbs { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 12.5px; }
+  .crumbs .here { color: var(--text); font-weight: 500; }
+  .spacer { flex: 1; }
+  .search { display: flex; align-items: center; gap: 8px; width: 240px; height: 30px; padding: 0 10px; background: var(--surface-2);
+    border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--faint); font-size: 13px; cursor: text; }
+  .search .soon { margin-left: auto; font-size: 10.5px; color: var(--faint); text-transform: uppercase; letter-spacing: .06em; }
+  .iconbtn { width: 30px; height: 30px; display: grid; place-items: center; border: 1px solid var(--border); background: var(--surface-2);
+    border-radius: var(--radius-sm); color: var(--muted); cursor: pointer; }
+  .iconbtn:hover { color: var(--text); border-color: var(--border-strong); }
+  .btn { height: 30px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; border-radius: var(--radius-sm);
+    font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid transparent; }
+  .btn.primary { background: var(--accent); color: var(--accent-fg); box-shadow: var(--shadow); }
+  .btn.primary:hover { filter: brightness(1.06); }
+  .btn.ghost { background: var(--surface-2); border-color: var(--border); color: var(--text); }
+  .btn.ghost:hover { border-color: var(--border-strong); }
+
+  .nav { grid-area: nav; background: var(--surface); border-right: 1px solid var(--border); overflow-y: auto;
+    padding: 12px 8px; display: flex; flex-direction: column; gap: 2px; }
+  .projsw { display: flex; align-items: center; gap: 10px; padding: 7px 8px; margin-bottom: 4px; border-bottom: 1px solid var(--border); cursor: pointer; border-radius: var(--radius-sm); }
+  .projsw:hover { background: var(--surface-2); }
+  .projsw .cover { width: 30px; height: 30px; border-radius: 7px; background: radial-gradient(120% 120% at 20% 10%, #cdd3fb, #8b8ce8 55%, #5b5bd6); flex: none; }
+  .projsw .name { font-weight: 600; font-size: 13.5px; } .projsw .sub { font-size: 11.5px; color: var(--muted); }
+  .projsw .sw { margin-left: auto; color: var(--faint); }
+  .navlabel { font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); padding: 12px 10px 4px; }
+  .navitem { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: var(--radius-sm); color: var(--muted); cursor: pointer; }
+  .navitem:hover { background: var(--surface-2); color: var(--text); }
+  .navitem.active { background: var(--accent-soft); color: var(--text); font-weight: 500; }
+  .navitem.active .ico { color: var(--accent); }
+  .navitem .ico { width: 15px; color: var(--faint); flex: none; text-align: center; } .navitem .lab { flex: 1; }
+  .navitem .count { font-family: var(--font-mono); font-size: 11.5px; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .navitem.stubs .count { color: var(--stub); background: var(--stub-soft); border-radius: 20px; padding: 0 7px; }
+
+  .main { grid-area: main; overflow-y: auto; }
+  .main-inner { max-width: 940px; margin: 0 auto; padding: 26px 30px 80px; }
+
+  /* project hero */
+  .phero { display: flex; gap: 22px; align-items: flex-start; padding-bottom: 24px; border-bottom: 1px solid var(--border); }
+  .phero .pcov { width: 92px; height: 118px; border-radius: 10px; flex: none; box-shadow: var(--shadow-lg);
+    background: linear-gradient(160deg, #6a6be0, #4b3fb0 60%, #2f2a6b); position: relative; overflow: hidden; }
+  .phero .pcov::after { content: ""; position: absolute; inset: 0; background:
+    radial-gradient(60% 40% at 30% 15%, rgba(255,255,255,.35), transparent 60%); }
+  .phero .pcov .pc-t { position: absolute; left: 10px; right: 10px; bottom: 10px; color: #fff; font-weight: 700; font-size: 15px; line-height: 1.1; letter-spacing: -.01em; }
+  .pinfo { flex: 1; min-width: 0; }
+  .pbadge { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px; border-radius: 20px; font-size: 12px; font-weight: 600; background: var(--accent-soft); color: var(--accent); }
+  .pinfo h1 { font-size: 28px; letter-spacing: -.02em; margin: 9px 0 8px; font-weight: 700; }
+  .logline { color: var(--text); font-size: 15.5px; line-height: 1.55; max-width: 56ch; font-style: italic; }
+  .pmeta { display: flex; align-items: center; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+  .gchip { height: 22px; padding: 0 9px; border-radius: 6px; font-size: 12px; background: var(--surface-2); border: 1px solid var(--border); color: var(--muted); display: inline-flex; align-items: center; }
+  .status-pill { display: inline-flex; align-items: center; gap: 7px; height: 24px; padding: 0 11px; border-radius: 20px; font-size: 12.5px; font-weight: 600; background: var(--ok-soft); color: var(--ok); }
+  .status-pill .d { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
+
+  /* stat cards */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 24px 0; }
+  .stat { border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 15px; background: var(--surface); }
+  .stat .sv { font-size: 26px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .stat .sl { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+  .stat.link { cursor: pointer; } .stat.link:hover { border-color: var(--border-strong); }
+  .stat.chantier { background: var(--stub-soft); border-color: var(--stub-line); }
+  .stat.chantier .sv, .stat.chantier .sl { color: var(--stub); }
+  .stat .sv small { font-size: 13px; font-weight: 500; color: var(--muted); }
+
+  .cols { display: grid; grid-template-columns: 1.4fr 1fr; gap: 22px; }
+  @media (max-width: 820px) { .cols { grid-template-columns: 1fr; } .stats { grid-template-columns: repeat(2,1fr); } }
+  .card { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); overflow: hidden; }
+  .card .ch { display: flex; align-items: center; gap: 8px; padding: 12px 15px; border-bottom: 1px solid var(--border); }
+  .card .ch h3 { font-size: 12px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin: 0; font-weight: 600; }
+  .card .ch .all { margin-left: auto; font-size: 12px; color: var(--accent); cursor: pointer; }
+
+  .rentry { display: flex; align-items: center; gap: 11px; padding: 10px 15px; border-bottom: 1px solid var(--border); cursor: pointer; }
+  .rentry:last-child { border-bottom: 0; } .rentry:hover { background: var(--surface-2); }
+  .rentry .av { width: 28px; height: 28px; border-radius: 6px; background: var(--surface-3); display: grid; place-items: center; font-size: 11px; color: var(--muted); font-weight: 600; flex: none; }
+  .rentry .re-b { flex: 1; min-width: 0; } .rentry .re-t { font-weight: 600; font-size: 13.5px; }
+  .rentry .re-ty { font-size: 11px; color: var(--faint); text-transform: uppercase; letter-spacing: .04em; }
+  .rentry .re-d { color: var(--faint); font-size: 11.5px; }
+  .rentry.warn .re-t::after { content: "▲"; color: var(--danger); font-size: 10px; margin-left: 6px; }
+
+  .distrib { padding: 6px 15px 12px; }
+  .dbar { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 12.5px; }
+  .dbar .dn { width: 88px; color: var(--muted); flex: none; }
+  .dbar .track { flex: 1; height: 7px; border-radius: 4px; background: var(--surface-3); overflow: hidden; }
+  .dbar .fill { height: 100%; background: var(--accent); border-radius: 4px; }
+  .dbar .dv { width: 24px; text-align: right; color: var(--text); font-family: var(--font-mono); }
+
+  .stubline { display: flex; align-items: center; gap: 10px; padding: 9px 15px; border-bottom: 1px solid var(--border); }
+  .stubline:last-child { border-bottom: 0; }
+  .stubline .sd { width: 24px; height: 24px; border-radius: 6px; background: var(--stub-soft); color: var(--stub); border: 1px solid var(--stub-line); display: grid; place-items: center; flex: none; }
+  .stubline .sn { flex: 1; font-weight: 500; font-size: 13.5px; } .stubline .sc { font-family: var(--font-mono); font-size: 11.5px; color: var(--stub); }
+
+  .health { display: flex; align-items: center; gap: 12px; padding: 11px 15px; font-size: 12.5px; color: var(--muted); }
+  .health .live { display: inline-flex; align-items: center; gap: 7px; color: var(--ok); font-weight: 500; }
+  .health .live .p { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 0 rgba(47,143,91,.5); animation: pulse 2.2s infinite; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(47,143,91,.45); } 70% { box-shadow: 0 0 0 7px rgba(47,143,91,0); } 100% { box-shadow: 0 0 0 0 rgba(47,143,91,0); } }
+  @media (prefers-reduced-motion: reduce) { .health .live .p { animation: none; } }
+
+  @media (max-width: 820px) {
+    .launch { grid-template-columns: 1fr; } .lc-right { border-left: 0; border-top: 1px solid var(--border); }
+    .lc-left { padding: 40px 28px; } .lc-hero h1 { font-size: 32px; }
+    .app { grid-template-columns: 60px minmax(0,1fr); }
+    .nav .lab, .nav .navlabel, .nav .projsw .name, .nav .projsw .sub, .nav .projsw .sw, .navitem .count { display: none; }
+    .nav { align-items: center; } .navitem { justify-content: center; } .projsw { justify-content: center; }
+    .phero { flex-direction: column; }
+  }
+</style>
+
+<!-- ============ LAUNCHER ============ -->
+<div class="stage on" id="launch">
+  <div class="launch">
+    <div class="lc-left">
+      <div class="lc-brand"><span class="glyph">✦</span>Storyteller</div>
+      <div class="lc-hero">
+        <h1>La bible de votre roman, à vous.</h1>
+        <p>Un dossier de fichiers markdown, lisible partout, sans compte ni cloud. Personnages, lieux, factions, chapitres — reliés, retrouvables, à vous pour toujours.</p>
+        <div class="lc-actions">
+          <button class="bigbtn primary"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Ouvrir un dossier…</button>
+          <button class="bigbtn ghost"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>Nouveau projet</button>
+        </div>
+      </div>
+      <div class="lc-foot"><span class="dot"></span>Aucune donnée ne quitte votre machine · markdown = source de vérité</div>
+    </div>
+    <div class="lc-right">
+      <p class="rt">Projets récents <span class="cnt">· 3</span></p>
+      <div class="recent" id="openProj">
+        <span class="cov v"></span>
+        <div class="rb"><div class="rn">Cité de Verre</div><div class="rp">~/romans/cite-de-verre</div></div>
+        <div class="rmeta">32 entrées<div class="m2">il y a 2 h</div></div>
+        <span class="go">→</span>
+      </div>
+      <div class="recent">
+        <span class="cov o"></span>
+        <div class="rb"><div class="rn">Les Marches d'Ambre</div><div class="rp">~/romans/marches-ambre</div></div>
+        <div class="rmeta">78 entrées<div class="m2">hier</div></div>
+        <span class="go">→</span>
+      </div>
+      <div class="recent">
+        <span class="cov g"></span>
+        <div class="rb"><div class="rn">Nouvelle policière (sans titre)</div><div class="rp">~/brouillons/polar-01</div></div>
+        <div class="rmeta">12 entrées<div class="m2">3 jours</div></div>
+        <span class="go">→</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ DASHBOARD ============ -->
+<div class="stage" id="dash">
+  <div class="app">
+    <header class="topbar">
+      <div class="brand"><span class="glyph">✦</span><span>Storyteller</span></div>
+      <nav class="crumbs"><span class="here">Cité de Verre</span></nav>
+      <div class="spacer"></div>
+      <div class="search" title="Recherche plein-texte — jalon M5">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <span class="txt">Rechercher…</span><span class="soon">à venir</span>
+      </div>
+      <button class="btn primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>Nouvelle entrée</button>
+      <button class="iconbtn langbtn" title="Langue d'interface (FR/EN)" style="width:auto;padding:0 10px;gap:5px;font-family:var(--font-mono);font-size:12px;font-weight:600" onclick="var s=this.querySelector('span');s.textContent=s.textContent==='FR'?'EN':'FR'"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg><span>FR</span></button>
+      <button class="iconbtn" id="themeBtn" title="Thème"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+    </header>
+
+    <aside class="nav">
+      <div class="projsw" id="switchProj" title="Changer de projet">
+        <div class="cover"></div>
+        <div class="rb"><div class="name">Cité de Verre</div><div class="sub">32 entrées</div></div>
+        <span class="sw"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m8 9 4-4 4 4M8 15l4 4 4-4"/></svg></span>
+      </div>
+      <div class="navlabel">Types</div>
+      <div class="navitem"><span class="ico">◆</span><span class="lab">Projet</span><span class="count">1</span></div>
+      <div class="navitem"><span class="ico">☺</span><span class="lab">Personnages</span><span class="count">6</span></div>
+      <div class="navitem"><span class="ico">⌂</span><span class="lab">Lieux</span><span class="count">5</span></div>
+      <div class="navitem"><span class="ico">⚑</span><span class="lab">Factions</span><span class="count">3</span></div>
+      <div class="navitem"><span class="ico">◈</span><span class="lab">Objets</span><span class="count">4</span></div>
+      <div class="navitem"><span class="ico">⚙</span><span class="lab">Systèmes</span><span class="count">2</span></div>
+      <div class="navitem"><span class="ico">▤</span><span class="lab">Chapitres</span><span class="count">5</span></div>
+      <div class="navitem"><span class="ico">✎</span><span class="lab">Notes</span><span class="count">2</span></div>
+      <div class="navlabel">Chantier</div>
+      <div class="navitem stubs"><span class="ico">⌦</span><span class="lab">À créer (stubs)</span><span class="count">7</span></div>
+    </aside>
+
+    <main class="main">
+      <div class="main-inner">
+        <!-- hero -->
+        <div class="phero">
+          <div class="pcov"><div class="pc-t">Cité<br>de Verre</div></div>
+          <div class="pinfo">
+            <span class="pbadge">◆ Projet</span>
+            <h1>Cité de Verre</h1>
+            <div class="logline">« Une orpheline prodige du verre découvre que l'œuvre scellée de sa mère peut fracturer la cité — ou la sauver. »</div>
+            <div class="pmeta">
+              <span class="status-pill"><span class="d"></span>En écriture</span>
+              <span class="gchip">fantasy</span>
+              <span class="gchip">low-fantasy</span>
+              <span class="gchip">huis-clos</span>
+              <span style="color:var(--faint);font-size:12px" class="mono">· project.md</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- stats -->
+        <div class="stats">
+          <div class="stat"><div class="sv">32</div><div class="sl">entrées au total</div></div>
+          <div class="stat"><div class="sv">5 <small>/ 12</small></div><div class="sl">chapitres esquissés</div></div>
+          <div class="stat link chantier"><div class="sv">7</div><div class="sl">liens à créer</div></div>
+          <div class="stat link"><div class="sv" style="color:var(--danger)">2</div><div class="sl">entrées à vérifier</div></div>
+        </div>
+
+        <div class="cols">
+          <div style="display:flex;flex-direction:column;gap:22px">
+            <!-- recent -->
+            <div class="card">
+              <div class="ch"><h3>Modifié récemment</h3><span class="all">tout voir →</span></div>
+              <div class="rentry"><span class="av">AS</span><div class="re-b"><div class="re-t">Aria Solane</div><div class="re-ty">Personnage</div></div><span class="re-d">il y a 2 h</span></div>
+              <div class="rentry"><span class="av">LF</span><div class="re-b"><div class="re-t">La Fêlure</div><div class="re-ty">Chapitre · 3</div></div><span class="re-d">hier</span></div>
+              <div class="rentry warn"><span class="av">LB</span><div class="re-b"><div class="re-t">Livia Brande</div><div class="re-ty">Personnage</div></div><span class="re-d">hier</span></div>
+              <div class="rentry"><span class="av">OP</span><div class="re-b"><div class="re-t">Ordre du Prisme</div><div class="re-ty">Faction</div></div><span class="re-d">29 juil.</span></div>
+              <div class="rentry"><span class="av">LF</span><div class="re-b"><div class="re-t">Le Four</div><div class="re-ty">Chapitre · 4</div></div><span class="re-d">28 juil.</span></div>
+            </div>
+
+            <!-- distribution -->
+            <div class="card">
+              <div class="ch"><h3>Répartition par type</h3></div>
+              <div class="distrib">
+                <div class="dbar"><span class="dn">Personnages</span><span class="track"><span class="fill" style="width:100%"></span></span><span class="dv">6</span></div>
+                <div class="dbar"><span class="dn">Lieux</span><span class="track"><span class="fill" style="width:83%"></span></span><span class="dv">5</span></div>
+                <div class="dbar"><span class="dn">Chapitres</span><span class="track"><span class="fill" style="width:83%"></span></span><span class="dv">5</span></div>
+                <div class="dbar"><span class="dn">Objets</span><span class="track"><span class="fill" style="width:66%"></span></span><span class="dv">4</span></div>
+                <div class="dbar"><span class="dn">Factions</span><span class="track"><span class="fill" style="width:50%"></span></span><span class="dv">3</span></div>
+                <div class="dbar"><span class="dn">Systèmes</span><span class="track"><span class="fill" style="width:33%"></span></span><span class="dv">2</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:22px">
+            <!-- chantier -->
+            <div class="card">
+              <div class="ch"><h3 style="color:var(--stub)">Chantier — à créer</h3><span class="all">ouvrir →</span></div>
+              <div class="stubline"><span class="sd">＋</span><span class="sn">Maître Orlan</span><span class="sc">3×</span></div>
+              <div class="stubline"><span class="sd">＋</span><span class="sn">Humain</span><span class="sc">4×</span></div>
+              <div class="stubline"><span class="sd">＋</span><span class="sn">Verre Vivant</span><span class="sc">2×</span></div>
+              <div class="stubline"><span class="sd">＋</span><span class="sn">Guilde des Fondeurs</span><span class="sc">1×</span></div>
+            </div>
+
+            <!-- health -->
+            <div class="card">
+              <div class="ch"><h3>Santé de l'index</h3></div>
+              <div class="health"><span class="live"><span class="p"></span>Watcher actif</span><span>· réindexé il y a 4 s</span></div>
+              <div class="health" style="border-top:1px solid var(--border)"><span>Éditez les .md dans Obsidian ou vim&nbsp;: l'index se reconstruit tout seul.</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var order = ['system', 'light', 'dark'], i = 0;
+    var root = document.documentElement, btn = document.getElementById('themeBtn');
+    btn.addEventListener('click', function () {
+      i = (i + 1) % order.length;
+      if (order[i] === 'system') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', order[i]);
+    });
+  })();
+
+  function show(id) {
+    document.querySelectorAll('.stage').forEach(function (s) { s.classList.remove('on'); });
+    document.getElementById(id).classList.add('on');
+    window.scrollTo(0, 0);
+  }
+  document.getElementById('openProj').addEventListener('click', function () { show('dash'); });
+  document.getElementById('switchProj').addEventListener('click', function () { show('launch'); });
+</script>
