@@ -93,7 +93,7 @@ HTTP wrapper on top of `core`. Serves the API (see [api.md](api.md)) and, in pro
 - Provides the MVP [views](glossary.md): filterable lists/tables by [type](glossary.md), [backlinks](glossary.md) panel, [entry](glossary.md) editor (frontmatter + markdown body). No graph in MVP (v2).
 - Built statically for Docker (served by the server) or embedded in the Tauri bundle.
 
-> Known constraint: **Shadcn without Tailwind**. `shadcn-svelte` depends on Tailwind, which conflicts with the "avoid Tailwind" preference. Alternatives to arbitrate (Bits UI / Melt UI + custom CSS) → see §6 and ADR. Detailed GUI design comes **after** this doc.
+> **Resolved:** the Shadcn/Tailwind question is settled — Tailwind is adopted, contained by component classes ([ADR 0013](adr/0013-tailwind-with-component-classes.md)). The GUI design (["Atelier"](ui/README.md)) and the M4 scaffold followed this doc, as intended.
 
 ---
 
@@ -124,7 +124,7 @@ See the [roadmap](roadmap.md): milestone M6 = MVP packaging (Docker/Nix); M7 = d
 
 To be decided in [ADR](adr/README.md); do not prejudge here.
 
-1. **Shadcn without Tailwind** — `shadcn-svelte` depends on Tailwind, conflicting with the "avoid Tailwind" preference. Alternatives: Bits UI / Melt UI + custom CSS.
+1. ~~**Shadcn without Tailwind**~~ — **Resolved** by [ADR 0013](adr/0013-tailwind-with-component-classes.md): Tailwind is adopted, contained by component classes.
 2. **Primary target** — Tauri app vs. headless server: which one drives product/UX tradeoffs by default?
 3. **Entity identity** — filename/title/alias (current default) vs. stable `id` field (hardening path). The **link rewriting policy** on rename is decided ([ADR 0012](adr/0012-rename-link-rewriting.md): rewrite breaking links to the new filename, keep no alias); the stable-`id` question stays open. See [linking](linking.md) and [data model](data-model.md).
 4. **Markdown rendering** — Rust side (`core`) vs. front side. Until this is decided, `?render=html` answers `501` rather than guessing. Wikilink *extraction* is settled: it happens in `core`, since the index needs it.

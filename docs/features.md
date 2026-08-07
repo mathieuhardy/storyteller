@@ -114,7 +114,7 @@ This document lists **Storyteller** features grouped by domain, with a priority 
 | --- | --- |
 | Rust backend: `storyteller-core` (lib) + `storyteller-server` (HTTP binary) | MVP |
 | HTTP API (read-only first, then CRUD) | MVP |
-| SvelteKit + Shadcn frontend (avoid Tailwind if possible) | MVP |
+| SvelteKit + Shadcn frontend (Tailwind, contained — ADR 0013) | MVP |
 | Single-user, local / self-host, no auth or permissions | MVP |
 | Self-host deployment via Docker | MVP |
 | Nix flake(s) for developing and installing without Docker | MVP |

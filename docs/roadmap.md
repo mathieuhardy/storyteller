@@ -12,7 +12,7 @@ Framework reminder: [markdown is the sole source of truth](principles.md), the [
 | **M1** | ✅ done | `storyteller-core` + index + **read-only** API: frontmatter/body parsing, type catalog, [index](glossary.md) building (`cache.sqlite`), read endpoints (list by type, entry, backlinks). | M0 | The core parses a real project without loss; the index rebuilds entirely from files; the API exposes entries, their typed fields, and backlinks in read mode; the index is rebuildable and gitignored. |
 | **M2** | ✅ done | Entry CRUD: **non-destructive** writing (unknown YAML keys, key order, and body preserved), creation, update, deletion, **rename** with link updates, **watcher** for file→index sync. | M1 | Create/edit/delete an entry via API modifies markdown without breaking external edits; rename updates links and/or keeps old title as [alias](glossary.md); watcher reindexes external changes. |
 | **M3** | ✅ done | Full links: [wikilink](glossary.md) resolution (file → title → alias), automatic [backlinks](glossary.md), [stub](glossary.md) detection, ambiguity handling, **create entry from stub**. | M1, M2 | Backlinks are exact and bidirectional; stubs are listed; resolution ambiguity is signaled; promoting a stub creates a real entry via M2 CRUD and resolves the link. |
-| **M4** | — | SvelteKit + Shadcn frontend: filterable list/table [views](glossary.md) by type, backlinks panel, entry editor (frontmatter + body). | M1, M2, M3 | GUI consumes a stable M1–M3 API; navigate, filter, and edit entries; links and backlinks are clickable; no API bypass on front side. |
+| **M4** | 🚧 wip | SvelteKit + Shadcn frontend: filterable list/table [views](glossary.md) by type, backlinks panel, entry editor (frontmatter + body). | M1, M2, M3 | GUI consumes a stable M1–M3 API; navigate, filter, and edit entries; links and backlinks are clickable; no API bypass on front side. |
 | **M5** | — | FTS search + advanced filters/sort + **saved views**. | M1 (index), M4 | Full-text search queries the index; filters and sorts combine; a view can be named, saved, and reloaded. |
 | **M6** | — | Packaging & self-host **MVP**: `storyteller-server` distributed via **Docker** and installable via **Nix**. | M4 | The application launches in self-host Docker and installs via Nix; index rebuilds; a reproducible release is produced. |
 | **M7** | — | v2+: packaged desktop (`storyteller-tauri` → AppImage/.deb), link graph, media gallery, custom types, Android APK spike. | M6 | Each v2 item is scoped (spec or spike); none blocks the M1–M6 MVP. |
@@ -32,6 +32,16 @@ Non-destructive entry CRUD and rename: `POST`/`PATCH`/`DELETE /entities` and `PO
 ### M3 — What Landed
 
 Link exposure on top of M1's resolver: `GET /entities/{slug}/links` (outgoing links, each `resolved` / `stub` / `ambiguous`, with candidate slugs when ambiguous) and `GET /stubs` (unresolved targets grouped by normalized key, with their sources). **Creation from a stub** reuses M2's `POST /entities`: creating the entry with its `title` pre-filled from the link text makes the link resolve at the next rebuild, with **no source file rewritten** ([linking.md](linking.md) §6.3).
+
+### M4 — What Landed (in progress)
+
+The **first slice** of the GUI. Delivered:
+
+- **Backend registry**: `GET /projects` and `POST /projects/open` — the recent-projects registry (a machine preference in the OS config dir, not inside any project) and **runtime switching** of the active project (rescan + index rebuild + watcher restart). Recorded in [api.md](api.md#implementation-status).
+- **Frontend scaffold** (`frontend/`): SvelteKit SPA (`adapter-static`, `ssr` off) + Tailwind v4 carrying the ["Atelier" tokens](ui/foundations.md) in both themes ([ADR 0013](adr/0013-tailwind-with-component-classes.md)); a transport-agnostic API client, an [SSE](api.md#5-event-stream-sse) client, and the EN/FR i18n catalog ([ADR 0014](adr/0014-ui-i18n-front-catalog.md)).
+- **App shell + launcher**: the topbar / type-nav / collapsible links-rail shell and the project launcher, consuming `/projects`, `/project` and `/types`. The five business screens are stubbed as navigable placeholders. See [frontend/README.md](../frontend/README.md).
+
+Still owned by M4: the detailed screens (**entry**, **list/table**, **editor**, **links workshop**), the `/assets` endpoints, `PATCH /types/{type}`, and markdown rendering (`?render=html`). These are the next work packages.
 
 ## Critical Path
 

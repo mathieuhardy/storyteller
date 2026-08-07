@@ -5,9 +5,11 @@ Référence de conception de l'interface **Storyteller** (jalon [M4](../roadmap.
 l'implémentation SvelteKit. Il complète [usage.md](../usage.md) (guide utilisateur, à remplir après M4) et
 s'appuie sur [data-model.md](../data-model.md), [linking.md](../linking.md) et [api.md](../api.md).
 
-> **Statut : conception.** Rien n'est encore implémenté. Les maquettes de [`mockups/`](mockups/) sont des
-> pages HTML autonomes servant de **référence visuelle**, pas de code de production. Les points de styling et
-> d'i18n sont tranchés : Tailwind + shadcn-svelte contenu par des classes de composants
+> **Statut : implémentation en cours (M4).** L'amorçage, le shell applicatif et le lanceur sont réalisés
+> dans [`frontend/`](../../frontend/README.md) ; les cinq écrans métier restent à faire (placeholders
+> navigables pour l'instant). Les maquettes de [`mockups/`](mockups/) sont des pages HTML autonomes servant
+> de **référence visuelle**, pas de code de production. Styling et i18n sont tranchés et appliqués : Tailwind
+> + shadcn-svelte contenu par des classes de composants
 > ([ADR 0013](../adr/0013-tailwind-with-component-classes.md)) et catalogue i18n côté front
 > ([ADR 0014](../adr/0014-ui-i18n-front-catalog.md)).
 

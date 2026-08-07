@@ -75,7 +75,7 @@ storyteller/
   storyteller-core/     (lib) model, markdown/YAML parsing, index, links
   storyteller-server/   (bin) HTTP server, exposes the API — depends on core
   storyteller-tauri/    (bin) desktop/mobile webview — depends on core   [M7]
-  frontend/             SvelteKit + Shadcn (avoid Tailwind if possible)  [M4]
+  frontend/             SvelteKit + Tailwind (ADR 0013) — scaffold + shell  [M4, wip]
   tests/fixtures/       reference project, shared by both crates' tests
   docs/                 specs (see "Read First")
 ```
