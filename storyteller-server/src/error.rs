@@ -28,6 +28,16 @@ impl ApiError {
         }
     }
 
+    /// No project is currently open. The client should use `POST /projects/open`
+    /// to open one first.
+    pub fn no_project() -> Self {
+        Self {
+            status: StatusCode::SERVICE_UNAVAILABLE,
+            code: "no_project",
+            message: "no project open — use POST /projects/open first".into(),
+        }
+    }
+
     pub fn bad_request(message: impl Into<String>) -> Self {
         Self {
             status: StatusCode::BAD_REQUEST,

@@ -51,9 +51,20 @@ export const en = {
 	'launcher.openError': 'Could not open that folder.',
 
 	'dashboard.title': 'Dashboard',
-	'dashboard.placeholderTitle': 'Project shell ready',
-	'dashboard.placeholderBody':
-		'The dashboard, entry views and editor land in the next milestone steps. The navigation, links panel, theme and language are live.',
+	'dashboard.totalEntries': 'total entries',
+	'dashboard.chapters': 'chapters',
+	'dashboard.toCreate': 'to create',
+	'dashboard.toReview': 'to review',
+	'dashboard.recentlyModified': 'Recently modified',
+	'dashboard.viewAll': 'view all',
+	'dashboard.distribution': 'Distribution by type',
+	'dashboard.workshop': 'Workshop',
+	'dashboard.open': 'open',
+	'dashboard.indexHealth': 'Index health',
+	'dashboard.watcherActive': 'Watcher active',
+	'dashboard.externalEditHint': 'Edit .md files externally — the index rebuilds automatically.',
+	'dashboard.noEntries': 'No entries yet.',
+	'dashboard.noStubs': 'All links resolved!',
 
 	'screen.comingSoonTitle': 'Coming soon',
 	'screen.comingSoonBody': 'This view is part of a later step of the frontend milestone.',

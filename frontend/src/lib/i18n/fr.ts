@@ -49,9 +49,20 @@ export const fr: Messages = {
 	'launcher.openError': "Impossible d'ouvrir ce dossier.",
 
 	'dashboard.title': 'Tableau de bord',
-	'dashboard.placeholderTitle': "Coque du projet prête",
-	'dashboard.placeholderBody':
-		"Le tableau de bord, les vues d'entrées et l'éditeur arrivent aux étapes suivantes. La navigation, le panneau de liens, le thème et la langue sont actifs.",
+	'dashboard.totalEntries': 'entrées au total',
+	'dashboard.chapters': 'chapitres',
+	'dashboard.toCreate': 'à créer',
+	'dashboard.toReview': 'à vérifier',
+	'dashboard.recentlyModified': 'Modifié récemment',
+	'dashboard.viewAll': 'tout voir',
+	'dashboard.distribution': 'Répartition par type',
+	'dashboard.workshop': 'Chantier',
+	'dashboard.open': 'ouvrir',
+	'dashboard.indexHealth': 'Santé de l\'index',
+	'dashboard.watcherActive': 'Watcher actif',
+	'dashboard.externalEditHint': 'Éditez les .md dans Obsidian ou vim — l\'index se reconstruit tout seul.',
+	'dashboard.noEntries': 'Aucune entrée pour le moment.',
+	'dashboard.noStubs': 'Tous les liens sont résolus !',
 
 	'screen.comingSoonTitle': 'Bientôt',
 	'screen.comingSoonBody': 'Cette vue fait partie d’une étape ultérieure du jalon frontend.',

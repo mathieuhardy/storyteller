@@ -18,17 +18,18 @@ const USAGE: &str = "\
 storyteller-server — serves the Storyteller read API over HTTP
 
 USAGE:
-    storyteller-server --project <PATH> [--bind <ADDR>]
+    storyteller-server [--project <PATH>] [--bind <ADDR>]
 
 OPTIONS:
     -p, --project <PATH>  Project folder to open (env: STORYTELLER_PROJECT)
+                          If omitted, starts in launcher-only mode.
     -b, --bind <ADDR>     Address to listen on (env: STORYTELLER_BIND)
                           [default: 127.0.0.1:8787]
     -h, --help            Print this help
 ";
 
 struct Options {
-    project: PathBuf,
+    project: Option<PathBuf>,
     bind: SocketAddr,
 }
 
@@ -56,8 +57,14 @@ fn main() -> anyhow::Result<()> {
 }
 
 async fn serve(options: Options) -> anyhow::Result<()> {
-    let state = AppState::bootstrap(&options.project)
-        .with_context(|| format!("opening project {}", options.project.display()))?;
+    let state = match &options.project {
+        Some(path) => AppState::bootstrap(path)
+            .with_context(|| format!("opening project {}", path.display()))?,
+        None => {
+            tracing::info!("starting in launcher-only mode (no project)");
+            AppState::bootstrap_empty()
+        }
+    };
 
     // Live file→index sync (M2). A failure here is not fatal: the API still
     // serves and reindexes its own writes; only external edits go unnoticed.
@@ -103,9 +110,6 @@ fn parse_options() -> anyhow::Result<Option<Options>> {
         }
     }
 
-    let Some(project) = project else {
-        bail!("no project folder given\n\n{USAGE}");
-    };
     let bind = bind.unwrap_or_else(|| DEFAULT_BIND.to_string());
 
     Ok(Some(Options {

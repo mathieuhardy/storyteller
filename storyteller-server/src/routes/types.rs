@@ -39,16 +39,22 @@ impl TypeResponse {
 /// `GET /api/v1/types` — the enabled types.
 ///
 /// The full catalog is reachable with `?all=true`, which a view needs to render
-/// entries of a type that has since been disabled.
+/// entries of a type that has since been disabled. Returns all types as disabled
+/// if no project is open (launcher-only mode).
 pub async fn list(
     State(state): State<SharedState>,
     axum::extract::Query(query): axum::extract::Query<ListTypesQuery>,
 ) -> Json<Vec<TypeResponse>> {
     let active = state.current();
-    let config = active.project().config();
     let types = types::catalog()
         .iter()
-        .map(|schema| (schema, config.is_enabled(schema.name)))
+        .map(|schema| {
+            let enabled = active
+                .as_ref()
+                .map(|a| a.project().config().is_enabled(schema.name))
+                .unwrap_or(false);
+            (schema, enabled)
+        })
         .filter(|(_, enabled)| query.all || *enabled)
         .map(|(schema, enabled)| TypeResponse::build(schema, enabled))
         .collect();
@@ -68,6 +74,9 @@ pub async fn get(
 ) -> ApiResult<Json<TypeResponse>> {
     let schema = types::type_schema(&type_name)
         .ok_or_else(|| ApiError::not_found(format!("unknown type: {type_name}")))?;
-    let enabled = state.current().project().config().is_enabled(schema.name);
+    let enabled = state
+        .current()
+        .map(|a| a.project().config().is_enabled(schema.name))
+        .unwrap_or(false);
     Ok(Json(TypeResponse::build(schema, enabled)))
 }

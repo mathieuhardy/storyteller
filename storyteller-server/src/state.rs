@@ -122,7 +122,8 @@ impl Active {
 /// The server's shared state: the swappable active project plus the pieces that
 /// outlive a project switch.
 pub struct AppState {
-    active: RwLock<Arc<Active>>,
+    /// The active project, or `None` if no project is open yet (launcher-only mode).
+    active: RwLock<Option<Arc<Active>>>,
     events: broadcast::Sender<Event>,
     registry: Mutex<Registry>,
     watcher: Mutex<Option<crate::watcher::Watcher>>,
@@ -136,19 +137,34 @@ impl AppState {
     ///
     /// Uses the OS config location for the recent-projects registry.
     pub fn bootstrap(project_root: &Path) -> Result<SharedState> {
-        Self::bootstrap_with_registry(project_root, Registry::load())
+        Self::bootstrap_with_registry(Some(project_root), Registry::load())
+    }
+
+    /// Starts the server without an active project (launcher-only mode). The
+    /// client opens a project via `POST /projects/open`.
+    pub fn bootstrap_empty() -> SharedState {
+        Self::bootstrap_with_registry(None, Registry::load())
+            .expect("empty bootstrap cannot fail")
     }
 
     /// Like [`bootstrap`](Self::bootstrap) but with a registry loaded from an
     /// explicit location — for tests and embeddings that must not read or write
     /// the user's real config (see [`Registry::load_from`]).
     pub fn bootstrap_with_registry(
-        project_root: &Path,
+        project_root: Option<&Path>,
         mut registry: Registry,
     ) -> Result<SharedState> {
-        let active = Arc::new(Active::open(project_root)?);
         let (events, _) = broadcast::channel(EVENT_CAPACITY);
-        record_open(&mut registry, &active);
+
+        let active = match project_root {
+            Some(path) => {
+                let active = Arc::new(Active::open(path)?);
+                record_open(&mut registry, &active);
+                Some(active)
+            }
+            None => None,
+        };
+
         Ok(Arc::new(Self {
             active: RwLock::new(active),
             events,
@@ -157,27 +173,38 @@ impl AppState {
         }))
     }
 
-    /// The active project, as a cheap `Arc` clone. Callers hold it for the span
-    /// of a request; a concurrent [`open`](Self::open) only affects the *next*
-    /// `current()`, never one already taken.
-    pub fn current(&self) -> Arc<Active> {
+    /// The active project, if any. Returns `None` in launcher-only mode before
+    /// a project is opened.
+    pub fn current(&self) -> Option<Arc<Active>> {
         self.active
             .read()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
             .clone()
     }
 
+    /// The active project, or an error if none is open. Use this in routes that
+    /// require a project.
+    pub fn require_project(&self) -> Result<Arc<Active>> {
+        self.current()
+            .ok_or_else(|| storyteller_core::Error::ProjectNotFound(std::path::PathBuf::new()))
+    }
+
     /// (Re)starts the file watcher on the active project's folder. Replacing the
     /// stored handle drops the previous watcher, which stops its worker thread.
     /// A watcher that fails to start is not fatal: the API still serves and
-    /// reindexes its own writes; only external edits go unnoticed.
+    /// reindexes its own writes; only external edits go unnoticed. If no project
+    /// is open, the watcher is stopped.
     pub fn start_watcher(self: &Arc<Self>) {
-        let watcher = match crate::watcher::spawn(self.clone()) {
-            Ok(watcher) => Some(watcher),
-            Err(err) => {
-                tracing::warn!("file watcher disabled: {err:#}");
-                None
+        let watcher = if self.current().is_some() {
+            match crate::watcher::spawn(self.clone()) {
+                Ok(watcher) => Some(watcher),
+                Err(err) => {
+                    tracing::warn!("file watcher disabled: {err:#}");
+                    None
+                }
             }
+        } else {
+            None
         };
         *self.watcher.lock().unwrap_or_else(|p| p.into_inner()) = watcher;
     }
@@ -186,7 +213,7 @@ impl AppState {
     /// it in, rewatches it, records it in the registry, and announces a rebuild.
     pub fn open(self: &Arc<Self>, root: &Path) -> Result<Arc<Active>> {
         let active = Arc::new(Active::open(root)?);
-        *self.active.write().unwrap_or_else(|p| p.into_inner()) = active.clone();
+        *self.active.write().unwrap_or_else(|p| p.into_inner()) = Some(active.clone());
         self.start_watcher();
         {
             let mut registry = self.registry.lock().unwrap_or_else(|p| p.into_inner());
@@ -212,7 +239,7 @@ impl AppState {
         changed: &[String],
         reason: &'static str,
     ) -> Result<Vec<Change>> {
-        let active = self.current();
+        let active = self.require_project()?;
         let (changes, report) = active.reindex_reporting(changed)?;
         if let Some(report) = report {
             self.emit(Event::index_rebuilt(reason, &report));
@@ -229,9 +256,11 @@ impl AppState {
             .to_vec()
     }
 
-    /// Canonical path of the active project's folder.
+    /// Canonical path of the active project's folder, or empty if none is open.
     pub fn active_root(&self) -> String {
-        self.current().project().root().display().to_string()
+        self.current()
+            .map(|a| a.project().root().display().to_string())
+            .unwrap_or_default()
     }
 
     /// Subscribes to the change-event stream (SSE, `docs/api.md` §5).

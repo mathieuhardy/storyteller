@@ -24,7 +24,7 @@ pub async fn list(
     RawQuery(query): RawQuery,
 ) -> ApiResult<Json<Page<EntrySummary>>> {
     let params = params::parse(query.as_deref())?;
-    let page = state.current().index().list(&params.list)?;
+    let page = state.require_project()?.index().list(&params.list)?;
     Ok(Json(page))
 }
 
@@ -39,7 +39,7 @@ pub async fn get(
     RawQuery(query): RawQuery,
 ) -> ApiResult<Json<Entry>> {
     let params = params::parse(query.as_deref())?;
-    let active = state.current();
+    let active = state.require_project()?;
     let mut entry = read_entry(&active, &slug)?;
 
     if params.wants_backlinks() {
@@ -53,7 +53,7 @@ pub async fn backlinks(
     State(state): State<SharedState>,
     Path(slug): Path<String>,
 ) -> ApiResult<Json<Vec<Backlink>>> {
-    let active = state.current();
+    let active = state.require_project()?;
     // Checked first so an unknown slug is a 404 rather than an empty list.
     ensure_exists(&active, &slug)?;
     let backlinks = active.index().backlinks(&slug)?;
@@ -66,7 +66,7 @@ pub async fn links(
     State(state): State<SharedState>,
     Path(slug): Path<String>,
 ) -> ApiResult<Json<Vec<OutgoingLink>>> {
-    let active = state.current();
+    let active = state.require_project()?;
     // An unknown slug is a 404, not an empty list, matching `backlinks`.
     ensure_exists(&active, &slug)?;
     let links = active.index().outgoing_links(&slug)?;
@@ -76,7 +76,7 @@ pub async fn links(
 /// `GET /api/v1/stubs` — every unresolved link target in the project, grouped by
 /// normalized key, for the "to create" list (`docs/linking.md` §6).
 pub async fn stubs(State(state): State<SharedState>) -> ApiResult<Json<Vec<Stub>>> {
-    Ok(Json(state.current().index().stubs()?))
+    Ok(Json(state.require_project()?.index().stubs()?))
 }
 
 /// Body of `POST /api/v1/entities`.
@@ -108,7 +108,7 @@ pub async fn create(
             body.type_name
         )));
     }
-    let active = state.current();
+    let active = state.require_project()?;
     if !active.project().config().is_enabled(&body.type_name) {
         return Err(ApiError::bad_request(format!(
             "type `{}` is disabled for creation in this project",
@@ -158,7 +158,7 @@ pub async fn update(
     Path(slug): Path<String>,
     Json(body): Json<UpdateBody>,
 ) -> ApiResult<Json<Entry>> {
-    let active = state.current();
+    let active = state.require_project()?;
     let path = path_of(&active, &slug)?;
     let entry = active.project().update_entry(
         &path,
@@ -183,7 +183,7 @@ pub async fn delete(
     State(state): State<SharedState>,
     Path(slug): Path<String>,
 ) -> ApiResult<StatusCode> {
-    let active = state.current();
+    let active = state.require_project()?;
     let path = path_of(&active, &slug)?;
     active.project().delete_entry(&path)?;
     active.reindex(std::slice::from_ref(&path))?;
@@ -210,7 +210,7 @@ pub async fn rename(
             "rename needs at least one of `new_title` or `new_slug`",
         ));
     }
-    let active = state.current();
+    let active = state.require_project()?;
     let path = path_of(&active, &slug)?;
     let outcome = active.project().rename_entry(
         &path,

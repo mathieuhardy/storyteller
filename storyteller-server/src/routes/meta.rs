@@ -23,10 +23,14 @@ pub struct VersionResponse {
 
 /// `GET /api/v1/version` — lets the frontend check compatibility.
 pub async fn version(State(state): State<SharedState>) -> Json<VersionResponse> {
+    let schema_version = state
+        .current()
+        .map(|a| a.project().config().schema_version)
+        .unwrap_or(1);
     Json(VersionResponse {
         api_version: API_VERSION,
         core_version: storyteller_core::CORE_VERSION,
-        schema_version: state.current().project().config().schema_version,
+        schema_version,
     })
 }
 
@@ -53,7 +57,8 @@ pub struct Stats {
 
 /// `GET /api/v1/project` — the root entry plus project metadata.
 pub async fn project(State(state): State<SharedState>) -> ApiResult<Json<ProjectResponse>> {
-    Ok(Json(project_response(&state.current())?))
+    let active = state.require_project()?;
+    Ok(Json(project_response(&active)?))
 }
 
 /// Builds the `GET /project` payload for an active project. Shared with
