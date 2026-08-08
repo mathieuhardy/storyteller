@@ -199,6 +199,7 @@ The frontend treats these events as cache invalidations (reload affected entry/v
 | `422` | Content refused (e.g., provided frontmatter not serializable). |
 | `500` | Internal error (disk I/O, etc.). |
 | `501` | Endpoint or parameter **documented here but not implemented yet** (code `not_implemented`, message naming the milestone). Preferred over silently ignoring a parameter, which the client cannot detect. |
+| `503` | **No project open** (code `no_project`). The server started in launcher-only mode; the client should call `POST /projects/open` first. `GET /version`, `GET /projects`, and `GET /types` still work. |
 
 Normalized error body:
 

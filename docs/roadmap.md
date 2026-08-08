@@ -38,8 +38,10 @@ Link exposure on top of M1's resolver: `GET /entities/{slug}/links` (outgoing li
 The **first slice** of the GUI. Delivered:
 
 - **Backend registry**: `GET /projects` and `POST /projects/open` — the recent-projects registry (a machine preference in the OS config dir, not inside any project) and **runtime switching** of the active project (rescan + index rebuild + watcher restart). Recorded in [api.md](api.md#implementation-status).
+- **Launcher-only mode**: the server can now start without `--project`; routes return `503 no_project` until a project is opened via `POST /projects/open`. This enables first-time user experience.
 - **Frontend scaffold** (`frontend/`): SvelteKit SPA (`adapter-static`, `ssr` off) + Tailwind v4 carrying the ["Atelier" tokens](ui/foundations.md) in both themes ([ADR 0013](adr/0013-tailwind-with-component-classes.md)); a transport-agnostic API client, an [SSE](api.md#5-event-stream-sse) client, and the EN/FR i18n catalog ([ADR 0014](adr/0014-ui-i18n-front-catalog.md)).
 - **App shell + launcher**: the topbar / type-nav / collapsible links-rail shell and the project launcher, consuming `/projects`, `/project` and `/types`. The five business screens are stubbed as navigable placeholders. See [frontend/README.md](../frontend/README.md).
+- **Dashboard screen**: hero section (project cover, title, logline, status, genres), stats grid (entries, chapters, stubs, errors), recent entries card, distribution by type chart, stubs preview, and index health indicator with watcher pulse. Components in `frontend/src/lib/components/dashboard/`.
 
 Still owned by M4: the detailed screens (**entry**, **list/table**, **editor**, **links workshop**), the `/assets` endpoints, `PATCH /types/{type}`, and markdown rendering (`?render=html`). These are the next work packages.
 
