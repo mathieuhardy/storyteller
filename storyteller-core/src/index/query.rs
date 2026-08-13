@@ -100,7 +100,7 @@ pub(super) fn list(conn: &Connection, query: &ListQuery) -> Result<Page<EntrySum
     params.push(SqlValue::from(i64::try_from(offset).unwrap_or(i64::MAX)));
 
     let sql = format!(
-        "SELECT slug, path, type, title, excerpt, has_errors
+        "SELECT slug, path, type, title, excerpt, has_errors, updated
          FROM entries
          {where_clause}
          {order_clause}
@@ -116,6 +116,7 @@ pub(super) fn list(conn: &Connection, query: &ListQuery) -> Result<Page<EntrySum
             title: row.get(3)?,
             excerpt: row.get(4)?,
             has_errors: row.get::<_, i64>(5)? != 0,
+            updated: row.get::<_, Option<String>>(6)?.unwrap_or_default(),
         })
     })?;
 
@@ -135,7 +136,7 @@ pub(super) fn list(conn: &Connection, query: &ListQuery) -> Result<Page<EntrySum
 pub(super) fn summary(conn: &Connection, slug: &str) -> Result<Option<EntrySummary>> {
     let row = conn
         .query_row(
-            "SELECT slug, path, type, title, excerpt, has_errors
+            "SELECT slug, path, type, title, excerpt, has_errors, updated
              FROM entries WHERE slug = ?1 ORDER BY path LIMIT 1",
             [slug],
             |row| {
@@ -146,6 +147,7 @@ pub(super) fn summary(conn: &Connection, slug: &str) -> Result<Option<EntrySumma
                     title: row.get(3)?,
                     excerpt: row.get(4)?,
                     has_errors: row.get::<_, i64>(5)? != 0,
+                    updated: row.get::<_, Option<String>>(6)?.unwrap_or_default(),
                 })
             },
         )
@@ -164,6 +166,7 @@ struct SummaryRow {
     title: String,
     excerpt: String,
     has_errors: bool,
+    updated: String,
 }
 
 impl SummaryRow {
@@ -176,6 +179,7 @@ impl SummaryRow {
             title: self.title,
             excerpt: self.excerpt,
             has_errors: self.has_errors,
+            updated: self.updated,
         })
     }
 }

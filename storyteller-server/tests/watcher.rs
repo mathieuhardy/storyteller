@@ -79,7 +79,7 @@ async fn an_external_create_reaches_the_index() {
     let server = TestServer::new();
     let mut events = server.subscribe();
     // The watcher watches the canonicalized project root the state holds.
-    let root = server.state().current().project().root().to_path_buf();
+    let root = server.state().current().expect("open project").project().root().to_path_buf();
     let _watcher = storyteller_server::watcher::spawn(server.state()).expect("watcher starts");
 
     // A new file appears the way Obsidian or vim would create it.
@@ -103,7 +103,7 @@ async fn an_external_create_reaches_the_index() {
 async fn an_external_delete_reaches_the_index() {
     let server = TestServer::new();
     let mut events = server.subscribe();
-    let root = server.state().current().project().root().to_path_buf();
+    let root = server.state().current().expect("open project").project().root().to_path_buf();
     let _watcher = storyteller_server::watcher::spawn(server.state()).expect("watcher starts");
 
     std::fs::remove_file(root.join("characters/aria-solane.md")).unwrap();

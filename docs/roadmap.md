@@ -42,8 +42,9 @@ The **first slice** of the GUI. Delivered:
 - **Frontend scaffold** (`frontend/`): SvelteKit SPA (`adapter-static`, `ssr` off) + Tailwind v4 carrying the ["Atelier" tokens](ui/foundations.md) in both themes ([ADR 0013](adr/0013-tailwind-with-component-classes.md)); a transport-agnostic API client, an [SSE](api.md#5-event-stream-sse) client, and the EN/FR i18n catalog ([ADR 0014](adr/0014-ui-i18n-front-catalog.md)).
 - **App shell + launcher**: the topbar / type-nav / collapsible links-rail shell and the project launcher, consuming `/projects`, `/project` and `/types`. The five business screens are stubbed as navigable placeholders. See [frontend/README.md](../frontend/README.md).
 - **Dashboard screen**: hero section (project cover, title, logline, status, genres), stats grid (entries, chapters, stubs, errors), recent entries card, distribution by type chart, stubs preview, and index health indicator with watcher pulse. Components in `frontend/src/lib/components/dashboard/`.
+- **List/table screen** (`/type/{type}`): Table and List views of a type's entries, entirely URL-driven (`sort=`, `tag=`, `<field>=`, `page=`, `per_page=`) so the toolbar, filter chips and pager just read/rewrite the query string. Sortable column headers plus a toolbar sort menu, an "add a filter" popover generated from the type's field schema (enum/boolean fields offer their values directly), removable filter chips, and pagination. `EntrySummary` gained an `updated` timestamp (`docs/api.md` §3) so the Modified column and default `sort=-updated` have real data; per-type columns beyond that (role, status…) need a richer list endpoint and are deferred. Components in `frontend/src/lib/components/list/`.
 
-Still owned by M4: the detailed screens (**entry**, **list/table**, **editor**, **links workshop**), the `/assets` endpoints, `PATCH /types/{type}`, and markdown rendering (`?render=html`). These are the next work packages.
+Still owned by M4: the detailed screens (**entry**, **editor**, **links workshop**), the `/assets` endpoints, `PATCH /types/{type}`, and markdown rendering (`?render=html`). These are the next work packages.
 
 ## Critical Path
 

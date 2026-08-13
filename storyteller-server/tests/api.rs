@@ -123,6 +123,7 @@ async fn entities_returns_a_paginated_list() {
         "tags",
         "excerpt",
         "has_errors",
+        "updated",
     ] {
         assert!(item.get(key).is_some(), "{key} missing from a list item");
     }

@@ -66,6 +66,8 @@ export interface EntrySummary {
 	tags: string[];
 	excerpt: string;
 	has_errors: boolean;
+	/** `updated` frontmatter value (RFC 3339), empty string when absent. */
+	updated: string;
 }
 
 /** Paginated list wrapper (docs/api.md §4). */

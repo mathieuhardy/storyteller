@@ -13,6 +13,8 @@
 		| 'x'
 		| 'feather'
 		| 'chevron-right'
+		| 'chevron-left'
+		| 'chevron-down'
 		| 'square-plus';
 
 	const PATHS: Record<IconName, string[]> = {
@@ -38,6 +40,8 @@
 		x: ['M18 6 6 18', 'M6 6l12 12'],
 		feather: ['M20.2 12.2a6 6 0 0 0-8.5-8.5L5 10.5V19h8.5z', 'M16 8 2 22', 'M17.5 15H9'],
 		'chevron-right': ['M9 6l6 6-6 6'],
+		'chevron-left': ['M15 6l-6 6 6 6'],
+		'chevron-down': ['M6 9l6 6 6-6'],
 		'square-plus': ['M4 4h16v16H4z', 'M12 8v8', 'M8 12h8']
 	};
 </script>

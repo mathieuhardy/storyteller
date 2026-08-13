@@ -35,7 +35,7 @@ impl TestServer {
         // the developer's real `~/.config/storyteller` and stay isolated from
         // each other.
         let registry = Registry::load_from(Some(dir.path().join("projects.json")));
-        let state = storyteller_server::AppState::bootstrap_with_registry(&root, registry)
+        let state = storyteller_server::AppState::bootstrap_with_registry(Some(&root), registry)
             .expect("open project");
         Self {
             _dir: dir,

@@ -56,6 +56,15 @@ export function typeLabel(name: string): string {
 	return catalogs[locale][key] ?? en[key] ?? name;
 }
 
+/** Localized label of a schema field. No `field.*` catalog entries exist yet
+ * (ADR 0014 §3 sanctions this as a transitional state), so this falls back to
+ * the server's French `label` — same shape as `typeLabel`, ready to pick up
+ * `field.<name>` keys once that catalog is filled in. */
+export function fieldLabel(field: { name: string; label: string }): string {
+	const key = `field.${field.name}` as MessageKey;
+	return catalogs[locale][key] ?? en[key] ?? field.label;
+}
+
 export function formatNumber(value: number): string {
 	return new Intl.NumberFormat(locale).format(value);
 }

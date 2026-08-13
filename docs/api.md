@@ -94,7 +94,7 @@ An [entry](glossary.md) is serialized as follows (the `frontmatter` keys are **i
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/api/v1/entities` | **List** with filters/sort/pagination (see [§4](#4-filtering-sorting-pagination)). Returns a light list (`slug`, `path`, `type`, `title`, `tags`, excerpt). |
+| `GET` | `/api/v1/entities` | **List** with filters/sort/pagination (see [§4](#4-filtering-sorting-pagination)). Returns a light list (`slug`, `path`, `type`, `title`, `tags`, `excerpt`, `updated`). |
 | `GET` | `/api/v1/entities/{slug}` | **Get** a full entry. Options: `?include=backlinks`, `?render=html`. |
 | `POST` | `/api/v1/entities` | **Create** an entry. Body: `{ type, title, frontmatter?, body? }`. Backend generates the slug (ASCII kebab-case), writes the file in the type folder, initializes `created`/`updated`. Can **materialize a stub**. |
 | `PATCH` | `/api/v1/entities/{slug}` | **Update** (**non-destructive** write): `{ frontmatter?, body? }`. Merges provided keys, **preserves** unknown keys / order / untouched body; updates `updated`. |

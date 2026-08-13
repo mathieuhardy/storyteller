@@ -102,6 +102,9 @@ pub struct EntrySummary {
     /// `true` when the entry carries at least one diagnostic, so a view can
     /// badge it without fetching the whole entry.
     pub has_errors: bool,
+    /// `updated` frontmatter value (RFC 3339), empty when absent — lets a list
+    /// view show/sort recency without fetching the full entry.
+    pub updated: String,
 }
 
 /// Reads a field as a list of strings, accepting a bare string as a 1-element
