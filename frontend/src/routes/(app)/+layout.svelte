@@ -28,15 +28,24 @@
 	);
 
 	const activeType = $derived(page.params.type ?? null);
+	const activeSlug = $derived(page.params.slug ?? null);
 	const activeWorkshop = $derived(page.url.pathname === '/stubs');
 
 	const breadcrumb = $derived.by(() => {
 		const crumbs: { label: string; href?: string }[] = [
 			{ label: projectName, href: '/dashboard' }
 		];
-		if (activeType) crumbs.push({ label: typeLabel(activeType) });
-		else if (activeWorkshop) crumbs.push({ label: t('nav.stubs') });
-		else crumbs.push({ label: t('dashboard.title') });
+		if (activeSlug) {
+			// Entry view: we don't have the entry type here, so just show the slug
+			// A proper implementation would require loading the entry data at layout level
+			crumbs.push({ label: activeSlug });
+		} else if (activeType) {
+			crumbs.push({ label: typeLabel(activeType) });
+		} else if (activeWorkshop) {
+			crumbs.push({ label: t('nav.stubs') });
+		} else {
+			crumbs.push({ label: t('dashboard.title') });
+		}
 		return crumbs;
 	});
 </script>
