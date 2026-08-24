@@ -26,6 +26,8 @@ pub enum Event {
     },
     /// An entry was deleted or moved out of the project.
     EntityDeleted { slug: String, path: String },
+    /// An asset was added under `assets/` (`POST /assets`).
+    AssetsChanged { path: String, change: &'static str },
     /// The index was rebuilt; views should refresh. Emitted after an external
     /// change the watcher picked up (`docs/api.md` §5, "index.rebuilt").
     IndexRebuilt {
@@ -42,6 +44,7 @@ impl Event {
             Event::EntityCreated { .. } => "entity.created",
             Event::EntityUpdated { .. } => "entity.updated",
             Event::EntityDeleted { .. } => "entity.deleted",
+            Event::AssetsChanged { .. } => "assets.changed",
             Event::IndexRebuilt { .. } => "index.rebuilt",
         }
     }
@@ -60,6 +63,7 @@ impl Event {
                 type_name,
             } => json!({ "slug": slug, "path": path, "type": type_name }),
             Event::EntityDeleted { slug, path } => json!({ "slug": slug, "path": path }),
+            Event::AssetsChanged { path, change } => json!({ "path": path, "change": change }),
             Event::IndexRebuilt {
                 reason,
                 duration_ms,

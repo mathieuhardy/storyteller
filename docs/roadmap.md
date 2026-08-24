@@ -47,8 +47,9 @@ The **first slice** of the GUI. Delivered:
 - **Entry editor** (`/entry/{slug}/edit`, `/type/{type}/new`): creation and edition, form generated from the type schema (all `FieldSchema.kind`s except `image`/`image-list`, deferred with `/assets`), link autocomplete with inline stub creation, markdown body editor (toolbar + edit/preview), and a save that diffs against the loaded entry so only changed fields are sent. Components in `frontend/src/lib/components/editor/`.
 - **Links workshop** (`/stubs`): stubs tab (create-from-stub modal, type picker) and an ambiguous-links tab (built by aggregating `GET /entities/{slug}/links` across every entry, since there is no dedicated aggregate endpoint) with non-destructive disambiguation rewrites. Components in `frontend/src/lib/components/workshop/`.
 - **`PATCH /types/{type}`**: enable/disable a type for creation, persisted to `.storyteller/config.yaml` (`ProjectConfig::save`, `Project::set_type_enabled`); existing entries of a disabled type stay untouched and indexed. `Active`'s `Project` moved behind a `Mutex` (matching `snapshot`/`index`) to allow this in-place mutation. No dedicated settings screen consumes it yet — the client function (`setTypeEnabled`) is exposed for one to pick up later.
+- **`/assets` endpoints**: list every file under `assets/`, serve one with a guessed `Content-Type`, and upload via `multipart/form-data` (flattened to a bare filename, `409` on collision), broadcasting `assets.changed`. New `storyteller-core::assets` module; no image-dimension dependency added (`width`/`height` stay unpopulated). Along the way, fixed a real gap this surfaced: routes guarded by `require_project` were answering a generic `404` instead of the documented `503 no_project` in launcher-only mode — `AppState::require_project` now returns that directly.
 
-Still owned by M4: the `/assets` endpoints and markdown rendering (`?render=html`). These are the next work packages.
+Still owned by M4: markdown rendering (`?render=html`).
 
 ## Critical Path
 

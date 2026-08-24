@@ -114,6 +114,10 @@ impl From<CoreError> for ApiError {
                 "cannot derive a slug from `{title}`: it has no usable characters"
             )),
             CoreError::UnknownType(name) => ApiError::not_found(format!("unknown type: {name}")),
+            CoreError::AssetNotFound(path) => ApiError::not_found(format!("no asset at: {path}")),
+            CoreError::AssetExists(path) => {
+                ApiError::conflict(format!("an asset already exists at: {path}"))
+            }
             CoreError::ProjectNotFound(path) => {
                 ApiError::not_found(format!("project not found: {}", path.display()))
             }

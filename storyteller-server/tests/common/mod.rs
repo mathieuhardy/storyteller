@@ -45,6 +45,21 @@ impl TestServer {
         }
     }
 
+    /// A server with no project open yet (launcher-only mode, `docs/api.md`
+    /// §3). Uses an injectable registry too, for the same isolation reason.
+    pub fn empty() -> Self {
+        let dir = tempfile::tempdir().expect("temp dir");
+        let registry = Registry::load_from(Some(dir.path().join("projects.json")));
+        let state = storyteller_server::AppState::bootstrap_with_registry(None, registry)
+            .expect("bootstrap without a project");
+        Self {
+            _dir: dir,
+            root: PathBuf::new(),
+            state: state.clone(),
+            router: storyteller_server::router(state),
+        }
+    }
+
     pub fn root(&self) -> &Path {
         &self.root
     }
@@ -90,6 +105,69 @@ impl TestServer {
         let (status, body) = self.get(uri).await;
         assert_eq!(status, StatusCode::OK, "{uri} → {body}");
         body
+    }
+
+    /// Issues a GET and returns the status, `content-type` header, and raw
+    /// body bytes — for endpoints that don't answer JSON (e.g. asset serving).
+    pub async fn get_raw(&self, uri: &str) -> (StatusCode, String, Vec<u8>) {
+        let response = self
+            .router
+            .clone()
+            .oneshot(Request::builder().uri(uri).body(Body::empty()).unwrap())
+            .await
+            .expect("response");
+
+        let status = response.status();
+        let content_type = response
+            .headers()
+            .get(axum::http::header::CONTENT_TYPE)
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or_default()
+            .to_string();
+        let bytes = response.into_body().collect().await.unwrap().to_bytes();
+        (status, content_type, bytes.to_vec())
+    }
+
+    /// Issues a `multipart/form-data` POST carrying one file part, returning
+    /// status and parsed JSON body.
+    pub async fn post_multipart(&self, uri: &str, filename: &str, bytes: &[u8]) -> (StatusCode, Value) {
+        const BOUNDARY: &str = "storyteller-test-boundary";
+        let mut body = Vec::new();
+        body.extend_from_slice(
+            format!(
+                "--{BOUNDARY}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"{filename}\"\r\nContent-Type: application/octet-stream\r\n\r\n"
+            )
+            .as_bytes(),
+        );
+        body.extend_from_slice(bytes);
+        body.extend_from_slice(format!("\r\n--{BOUNDARY}--\r\n").as_bytes());
+
+        let response = self
+            .router
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri(uri)
+                    .header(
+                        "content-type",
+                        format!("multipart/form-data; boundary={BOUNDARY}"),
+                    )
+                    .body(Body::from(body))
+                    .unwrap(),
+            )
+            .await
+            .expect("response");
+
+        let status = response.status();
+        let bytes = response.into_body().collect().await.unwrap().to_bytes();
+        let json = if bytes.is_empty() {
+            Value::Null
+        } else {
+            serde_json::from_slice(&bytes)
+                .unwrap_or_else(|e| panic!("POST {uri} returned a non-JSON body: {e}"))
+        };
+        (status, json)
     }
 
     /// Issues a request carrying a JSON body, returning status and parsed body

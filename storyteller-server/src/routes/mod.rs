@@ -4,6 +4,7 @@
 //! the M2 watcher adds the SSE change stream (`/events`). Search (M5) is
 //! deliberately absent rather than stubbed.
 
+mod assets;
 mod entities;
 mod events;
 pub(crate) mod meta;
@@ -38,6 +39,8 @@ pub fn router(state: SharedState) -> Router {
         .route("/entities/{slug}/backlinks", get(entities::backlinks))
         .route("/entities/{slug}/links", get(entities::links))
         .route("/stubs", get(entities::stubs))
+        .route("/assets", get(assets::list).post(assets::upload))
+        .route("/assets/{*path}", get(assets::serve))
         .route("/projects", get(projects::list))
         .route("/projects/open", post(projects::open))
         .route("/events", get(events::stream))

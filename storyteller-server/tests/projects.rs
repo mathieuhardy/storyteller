@@ -4,8 +4,22 @@
 mod common;
 
 use axum::http::StatusCode;
-use common::{make_project, TestServer};
+use common::{error_code, make_project, TestServer};
 use serde_json::json;
+
+/// Launcher-only mode (`docs/api.md` §3): before `POST /projects/open`, every
+/// route needing an active project answers a normalized `503 no_project`
+/// rather than a generic 404 — distinct from `Project::open` failing on a path
+/// that isn't a project at all (`opening_a_missing_folder_is_not_found`).
+#[tokio::test]
+async fn routes_needing_a_project_answer_503_before_one_is_open() {
+    let server = TestServer::empty();
+    for uri in ["/api/v1/project", "/api/v1/entities", "/api/v1/stubs"] {
+        let (status, body) = server.get(uri).await;
+        assert_eq!(status, StatusCode::SERVICE_UNAVAILABLE, "{uri}: {body}");
+        assert_eq!(error_code(&body), "no_project", "{uri}: {body}");
+    }
+}
 
 /// The canonical form of a path, matching what the API reports as a project root.
 fn canonical(path: &std::path::Path) -> String {

@@ -193,11 +193,12 @@ impl AppState {
             .clone()
     }
 
-    /// The active project, or an error if none is open. Use this in routes that
-    /// require a project.
-    pub fn require_project(&self) -> Result<Arc<Active>> {
-        self.current()
-            .ok_or_else(|| storyteller_core::Error::ProjectNotFound(std::path::PathBuf::new()))
+    /// The active project, or a normalized `503 no_project` if none is open yet
+    /// (launcher-only mode, `docs/api.md` §3). Use this in routes that require
+    /// a project — it is *not* `storyteller_core::Error::ProjectNotFound`,
+    /// which means something different (a given folder isn't a project).
+    pub fn require_project(&self) -> crate::error::ApiResult<Arc<Active>> {
+        self.current().ok_or_else(crate::error::ApiError::no_project)
     }
 
     /// (Re)starts the file watcher on the active project's folder. Replacing the
@@ -250,7 +251,11 @@ impl AppState {
         changed: &[String],
         reason: &'static str,
     ) -> Result<Vec<Change>> {
-        let active = self.require_project()?;
+        // Internal-only path (the watcher), so it stays on the core error type
+        // rather than `require_project`'s HTTP-flavored 503.
+        let active = self
+            .current()
+            .ok_or_else(|| storyteller_core::Error::ProjectNotFound(std::path::PathBuf::new()))?;
         let (changes, report) = active.reindex_reporting(changed)?;
         if let Some(report) = report {
             self.emit(Event::index_rebuilt(reason, &report));

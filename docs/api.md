@@ -23,11 +23,12 @@ This document is the **target contract**; it is delivered milestone by milestone
 |---|---|
 | **M1** ✅ | `GET /version`, `GET /project`, `GET /types`, `GET /types/{type}`, `GET /entities`, `GET /entities/{slug}` (`?include=backlinks`), `GET /entities/{slug}/backlinks`. Filters, sort and pagination of [§4](#4-filtering-sorting-pagination) except `q`. |
 | **M2** (CRUD) ✅ | `POST`/`PATCH`/`DELETE /entities` and `POST /entities/{slug}/rename` (non-destructive writing; rename per [ADR 0012](adr/0012-rename-link-rewriting.md)). After a write the index is rebuilt so the change is immediately visible. |
-| **M2** (watcher) ✅ | `GET /events` (the SSE stream of [§5](#5-event-stream-sse)) and file→index sync on external edits, via the [watcher](glossary.md): external changes are re-parsed incrementally (mtime + content hash) and announced as `index.rebuilt`; writes through the API announce the matching `entity.*` event. `assets.changed` waits for the asset endpoints (M4). |
+| **M2** (watcher) ✅ | `GET /events` (the SSE stream of [§5](#5-event-stream-sse)) and file→index sync on external edits, via the [watcher](glossary.md): external changes are re-parsed incrementally (mtime + content hash) and announced as `index.rebuilt`; writes through the API announce the matching `entity.*` event. `assets.changed` is broadcast by `POST /assets` (M4) — external asset changes (added outside the app) are not watched, only entries are. |
 | **M3** ✅ | `GET /entities/{slug}/links`, `GET /stubs`, creation from a stub (via `POST /entities` with the `title` pre-filled from the link text — no source rewrite). |
 | **M4** (registry) ✅ | `GET /projects`, `POST /projects/open` — the recent-projects registry (a machine preference, stored outside any project folder) and **runtime switching** of the active project (rescan + index rebuild + rewatch). |
 | **M4** (types) ✅ | `PATCH /types/{type}` — enable/disable a type for creation, persisted to `.storyteller/config.yaml`; existing entries of that type stay untouched and indexed either way. |
-| **M4** (remaining) | `/assets` endpoints, `?render=html`. |
+| **M4** (assets) ✅ | `GET /assets`, `GET /assets/{path}`, `POST /assets` (`multipart/form-data`) — list, serve, and upload files under `assets/`; broadcasts `assets.changed`. Width/height are never populated (no image-decoding dependency added for it); an upload keeps only the bare filename (flattened, no subfolders) and refuses to overwrite an existing one. |
+| **M4** (remaining) | `?render=html`. |
 | **M5** | `GET /search`, and `q` on `/entities`. |
 
 `?render=html` stays unimplemented until markdown rendering is settled ([architecture](architecture.md) §6).
@@ -132,9 +133,9 @@ An [entry](glossary.md) is serialized as follows (the `frontmatter` keys are **i
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/api/v1/assets` | List [assets](glossary.md) (`assets/images/`, `assets/maps/`): `{ path, kind, size, width?, height? }`. |
-| `GET` | `/api/v1/assets/{path}` | **Serve** raw file (image/static map), appropriate `Content-Type`. A map is a referenced static image (no interactive pins — [out of scope](principles.md)). |
-| `POST` | `/api/v1/assets` | **Upload** an asset (`multipart/form-data`) to assets folder; returns the `path` to reference via `![[file]]` or `![](assets/…)`. |
+| `GET` | `/api/v1/assets` | List every file under `assets/` (not just `images/`/`maps/`): `{ path, kind, size }`, `kind ∈ image \| file` by extension. `width`/`height` are never populated — decoding image dimensions would need a new dependency for a display-only nicety. |
+| `GET` | `/api/v1/assets/{path}` | **Serve** raw file (image/static map), `Content-Type` guessed from the extension. A map is a referenced static image (no interactive pins — [out of scope](principles.md)). |
+| `POST` | `/api/v1/assets` | **Upload** an asset (`multipart/form-data`, one file part) directly under `assets/` — the name is flattened to its bare filename (no subfolder placement via upload); returns `{ path }` to reference via `![[file]]` or `![](assets/…)`. Refuses to overwrite an existing file (`409`). |
 
 ---
 

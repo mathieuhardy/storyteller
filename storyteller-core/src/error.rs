@@ -34,6 +34,12 @@ pub enum Error {
     #[error("path escapes the project root: {0}")]
     PathEscapesProject(PathBuf),
 
+    #[error("no asset at this path: {0}")]
+    AssetNotFound(String),
+
+    #[error("an asset already exists at this path: {0}")]
+    AssetExists(String),
+
     #[error("i/o error on {path}: {source}")]
     Io {
         path: PathBuf,
