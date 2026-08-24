@@ -8,6 +8,7 @@
 	import { t } from '$i18n/index.svelte';
 	import TokenInput from './TokenInput.svelte';
 	import LinkFieldEditor from './LinkFieldEditor.svelte';
+	import ImageFieldEditor from './ImageFieldEditor.svelte';
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	let {
@@ -67,6 +68,10 @@
 		multi={true}
 		addLabel={t('editor.linkMany', { field: field.label })}
 	/>
+{:else if field.kind === 'image'}
+	<ImageFieldEditor bind:paths={value} multi={false} />
+{:else if field.kind === 'image-list'}
+	<ImageFieldEditor bind:paths={value} multi={true} />
 {:else}
 	<input class="ctrl-input" type="text" bind:value />
 {/if}

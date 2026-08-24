@@ -159,3 +159,10 @@ export interface ServerEvent {
 	name: ServerEventName;
 	data: unknown;
 }
+
+/** One file under `assets/` — `GET /assets` items (docs/api.md §3). */
+export interface AssetInfo {
+	path: string;
+	kind: 'image' | 'file';
+	size: number;
+}

@@ -144,6 +144,8 @@ export const fr: Messages = {
 	'editor.saving': 'Enregistrement…',
 	'editor.errorTitleRequired': 'Le titre est requis.',
 	'editor.errorMissingRequired': 'Des champs requis sont manquants.',
+	'editor.uploadImage': 'Téléverser…',
+	'editor.uploading': 'Téléversement…',
 
 	'workshop.title': 'Chantier des liens',
 	'workshop.subtitle':

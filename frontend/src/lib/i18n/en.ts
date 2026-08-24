@@ -146,6 +146,8 @@ export const en = {
 	'editor.saving': 'Saving…',
 	'editor.errorTitleRequired': 'Title is required.',
 	'editor.errorMissingRequired': 'Some required fields are missing.',
+	'editor.uploadImage': 'Upload…',
+	'editor.uploading': 'Uploading…',
 
 	'workshop.title': 'Links workshop',
 	'workshop.subtitle':

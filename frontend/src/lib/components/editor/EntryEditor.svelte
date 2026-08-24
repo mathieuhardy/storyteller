@@ -4,11 +4,6 @@
 	// schema (`GET /types/{type}`); saving only ever sends the fields that
 	// actually changed, so untouched keys/order/body stay byte-for-byte
 	// (`docs/api.md` §2 — non-destructive writing owns the rest server-side).
-	//
-	// Asset fields (`cover`, `portrait`, and any `image`/`image-list` field) are
-	// not editable here: `/assets` upload is still unimplemented (docs/roadmap.md
-	// M4 remaining work), so faking a dropzone would promise something the
-	// backend can't do yet — they stay untouched, preserved by omission.
 	import { goto } from '$app/navigation';
 	import type { Entry, FieldSchema, Frontmatter, OutgoingLink, TypeResponse } from '$api/types';
 	import { createEntity, updateEntity, ApiError } from '$api/client';
@@ -34,21 +29,11 @@
 
 	// `created`/`updated` are managed by the backend on every write (`docs/api.md`
 	// §2 — `created` immutable, `updated` refreshed) and never user-editable.
-	const HIDDEN_FIELDS = new Set([
-		'type',
-		'title',
-		'aliases',
-		'tags',
-		'cover',
-		'portrait',
-		'created',
-		'updated'
-	]);
-	const ASSET_KINDS = new Set(['image', 'image-list']);
+	// `cover`/`portrait` are NOT hidden: they're plain `image` fields, so they
+	// flow through the generic loop below like `map`/`image`/`attachments` do.
+	const HIDDEN_FIELDS = new Set(['type', 'title', 'aliases', 'tags', 'created', 'updated']);
 
-	const editableFields = schema.fields.filter(
-		(f) => !HIDDEN_FIELDS.has(f.name) && !ASSET_KINDS.has(f.kind)
-	);
+	const editableFields = schema.fields.filter((f) => !HIDDEN_FIELDS.has(f.name));
 
 	const initial: Frontmatter = entry?.frontmatter ?? {};
 
@@ -88,6 +73,10 @@
 				return Array.isArray(raw)
 					? (raw.map(stripWikilink).filter(Boolean) as string[])
 					: [];
+			case 'image':
+				return typeof raw === 'string' && raw ? [raw] : [];
+			case 'image-list':
+				return Array.isArray(raw) ? raw.map(String) : [];
 			default:
 				return typeof raw === 'string' ? raw : '';
 		}
@@ -117,6 +106,12 @@
 			}
 			case 'link-list':
 				return ((value as string[]) ?? []).map((v) => `[[${v}]]`);
+			case 'image': {
+				const paths = (value as string[]) ?? [];
+				return paths.length > 0 ? paths[0] : null;
+			}
+			case 'image-list':
+				return value;
 			default:
 				return value;
 		}

@@ -5,6 +5,7 @@
 // and in components (where it defaults to the global).
 
 import type {
+	AssetInfo,
 	Entry,
 	EntrySummary,
 	Frontmatter,
@@ -127,6 +128,27 @@ export const getBacklinks = (slug: string, fetchImpl: Fetch = fetch): Promise<Ba
 
 export const getStubs = (fetchImpl: Fetch = fetch): Promise<Stub[]> =>
 	request('/stubs', undefined, fetchImpl);
+
+// --- Assets -----------------------------------------------------------------
+
+export const getAssets = (fetchImpl: Fetch = fetch): Promise<AssetInfo[]> =>
+	request('/assets', undefined, fetchImpl);
+
+/** Uploads a file under `assets/`; the server flattens its name to a bare
+ * filename and refuses to overwrite an existing one (409). */
+export const uploadAsset = (
+	file: File | Blob,
+	filename: string,
+	fetchImpl: Fetch = fetch
+): Promise<{ path: string }> => {
+	const form = new FormData();
+	form.append('file', file, filename);
+	return request('/assets', { method: 'POST', body: form }, fetchImpl);
+};
+
+/** URL to fetch/display an asset by its project-relative path. */
+export const assetUrl = (path: string): string =>
+	`${BASE}/assets/${path.split('/').map(encodeURIComponent).join('/')}`;
 
 export const createEntity = (
 	body: { type: string; title: string; frontmatter?: Frontmatter; body?: string },
