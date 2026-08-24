@@ -563,11 +563,12 @@ async fn the_file_is_read_at_request_time() {
 }
 
 #[tokio::test]
-async fn unbuilt_features_say_so_instead_of_lying() {
+async fn entities_q_restricts_the_list_to_a_full_text_match() {
     let server = TestServer::new();
-    let (status, body) = server.get("/api/v1/entities?q=verre").await;
-    assert_eq!(status, StatusCode::NOT_IMPLEMENTED);
-    assert_eq!(error_code(&body), "not_implemented");
+    // "ironique" is only in aria-solane's body (docs/api.md §4: `q` on
+    // `/entities` restricts the list, same shape as any other filter).
+    let body = server.get_ok("/api/v1/entities?q=ironique").await;
+    assert_eq!(slugs(&body), ["aria-solane"]);
 }
 
 #[tokio::test]

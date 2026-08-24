@@ -482,6 +482,31 @@ fn list_filters_on_a_list_field_element() {
 }
 
 #[test]
+fn list_restricts_to_a_full_text_match() {
+    let fixture = Fixture::new();
+    let (_project, index) = fixture.indexed();
+
+    // `q` on `/entities` restricts the list (`docs/api.md` §4) — same shape
+    // as any other filter, unlike the dedicated `/search` endpoint which also
+    // ranks by relevance and returns a snippet.
+    let page = index
+        .list(&all(ListQuery {
+            q: Some("ironique".into()),
+            ..Default::default()
+        }))
+        .unwrap();
+    assert_eq!(slugs(&page.items), ["aria-solane"]);
+
+    let page = index
+        .list(&all(ListQuery {
+            q: Some("zzznonexistentzzz".into()),
+            ..Default::default()
+        }))
+        .unwrap();
+    assert!(page.items.is_empty());
+}
+
+#[test]
 fn list_sorts_by_column_and_by_frontmatter_field() {
     let fixture = Fixture::new();
     let (_project, index) = fixture.indexed();

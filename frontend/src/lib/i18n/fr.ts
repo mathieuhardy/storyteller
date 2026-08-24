@@ -15,7 +15,10 @@ export const fr: Messages = {
 	'action.newProject': 'Nouveau projet',
 
 	'search.placeholder': 'Rechercher…',
-	'search.comingSoon': 'La recherche arrive dans un jalon ultérieur',
+	'search.action': 'Rechercher',
+	'search.prompt': 'Tapez quelque chose pour chercher dans les titres, alias, étiquettes et le corps.',
+	'search.noResults': 'Aucun résultat pour « {query} ».',
+	'search.resultCount': '{count} résultat(s) pour « {query} »',
 
 	'links.toggle': 'Liens',
 
@@ -76,6 +79,11 @@ export const fr: Messages = {
 	'list.ascending': 'Croissant',
 	'list.descending': 'Décroissant',
 	'list.addFilter': 'Ajouter un filtre',
+	'list.views': 'Vues',
+	'list.savedViews': 'Vues enregistrées',
+	'list.noSavedViews': 'Aucune vue enregistrée pour ce type.',
+	'list.saveViewPlaceholder': 'Enregistrer sous…',
+	'list.deleteView': 'Supprimer « {name} »',
 	'list.filterByField': 'Filtrer par champ',
 	'list.filterValue': 'Valeur',
 	'list.filters': 'Filtres',

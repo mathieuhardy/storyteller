@@ -17,7 +17,10 @@ export const en = {
 	'action.newProject': 'New project',
 
 	'search.placeholder': 'Search…',
-	'search.comingSoon': 'Search arrives in a later milestone',
+	'search.action': 'Search',
+	'search.prompt': 'Type something to search titles, aliases, tags, and body text.',
+	'search.noResults': 'No results for “{query}”.',
+	'search.resultCount': '{count} result(s) for “{query}”',
 
 	'links.toggle': 'Links',
 
@@ -78,6 +81,11 @@ export const en = {
 	'list.ascending': 'Ascending',
 	'list.descending': 'Descending',
 	'list.addFilter': 'Add a filter',
+	'list.views': 'Views',
+	'list.savedViews': 'Saved views',
+	'list.noSavedViews': 'No saved views for this type yet.',
+	'list.saveViewPlaceholder': 'Save current as…',
+	'list.deleteView': 'Delete “{name}”',
 	'list.filterByField': 'Filter by field',
 	'list.filterValue': 'Value',
 	'list.filters': 'Filters',

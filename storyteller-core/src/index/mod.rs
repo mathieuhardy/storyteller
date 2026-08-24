@@ -15,9 +15,11 @@
 
 mod query;
 mod schema;
+mod search;
 
 pub use query::{ListQuery, Page, SortSpec, DEFAULT_PER_PAGE, MAX_PER_PAGE};
 pub use schema::INDEX_SCHEMA_VERSION;
+pub use search::SearchResult;
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -132,7 +134,7 @@ impl Index {
         // One transaction: an interrupted rebuild leaves the previous cache in
         // place instead of a half-written one.
         let transaction = self.conn.transaction()?;
-        for table in ["links", "fields", "tags", "aliases", "entries"] {
+        for table in ["links", "fields", "tags", "aliases", "entries_fts", "entries"] {
             transaction.execute(&format!("DELETE FROM {table}"), [])?;
         }
 
@@ -182,6 +184,13 @@ impl Index {
     /// Paginated, filtered, sorted listing (`docs/api.md` §4).
     pub fn list(&self, query: &ListQuery) -> Result<Page<EntrySummary>> {
         query::list(&self.conn, query)
+    }
+
+    /// Full-text search (`docs/api.md` §3 "Search"), ranked by relevance
+    /// unless `query.sort` names an explicit column. `query.q` is assumed
+    /// non-empty — validated by the caller ("required on `/search`").
+    pub fn search(&self, query: &ListQuery) -> Result<Page<SearchResult>> {
+        search::search(&self.conn, query)
     }
 
     /// Path of the entry owning `slug`.
@@ -415,6 +424,17 @@ fn insert_entry(conn: &Connection, entry: &Entry, stat: Option<FileStat>) -> Res
     for (key, value) in &entry.frontmatter {
         insert_field(conn, &entry.path, key, value)?;
     }
+
+    conn.execute(
+        "INSERT INTO entries_fts(path, title, aliases, tags, body) VALUES (?1, ?2, ?3, ?4, ?5)",
+        params![
+            entry.path,
+            entry.title(),
+            entry.aliases().join(" "),
+            entry.tags().join(" "),
+            entry.body,
+        ],
+    )?;
     Ok(())
 }
 

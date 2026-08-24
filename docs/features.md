@@ -80,7 +80,7 @@ This document lists **Storyteller** features grouped by domain, with a priority 
 | Sorting by field | MVP |
 | Full-text search (FTS) on `title`, `aliases`, `tags`, and `body` | MVP |
 | `backlink`s panel on each entry | MVP |
-| Saved `view`s (reusable filters + sort + columns) | v2 |
+| Saved `view`s (reusable filters + sort) | MVP (M5) |
 | Advanced combined queries/filters | v2 |
 | Link graph as navigation mode | v2 |
 

@@ -59,14 +59,10 @@ pub fn parse(raw: Option<&str>) -> ApiResult<ListParams> {
                     .include
                     .extend(value.split(',').map(str::trim).filter(|s| !s.is_empty()).map(str::to_string));
             }
-            // Full-text search queries the FTS index, which lands with search
-            // (M5). Ignoring `q` would silently return unfiltered results — the
-            // one outcome a client cannot detect.
-            "q" => {
-                return Err(ApiError::not_implemented(
-                    "full-text search (`q`) arrives with the search milestone (M5)",
-                ))
-            }
+            // On `/entities`, `q` restricts the list (`docs/api.md` §4); on
+            // `/search` it is additionally required — that check lives in the
+            // search route, since an empty/absent `q` is perfectly valid here.
+            "q" => params.list.q = Some(value),
             // Rendering side was an open architecture question; resolved by
             // ADR 0015 (in `core`). Only `html` is a served value.
             "render" => {
@@ -172,9 +168,10 @@ mod tests {
     }
 
     #[test]
-    fn reports_unbuilt_features_instead_of_ignoring_them() {
-        let error = parse(Some("q=verre")).unwrap_err();
-        assert_eq!(error.status, axum::http::StatusCode::NOT_IMPLEMENTED);
+    fn parses_q() {
+        let params = parse(Some("q=verre")).unwrap();
+        assert_eq!(params.list.q.as_deref(), Some("verre"));
+        assert!(parse(None).unwrap().list.q.is_none());
     }
 
     #[test]

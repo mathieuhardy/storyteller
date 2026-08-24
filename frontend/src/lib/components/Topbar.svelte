@@ -1,7 +1,6 @@
 <script lang="ts">
 	// Top bar (docs/ui/layout.md §2.1): brand · breadcrumb · flexible space ·
-	// search (reserved for M5) · links-panel toggle · language · theme · primary
-	// action. The search field is present but disabled until FTS lands (M5).
+	// search · links-panel toggle · language · theme · primary action.
 	import { goto } from '$app/navigation';
 	import Icon from './Icon.svelte';
 	import IconButton from './IconButton.svelte';
@@ -29,6 +28,15 @@
 		newEntryOpen = false;
 		goto(`/type/${type}/new`);
 	}
+
+	let searchInput = $state('');
+
+	function submitSearch(event: SubmitEvent) {
+		event.preventDefault();
+		const trimmed = searchInput.trim();
+		if (!trimmed) return;
+		goto(`/search?q=${encodeURIComponent(trimmed)}`);
+	}
 </script>
 
 <header class="topbar">
@@ -51,11 +59,10 @@
 
 	<div class="spacer"></div>
 
-	<label class="search" title={t('search.comingSoon')}>
+	<form class="search" onsubmit={submitSearch}>
 		<Icon name="search" size={15} />
-		<input type="search" placeholder={t('search.placeholder')} disabled />
-		<span class="soon">M5</span>
-	</label>
+		<input type="search" placeholder={t('search.placeholder')} bind:value={searchInput} />
+	</form>
 
 	<IconButton label={t('links.toggle')} active={linksOpen} onclick={() => onToggleLinks?.()}>
 		<Icon name="link" />
@@ -147,20 +154,8 @@
 		color: var(--text);
 		width: 150px;
 	}
-	.search input:disabled {
-		cursor: not-allowed;
-	}
-	.soon {
-		font-family: var(--font-mono);
-		font-size: 10px;
-		color: var(--faint);
-		border: 1px solid var(--border);
-		border-radius: 4px;
-		padding: 1px 4px;
-	}
 	@media (max-width: 900px) {
-		.search input,
-		.search .soon {
+		.search input {
 			display: none;
 		}
 	}

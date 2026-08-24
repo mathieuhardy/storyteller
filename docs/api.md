@@ -29,7 +29,7 @@ This document is the **target contract**; it is delivered milestone by milestone
 | **M4** (types) ✅ | `PATCH /types/{type}` — enable/disable a type for creation, persisted to `.storyteller/config.yaml`; existing entries of that type stay untouched and indexed either way. |
 | **M4** (assets) ✅ | `GET /assets`, `GET /assets/{path}`, `POST /assets` (`multipart/form-data`) — list, serve, and upload files under `assets/`; broadcasts `assets.changed`. Width/height are never populated (no image-decoding dependency added for it); an upload keeps only the bare filename (flattened, no subfolders) and refuses to overwrite an existing one. |
 | **M4** (render) ✅ | `?render=html` on `GET /entities/{slug}` — [ADR 0015](adr/0015-markdown-rendering-in-core.md) settled rendering in `core`. Wikilinks become `<a class="wikilink resolved">`/`<span class="wikilink stub\|ambiguous">`; `![[file]]` embeds resolve against `assets/` by filename (an `<img>`, or a visible "not found" block); the plain `![](assets/...)` form is left as `pulldown-cmark` renders it. Any `render` value other than `html` is a `400`. |
-| **M5** | `GET /search`, and `q` on `/entities`. |
+| **M5** ✅ | `GET /search` and `q` on `/entities` — FTS5 (`entries_fts`, accent-insensitive, per-term prefix matching); index schema bumped to v2 so an existing on-disk cache gets rebuilt with the new table. |
 
 ---
 
@@ -125,7 +125,7 @@ An [entry](glossary.md) is serialized as follows (the `frontmatter` keys are **i
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/api/v1/search?q=…` | **Full-text** search (FTS) on titles, aliases, tags, and body. Parameters: `q` (query), plus [§4](#4-filtering-sorting-pagination) filters/pagination (`type`, `tag`, `page`…). Returns light entries + highlighted excerpts (`snippet`). |
+| `GET` | `/api/v1/search?q=…` | **Full-text** search (FTS5) on titles, aliases, tags, and body — accent-insensitive, per-term prefix matching, ranked by relevance (an explicit `sort=` overrides ranking). `q` is **required**; combinable with [§4](#4-filtering-sorting-pagination) filters/pagination (`type`, `tag`, `page`…). Returns light entries + a highlighted excerpt (`snippet`, `<mark>…</mark>`). |
 
 ### Assets
 
@@ -161,7 +161,7 @@ List response wrapped with pagination metadata:
 }
 ```
 
-> These filter/sort combinations are the basis for **saved views** (milestone [M5](roadmap.md)): a view = a persisted set of parameters on the frontend side.
+> These filter/sort combinations are the basis for **saved views** ([M5](roadmap.md#m5--what-landed)): a view = a persisted set of parameters on the frontend side (`localStorage`, `SavedViewsMenu.svelte`) — no server endpoint involved.
 
 ---
 

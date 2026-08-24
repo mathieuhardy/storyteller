@@ -70,6 +70,12 @@ export interface EntrySummary {
 	updated: string;
 }
 
+/** A search hit — `GET /search` items: an `EntrySummary` plus a highlighted
+ * excerpt (`<mark>…</mark>`) from whichever field matched best. */
+export interface SearchResult extends EntrySummary {
+	snippet: string;
+}
+
 /** Paginated list wrapper (docs/api.md §4). */
 export interface Page<T> {
 	items: T[];

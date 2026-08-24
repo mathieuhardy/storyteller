@@ -13,7 +13,7 @@ Framework reminder: [markdown is the sole source of truth](principles.md), the [
 | **M2** | ✅ done | Entry CRUD: **non-destructive** writing (unknown YAML keys, key order, and body preserved), creation, update, deletion, **rename** with link updates, **watcher** for file→index sync. | M1 | Create/edit/delete an entry via API modifies markdown without breaking external edits; rename updates links and/or keeps old title as [alias](glossary.md); watcher reindexes external changes. |
 | **M3** | ✅ done | Full links: [wikilink](glossary.md) resolution (file → title → alias), automatic [backlinks](glossary.md), [stub](glossary.md) detection, ambiguity handling, **create entry from stub**. | M1, M2 | Backlinks are exact and bidirectional; stubs are listed; resolution ambiguity is signaled; promoting a stub creates a real entry via M2 CRUD and resolves the link. |
 | **M4** | ✅ done | SvelteKit + Shadcn frontend: filterable list/table [views](glossary.md) by type, backlinks panel, entry editor (frontmatter + body). | M1, M2, M3 | GUI consumes a stable M1–M3 API; navigate, filter, and edit entries; links and backlinks are clickable; no API bypass on front side. |
-| **M5** | — | FTS search + advanced filters/sort + **saved views**. | M1 (index), M4 | Full-text search queries the index; filters and sorts combine; a view can be named, saved, and reloaded. |
+| **M5** | ✅ done | FTS search + advanced filters/sort + **saved views**. | M1 (index), M4 | Full-text search queries the index; filters and sorts combine; a view can be named, saved, and reloaded. |
 | **M6** | — | Packaging & self-host **MVP**: `storyteller-server` distributed via **Docker** and installable via **Nix**. | M4 | The application launches in self-host Docker and installs via Nix; index rebuilds; a reproducible release is produced. |
 | **M7** | — | v2+: packaged desktop (`storyteller-tauri` → AppImage/.deb), link graph, media gallery, custom types, Android APK spike. | M6 | Each v2 item is scoped (spec or spike); none blocks the M1–M6 MVP. |
 
@@ -51,7 +51,16 @@ The **first slice** of the GUI. Delivered:
 - **Editor image fields**: with `/assets` landed, the entry editor's `image`/`image-list` fields (`cover`, `portrait`, `map`, `attachments`…) are no longer excluded — `ImageFieldEditor.svelte` uploads and shows thumbnails. Closes the gap flagged when the editor screen first landed.
 - **Markdown rendering** (`?render=html`): the last open item, resolved by [ADR 0015](adr/0015-markdown-rendering-in-core.md) — rendering happens in `core` (new `render` module, `pulldown-cmark`), so wikilink resolution is never duplicated in JS. Wikilinks/embeds are spliced to `<a>`/`<span>`/`<img>` at their exact byte spans before parsing; resolution is read from the already-indexed outgoing links, not a fresh project-wide scan. The entry detail screen's body now injects this HTML (`BodySection.svelte`), replacing its raw-text wikilink highlighter — this closes M4.
 
-M4 is done. Next: M5 (search, filters, saved views) or M6 (packaging) — see the roadmap overview.
+M4 is done.
+
+### M5 — What Landed
+
+- **Full-text search**: `entries_fts`, a new SQLite FTS5 virtual table (ADR 0011's engine choice), indexing title/aliases/tags/body — deliberately not arbitrary frontmatter, matching [api.md](api.md#3-search)'s own scope. Accent-insensitive (`remove_diacritics 2`, content is French per [ADR 0010](adr/0010-frontmatter-keys-en-content-fr.md)); free text is turned into a per-term, individually-quoted prefix match (`"word"*`), which is both forgiving of partial typing and safe against FTS5 query-syntax injection from arbitrary input. The index schema bumped to v2 so an existing on-disk cache gets rebuilt with the new table rather than silently missing it.
+- **`GET /search?q=…`**: ranked by relevance (FTS5 `rank`) unless an explicit `sort=` is given; combines with the usual `type`/`tag`/`<field>` filters and pagination; returns each hit with a highlighted `snippet`. **`q` on `GET /entities`** restricts the list the same way, without ranking or a snippet — both share `ListQuery`/`build_filters`.
+- **Search screen** (`/search`): the topbar's search box (previously disabled, "M5" badge) now submits here. Results ranked by relevance with highlighted snippets, combinable with the same URL-driven filters as the list/table screen, paginated with the same `Pager`.
+- **Saved views**: "a view = a persisted set of parameters on the frontend side" ([api.md](api.md#4-filtering-sorting-pagination)) — `SavedViewsMenu.svelte` on the list/table screen's toolbar names and stores the current `sort=`/`tag=`/`<field>=` combination in `localStorage` (a UI preference, like the theme/language, never written to the project), and reloads it later. `docs/features.md` §D previously listed this as v2; updated to MVP to match this milestone's actual DoD.
+
+M5 is done.
 
 ## Critical Path
 

@@ -14,6 +14,7 @@ import type {
 	Page,
 	ProjectResponse,
 	ProjectsResponse,
+	SearchResult,
 	Stub,
 	TypeResponse,
 	VersionResponse
@@ -131,6 +132,15 @@ export const getBacklinks = (slug: string, fetchImpl: Fetch = fetch): Promise<Ba
 
 export const getStubs = (fetchImpl: Fetch = fetch): Promise<Stub[]> =>
 	request('/stubs', undefined, fetchImpl);
+
+// --- Search -----------------------------------------------------------------
+
+/** `q` is required; `query` carries the rest of the query string verbatim
+ * (`type=`, `tag=`, `<field>=`, `sort=`, `page=`, `per_page=` — docs/api.md §4). */
+export const search = (
+	query: string,
+	fetchImpl: Fetch = fetch
+): Promise<Page<SearchResult>> => request(`/search${query}`, undefined, fetchImpl);
 
 // --- Assets -----------------------------------------------------------------
 

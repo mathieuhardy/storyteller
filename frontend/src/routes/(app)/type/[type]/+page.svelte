@@ -14,6 +14,7 @@
 	import EntriesTable from '$components/list/EntriesTable.svelte';
 	import EntriesCards from '$components/list/EntriesCards.svelte';
 	import Pager from '$components/list/Pager.svelte';
+	import SavedViewsMenu from '$components/list/SavedViewsMenu.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -99,6 +100,18 @@
 	function setPerPage(next: number) {
 		updateParams((params) => params.set('per_page', String(next)));
 	}
+
+	// Saved views (docs/api.md §4, M5) capture sort/filters, not the current
+	// page — reloading a view should always start from its first page.
+	const currentViewQuery = $derived.by(() => {
+		const params = new URLSearchParams(page.url.searchParams);
+		params.delete('page');
+		return params.toString();
+	});
+
+	function applyView(query: string) {
+		goto(query ? `?${query}` : page.url.pathname);
+	}
 </script>
 
 <div class="screen">
@@ -122,6 +135,8 @@
 		<div class="tsep"></div>
 		<SortMenu options={sortOptions} field={sort.field} descending={sort.descending} onchange={setSort} />
 		<FilterMenu fields={filterFields} onadd={addFilter} />
+		<div class="tsep"></div>
+		<SavedViewsMenu type={data.type} currentQuery={currentViewQuery} onapply={applyView} />
 	</div>
 
 	<FilterChips {chips} onremove={removeFilter} onclearall={clearAllFilters} />

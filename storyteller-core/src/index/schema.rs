@@ -4,17 +4,23 @@
 //! markdown files and can be thrown away at any time (golden rule 3). That is
 //! also why a schema change needs no migration — we simply rebuild.
 //!
-//! Note what is deliberately *absent*: the body. Full text lives in the files;
-//! the index keeps only what views need (title, excerpt, fields, links). The
-//! FTS table comes with search (M5) and is populated from the files at index
-//! time, not from a duplicated body column.
+//! Note what is deliberately *absent* from `entries`: the body. Full text
+//! lives in the files; `entries` keeps only what views need (title, excerpt,
+//! fields, links). The one place the body *is* duplicated is `entries_fts`
+//! (search, M5) — an FTS5 index needs its own copy of the searchable text, but
+//! it is exactly as disposable as the rest: rebuilt from the files, never
+//! read back as a source of truth.
 
 use rusqlite::Connection;
 
 use crate::error::Result;
 
 /// Version of the index layout. Bumping it discards existing caches.
-pub const INDEX_SCHEMA_VERSION: i64 = 1;
+///
+/// Bumped to 2 for `entries_fts` (search, M5): an existing on-disk cache from
+/// before this change has no such table, and would otherwise be reused as-is
+/// (`ensure_schema` only rebuilds on a version mismatch).
+pub const INDEX_SCHEMA_VERSION: i64 = 2;
 
 const SCHEMA: &str = r#"
 CREATE TABLE meta (
@@ -98,6 +104,19 @@ CREATE INDEX links_target_slug ON links(target_slug) WHERE target_slug IS NOT NU
 CREATE INDEX links_target_key ON links(target_key);
 CREATE INDEX links_source ON links(source_path);
 CREATE INDEX links_status ON links(status);
+
+-- Full-text search (docs/api.md "Search"; ADR 0011 chose SQLite+FTS5).
+-- `remove_diacritics 2` makes search accent-insensitive, matching the rest of
+-- the app's tolerant text comparison (see `normalize`) — content is French
+-- (ADR 0010), where that matters a lot ("cite" should find "Cité").
+CREATE VIRTUAL TABLE entries_fts USING fts5(
+    path UNINDEXED,
+    title,
+    aliases,
+    tags,
+    body,
+    tokenize = 'unicode61 remove_diacritics 2'
+);
 "#;
 
 /// Applies pragmas, then creates the schema if the database is empty or stale.
@@ -142,10 +161,19 @@ fn schema_version(conn: &Connection) -> Result<Option<i64>> {
 }
 
 fn drop_everything(conn: &Connection) -> Result<()> {
+    // The FTS5 virtual table owns "shadow" tables (`entries_fts_data`,
+    // `entries_fts_idx`, …) that also show up in `sqlite_master` as plain
+    // tables. Dropping the virtual table first cascades to them correctly;
+    // dropping a shadow table directly does not, so it must go first and the
+    // generic loop below must not also touch them.
+    conn.execute_batch("DROP TABLE IF EXISTS entries_fts")?;
+
     let names: Vec<(String, String)> = {
         let mut statement = conn.prepare(
             "SELECT type, name FROM sqlite_master
-             WHERE type IN ('table', 'index', 'view') AND name NOT LIKE 'sqlite_%'",
+             WHERE type IN ('table', 'index', 'view')
+               AND name NOT LIKE 'sqlite_%'
+               AND name NOT LIKE 'entries_fts%'",
         )?;
         let rows = statement.query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?;
         rows.collect::<rusqlite::Result<_>>()?

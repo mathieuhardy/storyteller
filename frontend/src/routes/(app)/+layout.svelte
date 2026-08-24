@@ -30,6 +30,7 @@
 	const activeType = $derived(page.params.type ?? null);
 	const activeSlug = $derived(page.params.slug ?? null);
 	const activeWorkshop = $derived(page.url.pathname === '/stubs');
+	const activeSearch = $derived(page.url.pathname === '/search');
 
 	const breadcrumb = $derived.by(() => {
 		const crumbs: { label: string; href?: string }[] = [
@@ -43,6 +44,8 @@
 			crumbs.push({ label: typeLabel(activeType) });
 		} else if (activeWorkshop) {
 			crumbs.push({ label: t('nav.stubs') });
+		} else if (activeSearch) {
+			crumbs.push({ label: t('search.action') });
 		} else {
 			crumbs.push({ label: t('dashboard.title') });
 		}

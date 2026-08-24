@@ -49,6 +49,9 @@ pub struct ListQuery {
     pub tags: Vec<String>,
     /// Frontmatter `(key, value)` equality filters, ANDed together.
     pub fields: Vec<(String, String)>,
+    /// Full-text filter (`docs/api.md` §4): on `/entities` it restricts the
+    /// list; `/search` requires it and additionally ranks by relevance.
+    pub q: Option<String>,
     pub sort: Option<SortSpec>,
     /// 1-based page number.
     pub page: usize,
@@ -191,8 +194,23 @@ fn tags_of(conn: &Connection, path: &str) -> Result<Vec<String>> {
     Ok(rows.collect::<rusqlite::Result<_>>()?)
 }
 
+/// Turns free text into a safe, forgiving FTS5 `MATCH` expression: each
+/// whitespace-separated term becomes an individually-quoted prefix match
+/// (`"word"*`), ANDed together. Quoting every term is what makes this safe
+/// against FTS5 query-syntax injection (unbalanced quotes, `OR`/`NOT`,
+/// column filters via `:`) from arbitrary user input — a quoted string
+/// followed by `*` is FTS5's own syntax for "starts with", so prefix
+/// matching still works per term.
+pub(super) fn build_match_query(q: &str) -> Option<String> {
+    let terms: Vec<String> = q
+        .split_whitespace()
+        .map(|term| format!("\"{}\"*", term.replace('"', "\"\"")))
+        .collect();
+    (!terms.is_empty()).then(|| terms.join(" AND "))
+}
+
 /// Builds the `WHERE` clause and its parameters.
-fn build_filters(query: &ListQuery) -> (String, Vec<SqlValue>) {
+pub(super) fn build_filters(query: &ListQuery) -> (String, Vec<SqlValue>) {
     let mut conditions: Vec<String> = Vec::new();
     let mut params: Vec<SqlValue> = Vec::new();
 
@@ -221,6 +239,16 @@ fn build_filters(query: &ListQuery) -> (String, Vec<SqlValue>) {
         params.push(SqlValue::from(normalize(value)));
     }
 
+    if let Some(q) = query.q.as_deref() {
+        if let Some(match_query) = build_match_query(q) {
+            conditions.push(
+                "entries.path IN (SELECT path FROM entries_fts WHERE entries_fts MATCH ?)"
+                    .to_string(),
+            );
+            params.push(SqlValue::from(match_query));
+        }
+    }
+
     let clause = if conditions.is_empty() {
         String::new()
     } else {
@@ -233,7 +261,7 @@ fn build_filters(query: &ListQuery) -> (String, Vec<SqlValue>) {
 ///
 /// `path` is always the last tie-breaker: two entries with the same title must
 /// not swap places between two identical requests.
-fn build_order(query: &ListQuery, params: &mut Vec<SqlValue>) -> String {
+pub(super) fn build_order(query: &ListQuery, params: &mut Vec<SqlValue>) -> String {
     let Some(sort) = &query.sort else {
         return "ORDER BY title COLLATE NOCASE ASC, path ASC".to_string();
     };
