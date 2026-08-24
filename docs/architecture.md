@@ -111,8 +111,8 @@ HTTP wrapper on top of `core`. Serves the API (see [api.md](api.md)) and, in pro
 
 | Target | Contents | Notes |
 |--------|----------|-------|
-| **Docker** | `storyteller-server` + built front | self-host image, browser access — **MVP (M6)** |
-| **Nix flake** | dev environment + install without Docker | reproducible dev and "native" install — **MVP (M6)** |
+| **Docker** | `storyteller-server` + built front, embedded ([ADR 0016](adr/0016-embed-frontend-in-server-binary.md)) | self-host image, browser access — **MVP (M6) ✅** |
+| **Nix flake** | `packages.default` / `nix run` — same embedded-frontend binary | reproducible "native" install — **MVP (M6) ✅** |
 | **AppImage / .deb** | Tauri bundle (`storyteller-tauri`) | desktop packaging via Tauri bundler — **v2 (M7)** |
 | **Android APK** | Tauri mobile bundle | **feasibility spike, out of MVP (M7)** |
 

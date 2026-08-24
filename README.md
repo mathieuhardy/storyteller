@@ -10,11 +10,11 @@ A local tool for storing and organizing all the **context** of a novel — its "
 
 ## Status
 
-**Pre-MVP — backend in progress.** The specs (M0) are stable and the read-only backend (M1) is in place: `storyteller-core` parses a project and builds its index, `storyteller-server` serves the read API. Next up is **M2**: non-destructive writing and the file watcher. See the [roadmap](docs/roadmap.md) for the milestone table.
+**MVP complete (M0–M6).** `storyteller-core` parses a project non-destructively, resolves wikilinks, and builds a rebuildable SQLite+FTS5 index; `storyteller-server` exposes the full read/write/link/search API plus a file watcher; the SvelteKit frontend covers the dashboard, list/table views, entry detail, the editor, the links workshop, and search. The application is packaged for self-host (Docker) and installable via Nix. See the [roadmap](docs/roadmap.md) for the milestone table.
 
-There is **no interface yet** (M4) and nothing to install (M6).
+Next up: **M7** (v2+) — packaged desktop, link graph, media gallery, custom types.
 
-### Trying the backend
+### Running it
 
 ```sh
 cargo run -p storyteller-server -- --project tests/fixtures/sample-project
@@ -23,6 +23,8 @@ curl 'http://127.0.0.1:8787/api/v1/entities/aria-solane?include=backlinks'
 ```
 
 Point `--project` at any folder of markdown files — a `.storyteller/` folder is created for the index, and nothing else is written. Endpoints served today are listed in [api.md](docs/api.md#implementation-status).
+
+For the frontend during development, see [frontend/README.md](frontend/README.md) — a dev server proxying to the backend above. For a packaged, self-contained build (API + built frontend in one binary), see [Installation](#installation) below.
 
 ## Features
 
@@ -47,11 +49,17 @@ See [architecture](docs/architecture.md) for details.
 
 ## Installation
 
-> Coming soon — packaging is milestone [M6](docs/roadmap.md). Until then, build from source (see [Status](#status)).
+- **Docker** — self-host, one image bundling the API and the built frontend (`storyteller-server/src/frontend.rs`):
 
-- **Docker** — coming soon (see [architecture](docs/architecture.md)).
-- **Nix** — coming soon (see [architecture](docs/architecture.md)).
-- **AppImage / .deb** — coming soon (see [architecture](docs/architecture.md)).
+  ```sh
+  docker build -t storyteller .
+  docker run -p 8787:8787 -v /path/to/your/novel:/data storyteller
+  ```
+
+  or `PROJECT_DIR=/path/to/your/novel docker compose up --build`. Open `http://localhost:8787`.
+
+- **Nix** — `nix build` / `nix run` (flake, `x86_64-linux`); see [flake.nix](flake.nix). The frontend's `npmDepsHash` is a placeholder until someone runs it once against network access to fill in the real hash — standard for a first Nix packaging pass.
+- **AppImage / .deb** — v2, [M7](docs/roadmap.md).
 
 ## Documentation
 

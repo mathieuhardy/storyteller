@@ -732,7 +732,11 @@ async fn an_unknown_endpoint_returns_the_normalized_error_body() {
 #[tokio::test]
 async fn routes_are_versioned() {
     let server = TestServer::new();
-    let (status, _) = server.get("/entities").await;
+    // Unprefixed paths never hit the API — they fall through to the frontend
+    // fallback (M6), which 404s here since test builds embed no frontend
+    // (`frontend/build/` is gitignored and untracked). `get_raw`, not `get`:
+    // that fallback answers plain text, not the API's JSON error shape.
+    let (status, _, _) = server.get_raw("/entities").await;
     assert_eq!(status, StatusCode::NOT_FOUND, "routes live under /api/v1");
 }
 

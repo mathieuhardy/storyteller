@@ -1,0 +1,17 @@
+# Rust build artifacts — rebuilt inside the image; copying the host's would
+# both bloat the build context and risk stale/host-arch binaries.
+target
+
+# Frontend build artifacts and deps — rebuilt inside the image for the same
+# reason (docker/README parity with frontend/.gitignore).
+frontend/node_modules
+frontend/build
+frontend/.svelte-kit
+
+# Never ship a project folder's disposable index into an image layer.
+**/.storyteller/cache.sqlite
+**/.storyteller/cache.sqlite-shm
+**/.storyteller/cache.sqlite-wal
+**/.storyteller/.gitignore
+
+.git

@@ -27,6 +27,7 @@
 
 pub mod error;
 pub mod events;
+mod frontend;
 pub mod params;
 pub mod registry;
 pub mod routes;

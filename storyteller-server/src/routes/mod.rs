@@ -17,6 +17,7 @@ use axum::routing::{get, post};
 use axum::Router;
 
 use crate::error::ApiError;
+use crate::frontend;
 use crate::state::SharedState;
 
 /// Version prefix of every route (`docs/api.md` §6).
@@ -46,11 +47,17 @@ pub fn router(state: SharedState) -> Router {
         .route("/projects", get(projects::list))
         .route("/projects/open", post(projects::open))
         .route("/events", get(events::stream))
+        // Its own fallback: an unmatched path *under* `/api/v1` is a JSON
+        // 404, never the frontend shell below it.
+        .fallback(not_found)
         .with_state(state);
 
     Router::new()
         .nest(API_PREFIX, api)
-        .fallback(not_found)
+        // Anything not under `/api/v1` is the built SvelteKit SPA (M6,
+        // self-host/Docker/Nix) — a no-op (clean 404s) when nothing is
+        // embedded, e.g. in `cargo test`/local Rust-only dev.
+        .fallback(frontend::serve)
         .method_not_allowed_fallback(method_not_allowed)
 }
 

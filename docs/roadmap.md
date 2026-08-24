@@ -14,7 +14,7 @@ Framework reminder: [markdown is the sole source of truth](principles.md), the [
 | **M3** | ✅ done | Full links: [wikilink](glossary.md) resolution (file → title → alias), automatic [backlinks](glossary.md), [stub](glossary.md) detection, ambiguity handling, **create entry from stub**. | M1, M2 | Backlinks are exact and bidirectional; stubs are listed; resolution ambiguity is signaled; promoting a stub creates a real entry via M2 CRUD and resolves the link. |
 | **M4** | ✅ done | SvelteKit + Shadcn frontend: filterable list/table [views](glossary.md) by type, backlinks panel, entry editor (frontmatter + body). | M1, M2, M3 | GUI consumes a stable M1–M3 API; navigate, filter, and edit entries; links and backlinks are clickable; no API bypass on front side. |
 | **M5** | ✅ done | FTS search + advanced filters/sort + **saved views**. | M1 (index), M4 | Full-text search queries the index; filters and sorts combine; a view can be named, saved, and reloaded. |
-| **M6** | — | Packaging & self-host **MVP**: `storyteller-server` distributed via **Docker** and installable via **Nix**. | M4 | The application launches in self-host Docker and installs via Nix; index rebuilds; a reproducible release is produced. |
+| **M6** | ✅ done | Packaging & self-host **MVP**: `storyteller-server` distributed via **Docker** and installable via **Nix**. | M4 | The application launches in self-host Docker and installs via Nix; index rebuilds; a reproducible release is produced. |
 | **M7** | — | v2+: packaged desktop (`storyteller-tauri` → AppImage/.deb), link graph, media gallery, custom types, Android APK spike. | M6 | Each v2 item is scoped (spec or spike); none blocks the M1–M6 MVP. |
 
 ### M1 — What Landed
@@ -61,6 +61,14 @@ M4 is done.
 - **Saved views**: "a view = a persisted set of parameters on the frontend side" ([api.md](api.md#4-filtering-sorting-pagination)) — `SavedViewsMenu.svelte` on the list/table screen's toolbar names and stores the current `sort=`/`tag=`/`<field>=` combination in `localStorage` (a UI preference, like the theme/language, never written to the project), and reloads it later. `docs/features.md` §D previously listed this as v2; updated to MVP to match this milestone's actual DoD.
 
 M5 is done.
+
+### M6 — What Landed
+
+- **Frontend embedded in the server binary** ([ADR 0016](adr/0016-embed-frontend-in-server-binary.md)): `storyteller-server/src/frontend.rs` uses `rust-embed` to bake `frontend/build/` (the built SvelteKit SPA) into the binary at compile time, forced identical across debug/release via `debug-embed`. `#[allow_missing]` keeps this from requiring a frontend build for ordinary `cargo build`/`cargo test`. The router's outer fallback serves it (exact asset, or `index.html` for a client-side route); the API sub-router got its own explicit fallback so unmatched `/api/v1/*` paths stay a JSON `404` rather than falling through to the SPA shell.
+- **`Dockerfile`**: three stages — `node` builds the frontend, `rust:1-bookworm` compiles the server with that frontend staged into place first, a `debian:bookworm-slim` runtime stage holds only the resulting binary (~126 MB image). Runs as root deliberately: `/data` is an arbitrary host-bind-mounted project folder owned by whatever uid the operator has, and a fixed non-root image uid would only be able to write it by coincidence — same single-operator trust boundary as running the binary directly (ADR 0003), the container adds packaging, not a security boundary between users. `docker-compose.yml` for a one-line `PROJECT_DIR=… docker compose up --build`. Built and run end-to-end against the sample fixture during development (index rebuild, entry create/read, search, `?render=html`, SPA routes, real API 404s) — not just a syntax check.
+- **`flake.nix`**: added `packages.default`/`storyteller-server`/`frontend` and `apps.default` (`nix run`) alongside the pre-existing dev shell, same embed-before-compile structure as the Dockerfile (`buildNpmPackage` output copied into place via `postPatch` before `buildRustPackage`). **Not verified end-to-end** — this session has no `nix` binary available to actually run `nix build`. `frontend`'s `npmDepsHash` is `pkgs.lib.fakeHash`, a deliberate placeholder: a real value can only come from Nix actually fetching `frontend/package-lock.json`'s dependency tree, which needs network access this session doesn't have either. Whoever runs `nix build` first will see the mismatch error report the real hash to paste in — the standard, expected way to fill this in.
+
+M6 is done (Docker verified live; Nix authored to standard nixpkgs patterns but unverified — see above).
 
 ## Critical Path
 

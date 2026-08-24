@@ -45,3 +45,4 @@ For overall product context, see [vision](../vision.md) and [principles](../prin
 | [0013](0013-tailwind-with-component-classes.md) | Tailwind, contained by component classes | Accepted |
 | [0014](0014-ui-i18n-front-catalog.md) | UI language via a front-side i18n catalog | Accepted |
 | [0015](0015-markdown-rendering-in-core.md) | Markdown rendering happens in `core` | Accepted |
+| [0016](0016-embed-frontend-in-server-binary.md) | The built frontend is embedded into `storyteller-server` at compile time | Accepted |

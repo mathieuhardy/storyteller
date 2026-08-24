@@ -1,0 +1,14 @@
+# Self-host (docs/architecture.md §5, M6). Point PROJECT_DIR at your novel's
+# folder (ADR 0004: one self-contained folder per project), then:
+#
+#   PROJECT_DIR=/path/to/your/novel docker compose up --build
+#
+# and open http://localhost:8787.
+services:
+  storyteller:
+    build: .
+    ports:
+      - "8787:8787"
+    volumes:
+      - ${PROJECT_DIR:?set PROJECT_DIR to your project folder}:/data
+    restart: unless-stopped
