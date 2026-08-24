@@ -80,3 +80,23 @@ pub async fn get(
         .unwrap_or(false);
     Ok(Json(TypeResponse::build(schema, enabled)))
 }
+
+#[derive(serde::Deserialize)]
+pub struct SetEnabledBody {
+    enabled: bool,
+}
+
+/// `PATCH /api/v1/types/{type}` — enable/disable a type for creation
+/// (`docs/api.md` §3). Persisted to `.storyteller/config.yaml`; existing entries
+/// of that type stay untouched and indexed either way (`docs/data-model.md` §7).
+pub async fn set_enabled(
+    State(state): State<SharedState>,
+    Path(type_name): Path<String>,
+    Json(body): Json<SetEnabledBody>,
+) -> ApiResult<Json<TypeResponse>> {
+    let schema = types::type_schema(&type_name)
+        .ok_or_else(|| ApiError::not_found(format!("unknown type: {type_name}")))?;
+    let active = state.require_project()?;
+    active.set_type_enabled(&type_name, body.enabled)?;
+    Ok(Json(TypeResponse::build(schema, body.enabled)))
+}

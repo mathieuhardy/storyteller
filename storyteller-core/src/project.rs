@@ -61,6 +61,25 @@ impl Project {
         self.config = ProjectConfig::load(&self.root);
     }
 
+    /// Enables or disables a type for **creation** (`PATCH /types/{type}`,
+    /// `docs/api.md` §3). Disabling never hides or deletes existing entries of
+    /// that type (`docs/data-model.md` §7) — it only changes what
+    /// `POST /entities` and the type picker offer going forward.
+    pub fn set_type_enabled(&mut self, type_name: &str, enabled: bool) -> Result<()> {
+        if types::type_schema(type_name).is_none() {
+            return Err(Error::UnknownType(type_name.to_string()));
+        }
+        let already = self.config.is_enabled(type_name);
+        if enabled && !already {
+            self.config.enabled_types.push(type_name.to_string());
+        } else if !enabled && already {
+            self.config.enabled_types.retain(|t| t != type_name);
+        }
+        self.config
+            .save(&self.root)
+            .map_err(|e| Error::io(ProjectConfig::path_in(&self.root), e))
+    }
+
     /// Absolute path of an entry, checked to stay inside the project.
     pub fn absolute_path(&self, relative: &str) -> Result<PathBuf> {
         let relative = Path::new(relative);
@@ -777,6 +796,37 @@ mod tests {
             on_disk.ends_with("---\nCorps intact avec [[Cité de Verre]].\n"),
             "body untouched: {on_disk}"
         );
+    }
+
+    #[test]
+    fn set_type_enabled_persists_and_leaves_existing_entries_alone() {
+        let dir = sample_project();
+        let root = dir.path().to_path_buf();
+        let mut project = Project::open(&root).unwrap();
+        assert!(project.config().is_enabled("character"));
+
+        project.set_type_enabled("character", false).unwrap();
+        assert!(!project.config().is_enabled("character"));
+        // Existing entries of a disabled type are neither hidden nor deleted.
+        assert!(root.join("characters/aria.md").exists());
+        assert!(project.scan().iter().any(|e| e.type_name == "character"));
+
+        // Persisted: a fresh load sees the same state.
+        let reloaded = Project::open(&root).unwrap();
+        assert!(!reloaded.config().is_enabled("character"));
+
+        project.set_type_enabled("character", true).unwrap();
+        assert!(project.config().is_enabled("character"));
+    }
+
+    #[test]
+    fn set_type_enabled_rejects_an_unknown_type() {
+        let dir = sample_project();
+        let mut project = Project::open(dir.path()).unwrap();
+        assert!(matches!(
+            project.set_type_enabled("dragon", false),
+            Err(Error::UnknownType(_))
+        ));
     }
 
     #[test]

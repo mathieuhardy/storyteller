@@ -92,6 +92,17 @@ export const getTypes = (fetchImpl: Fetch = fetch): Promise<TypeResponse[]> =>
 export const getType = (type: string, fetchImpl: Fetch = fetch): Promise<TypeResponse> =>
 	request(`/types/${encodeURIComponent(type)}`, undefined, fetchImpl);
 
+export const setTypeEnabled = (
+	type: string,
+	enabled: boolean,
+	fetchImpl: Fetch = fetch
+): Promise<TypeResponse> =>
+	request(
+		`/types/${encodeURIComponent(type)}`,
+		{ ...json({ enabled }), method: 'PATCH' },
+		fetchImpl
+	);
+
 // --- Entities (wired as the screens land) ---------------------------------
 
 export const getEntities = (

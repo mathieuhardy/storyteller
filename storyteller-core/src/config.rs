@@ -54,6 +54,24 @@ impl ProjectConfig {
         project_root.join(STORYTELLER_DIR).join(CONFIG_FILE)
     }
 
+    /// Persists `schema_version`/`enabled_types` to `.storyteller/config.yaml`,
+    /// creating the folder on first write (a project may not have had one yet —
+    /// `default()` covers it until now). `errors` is diagnostic-only and never
+    /// written back.
+    pub fn save(&self, project_root: &Path) -> std::io::Result<()> {
+        let path = Self::path_in(project_root);
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        let saved = SavedConfig {
+            schema_version: self.schema_version,
+            enabled_types: &self.enabled_types,
+        };
+        let yaml = serde_norway::to_string(&saved)
+            .unwrap_or_else(|_| "schema_version: 1\nenabled_types: []\n".to_string());
+        std::fs::write(path, yaml)
+    }
+
     /// Loads the config, falling back to defaults for anything unreadable.
     ///
     /// A project without `.storyteller/config.yaml` is perfectly valid — a
@@ -114,6 +132,14 @@ struct RawConfig {
     enabled_types: Option<Vec<String>>,
 }
 
+/// Shape written to disk by [`ProjectConfig::save`] — deliberately narrower than
+/// [`ProjectConfig`] itself: `errors` is a read-side diagnostic, never persisted.
+#[derive(Serialize)]
+struct SavedConfig<'a> {
+    schema_version: u32,
+    enabled_types: &'a [String],
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -159,5 +185,27 @@ mod tests {
         let config = ProjectConfig::load(dir.path());
         assert_eq!(config.enabled_types.len(), types::catalog().len());
         assert_eq!(config.errors[0].code, codes::YAML_PARSE_ERROR);
+    }
+
+    #[test]
+    fn save_writes_a_file_that_load_reads_back() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut config = ProjectConfig::default();
+        config.enabled_types.retain(|t| t != "faction");
+
+        config.save(dir.path()).unwrap();
+        let reloaded = ProjectConfig::load(dir.path());
+        assert!(!reloaded.is_enabled("faction"));
+        assert!(reloaded.is_enabled("character"));
+        assert_eq!(reloaded.schema_version, CURRENT_SCHEMA_VERSION);
+        assert!(reloaded.errors.is_empty());
+    }
+
+    #[test]
+    fn save_creates_the_storyteller_folder_if_absent() {
+        let dir = tempfile::tempdir().unwrap();
+        assert!(!dir.path().join(STORYTELLER_DIR).exists());
+        ProjectConfig::default().save(dir.path()).unwrap();
+        assert!(ProjectConfig::path_in(dir.path()).exists());
     }
 }

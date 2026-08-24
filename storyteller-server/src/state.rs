@@ -26,10 +26,12 @@ const EVENT_CAPACITY: usize = 256;
 ///
 /// Storyteller is single-user and local ([ADR 0003](../../docs/adr/0003-single-user-local.md)),
 /// so a `Mutex` around each is the right amount of machinery: queries are
-/// sub-millisecond and there is no concurrent writer to arbitrate. When both are
-/// needed, `snapshot` is always locked before `index`.
+/// sub-millisecond and there is no concurrent writer to arbitrate. When more
+/// than one is needed, lock order is always `project`, then `snapshot`, then
+/// `index` — `project` is mutable only for `PATCH /types/{type}`
+/// (`Project::set_type_enabled`), so that lock is held very briefly.
 pub struct Active {
-    project: Project,
+    project: Mutex<Project>,
     snapshot: Mutex<Snapshot>,
     index: Mutex<Index>,
 }
@@ -50,14 +52,23 @@ impl Active {
             "project opened"
         );
         Ok(Self {
-            project,
+            project: Mutex::new(project),
             snapshot: Mutex::new(snapshot),
             index: Mutex::new(index),
         })
     }
 
-    pub fn project(&self) -> &Project {
-        &self.project
+    /// Locks the project. Poisoning is recovered from, matching [`index`](Self::index).
+    pub fn project(&self) -> MutexGuard<'_, Project> {
+        self.project
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+    }
+
+    /// Enables or disables a type for creation, persisting the change to
+    /// `.storyteller/config.yaml` (`PATCH /types/{type}`, `docs/api.md` §3).
+    pub fn set_type_enabled(&self, type_name: &str, enabled: bool) -> Result<()> {
+        self.project().set_type_enabled(type_name, enabled)
     }
 
     /// Locks the index.
@@ -82,7 +93,7 @@ impl Active {
     /// if something actually moved. The caller emits the precise `entity.*` event.
     pub fn reindex(&self, changed: &[String]) -> Result<()> {
         let mut snapshot = self.snapshot();
-        let changes = snapshot.refresh(&self.project, changed);
+        let changes = snapshot.refresh(&self.project(), changed);
         if !changes.is_empty() {
             self.index().rebuild_from_snapshot(&snapshot)?;
         }
@@ -96,7 +107,7 @@ impl Active {
         changed: &[String],
     ) -> Result<(Vec<Change>, Option<RebuildReport>)> {
         let mut snapshot = self.snapshot();
-        let changes = snapshot.refresh(&self.project, changed);
+        let changes = snapshot.refresh(&self.project(), changed);
         let report = if changes.is_empty() {
             None
         } else {
@@ -108,7 +119,7 @@ impl Active {
     /// Rebuilds everything from a fresh scan (cold path: forced refresh).
     pub fn rebuild(&self) -> Result<RebuildReport> {
         let mut snapshot = self.snapshot();
-        *snapshot = Snapshot::scan(&self.project);
+        *snapshot = Snapshot::scan(&self.project());
         self.index().rebuild_from_snapshot(&snapshot)
     }
 
@@ -277,7 +288,8 @@ impl AppState {
 
 /// Records `active` as just-opened in `registry` and persists it (best-effort).
 fn record_open(registry: &mut Registry, active: &Active) {
-    let root = active.project().root();
+    let project = active.project();
+    let root = project.root();
     registry.touch(
         &root.display().to_string(),
         &project_name(root),

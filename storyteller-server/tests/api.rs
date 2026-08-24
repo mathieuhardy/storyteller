@@ -94,6 +94,70 @@ async fn a_field_can_accept_a_number_or_a_text() {
 }
 
 #[tokio::test]
+async fn patch_type_disables_it_without_touching_existing_entries() {
+    let server = TestServer::new();
+
+    let (status, body) = server
+        .send("PATCH", "/api/v1/types/faction", &json!({"enabled": false}))
+        .await;
+    assert_eq!(status, StatusCode::OK, "{body}");
+    assert_eq!(body["enabled"], false);
+
+    // Reflected immediately in the type list and the project's enabled_types.
+    let types = server.get_ok("/api/v1/types?all=true").await;
+    let faction = types
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|t| t["name"] == "faction")
+        .unwrap();
+    assert_eq!(faction["enabled"], false);
+    let project = server.get_ok("/api/v1/project").await;
+    assert!(!project["enabled_types"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|t| t == "faction"));
+
+    // Existing entries of the now-disabled type are still listed and readable.
+    let entities = server.get_ok("/api/v1/entities?type=faction").await;
+    assert!(!entities["items"].as_array().unwrap().is_empty());
+
+    // Creating a new one is refused while it stays disabled.
+    let (status, body) = server
+        .send(
+            "POST",
+            "/api/v1/entities",
+            &json!({"type": "faction", "title": "Nouvelle Faction"}),
+        )
+        .await;
+    assert_eq!(status, StatusCode::BAD_REQUEST, "{body}");
+
+    // Re-enabling restores creation.
+    server
+        .send("PATCH", "/api/v1/types/faction", &json!({"enabled": true}))
+        .await;
+    let (status, _) = server
+        .send(
+            "POST",
+            "/api/v1/entities",
+            &json!({"type": "faction", "title": "Nouvelle Faction"}),
+        )
+        .await;
+    assert_eq!(status, StatusCode::CREATED);
+}
+
+#[tokio::test]
+async fn patch_an_unknown_type_is_a_normalized_404() {
+    let server = TestServer::new();
+    let (status, body) = server
+        .send("PATCH", "/api/v1/types/dragon", &json!({"enabled": false}))
+        .await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+    assert_eq!(error_code(&body), "not_found");
+}
+
+#[tokio::test]
 async fn an_unknown_type_is_a_normalized_404() {
     let server = TestServer::new();
     let (status, body) = server.get("/api/v1/types/dragon").await;

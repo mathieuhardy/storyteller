@@ -26,7 +26,7 @@ pub fn router(state: SharedState) -> Router {
         .route("/version", get(meta::version))
         .route("/project", get(meta::project))
         .route("/types", get(types::list))
-        .route("/types/{type_name}", get(types::get))
+        .route("/types/{type_name}", get(types::get).patch(types::set_enabled))
         .route("/entities", get(entities::list).post(entities::create))
         .route(
             "/entities/{slug}",
