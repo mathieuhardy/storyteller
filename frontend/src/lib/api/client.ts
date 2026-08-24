@@ -7,6 +7,7 @@
 import type {
 	Entry,
 	EntrySummary,
+	Frontmatter,
 	OutgoingLink,
 	Backlink,
 	Page,
@@ -115,3 +116,15 @@ export const getBacklinks = (slug: string, fetchImpl: Fetch = fetch): Promise<Ba
 
 export const getStubs = (fetchImpl: Fetch = fetch): Promise<Stub[]> =>
 	request('/stubs', undefined, fetchImpl);
+
+export const createEntity = (
+	body: { type: string; title: string; frontmatter?: Frontmatter; body?: string },
+	fetchImpl: Fetch = fetch
+): Promise<Entry> => request('/entities', json(body), fetchImpl);
+
+export const updateEntity = (
+	slug: string,
+	body: { frontmatter?: Frontmatter; body?: string },
+	fetchImpl: Fetch = fetch
+): Promise<Entry> =>
+	request(`/entities/${encodeURIComponent(slug)}`, { ...json(body), method: 'PATCH' }, fetchImpl);

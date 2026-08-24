@@ -51,7 +51,12 @@
 </script>
 
 <div class="shell">
-	<Topbar {breadcrumb} linksOpen={railOpen} onToggleLinks={() => (railOpen = !railOpen)} />
+	<Topbar
+		{breadcrumb}
+		linksOpen={railOpen}
+		newEntryTypes={data.project.enabled_types}
+		onToggleLinks={() => (railOpen = !railOpen)}
+	/>
 	<div class="cols" class:rail-open={railOpen}>
 		<Nav
 			{projectName}

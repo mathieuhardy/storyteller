@@ -2,22 +2,33 @@
 	// Top bar (docs/ui/layout.md §2.1): brand · breadcrumb · flexible space ·
 	// search (reserved for M5) · links-panel toggle · language · theme · primary
 	// action. The search field is present but disabled until FTS lands (M5).
+	import { goto } from '$app/navigation';
 	import Icon from './Icon.svelte';
 	import IconButton from './IconButton.svelte';
 	import Button from './Button.svelte';
+	import Popover from './Popover.svelte';
 	import ThemeToggle from './ThemeToggle.svelte';
 	import LanguageSelect from './LanguageSelect.svelte';
-	import { t } from '$i18n/index.svelte';
+	import { t, typeLabel } from '$i18n/index.svelte';
 
 	let {
 		breadcrumb = [],
 		linksOpen = false,
+		newEntryTypes = [],
 		onToggleLinks
 	}: {
 		breadcrumb?: { label: string; href?: string }[];
 		linksOpen?: boolean;
+		newEntryTypes?: string[];
 		onToggleLinks?: () => void;
 	} = $props();
+
+	let newEntryOpen = $state(false);
+
+	function pickType(type: string) {
+		newEntryOpen = false;
+		goto(`/type/${type}/new`);
+	}
 </script>
 
 <header class="topbar">
@@ -53,10 +64,18 @@
 	<LanguageSelect />
 	<ThemeToggle />
 
-	<Button variant="primary" size="sm" disabled title={t('search.comingSoon')}>
-		<Icon name="plus" size={15} />
-		{t('action.newEntry')}
-	</Button>
+	<Popover align="right" bind:open={newEntryOpen}>
+		{#snippet trigger({ toggle })}
+			<Button variant="primary" size="sm" onclick={toggle} disabled={newEntryTypes.length === 0}>
+				<Icon name="plus" size={15} />
+				{t('action.newEntry')}
+			</Button>
+		{/snippet}
+		<p class="mlabel">{t('editor.pickType')}</p>
+		{#each newEntryTypes as typeName (typeName)}
+			<button class="mi" onclick={() => pickType(typeName)}>{typeLabel(typeName)}</button>
+		{/each}
+	</Popover>
 </header>
 
 <style>
@@ -149,5 +168,30 @@
 		.crumbs {
 			display: none;
 		}
+	}
+	.mlabel {
+		margin: 0;
+		padding: 7px 9px 4px;
+		font-size: 10.5px;
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+		color: var(--faint);
+	}
+	.mi {
+		width: 100%;
+		display: block;
+		padding: 7px 9px;
+		border: 0;
+		background: transparent;
+		border-radius: 5px;
+		font-size: 13px;
+		font: inherit;
+		color: var(--text);
+		text-align: left;
+		cursor: pointer;
+		white-space: nowrap;
+	}
+	.mi:hover {
+		background: var(--surface-2);
 	}
 </style>
