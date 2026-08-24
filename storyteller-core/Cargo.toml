@@ -12,6 +12,7 @@ serde_json = { workspace = true }
 serde_norway = { workspace = true }
 thiserror = { workspace = true }
 rusqlite = { workspace = true }
+pulldown-cmark = { workspace = true }
 unicode-normalization = { workspace = true }
 walkdir = { workspace = true }
 sha2 = { workspace = true }

@@ -43,6 +43,11 @@ pub struct Entry {
     /// Incoming links, only when explicitly requested (`?include=backlinks`).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub backlinks: Option<Vec<Backlink>>,
+    /// HTML render of `body`, only when explicitly requested (`?render=html`,
+    /// `docs/api.md` §2, [ADR 0015](../../docs/adr/0015-markdown-rendering-in-core.md)).
+    /// Display-only: never written back to the file.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub html: Option<String>,
     /// Per-entry diagnostics; empty when all is well. Never empty *and* fatal.
     pub errors: Vec<Diagnostic>,
 }
@@ -144,6 +149,7 @@ mod tests {
             frontmatter,
             body: body.into(),
             backlinks: None,
+            html: None,
             errors: Vec::new(),
         }
     }

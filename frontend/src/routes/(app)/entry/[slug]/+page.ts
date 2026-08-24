@@ -6,7 +6,7 @@ import { getEntity, getLinks, getType } from '$api/client';
 export const load: PageLoad = async ({ params, fetch }) => {
 	const slug = params.slug;
 
-	const entry = await getEntity(slug, { backlinks: true }, fetch);
+	const entry = await getEntity(slug, { backlinks: true, html: true }, fetch);
 
 	const [links, schema] = await Promise.all([
 		getLinks(slug, fetch),

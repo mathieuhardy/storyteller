@@ -467,6 +467,7 @@ pub fn entry_from_bytes(relative_path: &str, bytes: &[u8]) -> Entry {
             frontmatter: Frontmatter::new(),
             body: String::new(),
             backlinks: None,
+            html: None,
             errors: vec![Diagnostic::error(
                 codes::ENCODING_ERROR,
                 "file is not valid UTF-8; fix its encoding to make it readable",
@@ -486,6 +487,7 @@ pub fn entry_from_bytes(relative_path: &str, bytes: &[u8]) -> Entry {
         frontmatter: document.frontmatter,
         body: document.body,
         backlinks: None,
+        html: None,
         errors,
     }
 }

@@ -28,10 +28,8 @@ This document is the **target contract**; it is delivered milestone by milestone
 | **M4** (registry) ✅ | `GET /projects`, `POST /projects/open` — the recent-projects registry (a machine preference, stored outside any project folder) and **runtime switching** of the active project (rescan + index rebuild + rewatch). |
 | **M4** (types) ✅ | `PATCH /types/{type}` — enable/disable a type for creation, persisted to `.storyteller/config.yaml`; existing entries of that type stay untouched and indexed either way. |
 | **M4** (assets) ✅ | `GET /assets`, `GET /assets/{path}`, `POST /assets` (`multipart/form-data`) — list, serve, and upload files under `assets/`; broadcasts `assets.changed`. Width/height are never populated (no image-decoding dependency added for it); an upload keeps only the bare filename (flattened, no subfolders) and refuses to overwrite an existing one. |
-| **M4** (remaining) | `?render=html`. |
+| **M4** (render) ✅ | `?render=html` on `GET /entities/{slug}` — [ADR 0015](adr/0015-markdown-rendering-in-core.md) settled rendering in `core`. Wikilinks become `<a class="wikilink resolved">`/`<span class="wikilink stub\|ambiguous">`; `![[file]]` embeds resolve against `assets/` by filename (an `<img>`, or a visible "not found" block); the plain `![](assets/...)` form is left as `pulldown-cmark` renders it. Any `render` value other than `html` is a `400`. |
 | **M5** | `GET /search`, and `q` on `/entities`. |
-
-`?render=html` stays unimplemented until markdown rendering is settled ([architecture](architecture.md) §6).
 
 ---
 

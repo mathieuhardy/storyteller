@@ -36,7 +36,7 @@
 
 	<AttributesSection frontmatter={entry.frontmatter} fields={schema.fields} {links} />
 
-	<BodySection body={entry.body} {links} />
+	<BodySection body={entry.body} html={entry.html} />
 </div>
 
 <style>

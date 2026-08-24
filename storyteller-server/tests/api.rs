@@ -269,6 +269,64 @@ async fn frontmatter_keeps_its_key_order_and_unknown_keys() {
 }
 
 #[tokio::test]
+async fn html_is_absent_unless_render_html_is_requested() {
+    let server = TestServer::new();
+    let body = server.get_ok("/api/v1/entities/aria-solane").await;
+    assert!(body.get("html").is_none());
+}
+
+#[tokio::test]
+async fn render_html_resolves_links_stubs_and_a_missing_embed() {
+    let server = TestServer::new();
+    let body = server
+        .get_ok("/api/v1/entities/aria-solane?render=html")
+        .await;
+    let html = body["html"].as_str().unwrap();
+
+    // Resolved wikilink → a real link to the entry's slug.
+    assert!(
+        html.contains(r#"<a class="wikilink resolved" href="/entry/cite-de-verre">Cité de Verre</a>"#),
+        "{html}"
+    );
+    // Unresolved wikilink → a stub span, not a broken link.
+    assert!(
+        html.contains(r#"<span class="wikilink stub" data-target="Maître Orlan">Maître Orlan</span>"#),
+        "{html}"
+    );
+    // `![[aria-solane.jpg]]` has no matching file under `assets/` in the
+    // fixture → a visible "not found" block, not a broken `<img>`.
+    assert!(html.contains("asset-embed missing"), "{html}");
+    assert!(!html.contains("<img"), "{html}");
+    // Plain markdown still renders normally around the spliced fragments.
+    assert!(html.contains("<h2>Voix</h2>"), "{html}");
+}
+
+#[tokio::test]
+async fn render_html_resolves_an_uploaded_embed() {
+    let server = TestServer::new();
+    server
+        .post_multipart("/api/v1/assets", "aria-solane.jpg", b"fake-jpeg")
+        .await;
+
+    let body = server
+        .get_ok("/api/v1/entities/aria-solane?render=html")
+        .await;
+    let html = body["html"].as_str().unwrap();
+    assert!(
+        html.contains(r#"<img class="asset-embed" src="/api/v1/assets/assets/aria-solane.jpg""#),
+        "{html}"
+    );
+}
+
+#[tokio::test]
+async fn an_unsupported_render_value_is_a_400() {
+    let server = TestServer::new();
+    let (status, body) = server.get("/api/v1/entities/aria-solane?render=pdf").await;
+    assert_eq!(status, StatusCode::BAD_REQUEST, "{body}");
+    assert_eq!(error_code(&body), "bad_request");
+}
+
+#[tokio::test]
 async fn include_backlinks_attaches_them_to_the_entry() {
     let server = TestServer::new();
     let body = server
@@ -507,14 +565,9 @@ async fn the_file_is_read_at_request_time() {
 #[tokio::test]
 async fn unbuilt_features_say_so_instead_of_lying() {
     let server = TestServer::new();
-    for uri in [
-        "/api/v1/entities?q=verre",
-        "/api/v1/entities/aria-solane?render=html",
-    ] {
-        let (status, body) = server.get(uri).await;
-        assert_eq!(status, StatusCode::NOT_IMPLEMENTED, "{uri}");
-        assert_eq!(error_code(&body), "not_implemented");
-    }
+    let (status, body) = server.get("/api/v1/entities?q=verre").await;
+    assert_eq!(status, StatusCode::NOT_IMPLEMENTED);
+    assert_eq!(error_code(&body), "not_implemented");
 }
 
 #[tokio::test]

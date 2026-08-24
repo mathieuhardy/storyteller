@@ -113,11 +113,14 @@ export const getEntities = (
 
 export const getEntity = (
 	slug: string,
-	opts: { backlinks?: boolean } = {},
+	opts: { backlinks?: boolean; html?: boolean } = {},
 	fetchImpl: Fetch = fetch
 ): Promise<Entry> => {
-	const query = opts.backlinks ? '?include=backlinks' : '';
-	return request(`/entities/${encodeURIComponent(slug)}${query}`, undefined, fetchImpl);
+	const params = new URLSearchParams();
+	if (opts.backlinks) params.set('include', 'backlinks');
+	if (opts.html) params.set('render', 'html');
+	const query = params.toString();
+	return request(`/entities/${encodeURIComponent(slug)}${query ? `?${query}` : ''}`, undefined, fetchImpl);
 };
 
 export const getLinks = (slug: string, fetchImpl: Fetch = fetch): Promise<OutgoingLink[]> =>

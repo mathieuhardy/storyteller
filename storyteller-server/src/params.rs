@@ -21,11 +21,18 @@ pub struct ListParams {
     pub list: ListQuery,
     /// Extra sections the client asked to be included in the response.
     pub include: BTreeSet<String>,
+    /// `?render=` value, when present — only `html` is accepted.
+    render: Option<String>,
 }
 
 impl ListParams {
     pub fn wants_backlinks(&self) -> bool {
         self.include.contains("backlinks")
+    }
+
+    /// `?render=html` (`docs/api.md` §2, ADR 0015): render `body` to HTML.
+    pub fn wants_html(&self) -> bool {
+        self.render.as_deref() == Some("html")
     }
 }
 
@@ -60,12 +67,15 @@ pub fn parse(raw: Option<&str>) -> ApiResult<ListParams> {
                     "full-text search (`q`) arrives with the search milestone (M5)",
                 ))
             }
-            // Rendering side (core vs frontend) is still an open architecture
-            // question; nothing is served until it is decided.
+            // Rendering side was an open architecture question; resolved by
+            // ADR 0015 (in `core`). Only `html` is a served value.
             "render" => {
-                return Err(ApiError::not_implemented(format!(
-                    "`render={value}` is not available yet: markdown rendering is an open decision (see docs/architecture.md §6)"
-                )))
+                if value != "html" {
+                    return Err(ApiError::bad_request(format!(
+                        "unknown `render` value `{value}`; supported: html"
+                    )));
+                }
+                params.render = Some(value);
             }
             _ => params.list.fields.push((key, value)),
         }
@@ -163,14 +173,21 @@ mod tests {
 
     #[test]
     fn reports_unbuilt_features_instead_of_ignoring_them() {
-        for query in ["q=verre", "render=html"] {
-            let error = parse(Some(query)).unwrap_err();
-            assert_eq!(
-                error.status,
-                axum::http::StatusCode::NOT_IMPLEMENTED,
-                "{query}"
-            );
-        }
+        let error = parse(Some("q=verre")).unwrap_err();
+        assert_eq!(error.status, axum::http::StatusCode::NOT_IMPLEMENTED);
+    }
+
+    #[test]
+    fn parses_render_html() {
+        let params = parse(Some("render=html")).unwrap();
+        assert!(params.wants_html());
+        assert!(!parse(None).unwrap().wants_html());
+    }
+
+    #[test]
+    fn rejects_an_unknown_render_value() {
+        let error = parse(Some("render=pdf")).unwrap_err();
+        assert_eq!(error.status, axum::http::StatusCode::BAD_REQUEST);
     }
 
     #[test]

@@ -43,6 +43,7 @@ pub mod model;
 pub mod normalize;
 pub mod parse;
 pub mod project;
+pub mod render;
 pub mod snapshot;
 pub mod types;
 pub mod write;

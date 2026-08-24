@@ -19,6 +19,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }
 serde_norway = "0.9"
 rusqlite = { version = "0.40", features = ["bundled"] }
+pulldown-cmark = "0.13"
 unicode-normalization = "0.1"
 walkdir = "2"
 sha2 = "0.10"

@@ -44,3 +44,4 @@ For overall product context, see [vision](../vision.md) and [principles](../prin
 | [0012](0012-rename-link-rewriting.md) | Renaming rewrites breaking links, without keeping an alias | Accepted |
 | [0013](0013-tailwind-with-component-classes.md) | Tailwind, contained by component classes | Accepted |
 | [0014](0014-ui-i18n-front-catalog.md) | UI language via a front-side i18n catalog | Accepted |
+| [0015](0015-markdown-rendering-in-core.md) | Markdown rendering happens in `core` | Accepted |

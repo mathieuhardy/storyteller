@@ -1,5 +1,7 @@
 //! Entry endpoints (`docs/api.md` §3, "Entities").
 
+use std::collections::HashMap;
+
 use axum::extract::{Path, RawQuery, State};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
@@ -8,6 +10,7 @@ use serde::Deserialize;
 use storyteller_core::index::Page;
 use storyteller_core::links::{Backlink, OutgoingLink, Stub};
 use storyteller_core::model::Frontmatter;
+use storyteller_core::render::{self, LinkTarget};
 use storyteller_core::write::{now_rfc3339, slugify};
 use storyteller_core::{types, Entry, EntrySummary};
 
@@ -45,7 +48,46 @@ pub async fn get(
     if params.wants_backlinks() {
         entry.backlinks = Some(active.index().backlinks(&slug)?);
     }
+    if params.wants_html() {
+        entry.html = Some(render_entry_body(&active, &slug, &entry.body)?);
+    }
     Ok(Json(entry))
+}
+
+/// Renders `body` to HTML (`?render=html`, [ADR 0015](../../../docs/adr/0015-markdown-rendering-in-core.md)):
+/// wikilink resolution is looked up from the already-indexed outgoing links
+/// (cheap) rather than rebuilding a `Resolver` from a full project scan.
+fn render_entry_body(active: &Active, slug: &str, body: &str) -> ApiResult<String> {
+    let outgoing = active.index().outgoing_links(slug)?;
+    let by_target: HashMap<&str, &OutgoingLink> = outgoing
+        .iter()
+        .filter(|link| link.field.is_none())
+        .map(|link| (link.target_raw.as_str(), link))
+        .collect();
+    let resolve = |target_raw: &str| match by_target.get(target_raw) {
+        Some(link) => LinkTarget {
+            resolution: link.resolution,
+            slug: link.target_slug.clone(),
+        },
+        // Not in the index yet (e.g. a body edit not reindexed this instant):
+        // conservatively unresolved rather than wrongly claiming "resolved".
+        None => LinkTarget {
+            resolution: storyteller_core::links::Resolution::Stub,
+            slug: None,
+        },
+    };
+
+    let assets = active.project().list_assets();
+    let asset_path = |target: &str| {
+        assets
+            .iter()
+            .find(|asset| {
+                std::path::Path::new(&asset.path).file_name().and_then(|f| f.to_str()) == Some(target)
+            })
+            .map(|asset| asset.path.clone())
+    };
+
+    Ok(render::render_body(body, &resolve, &asset_path))
 }
 
 /// `GET /api/v1/entities/{slug}/backlinks` — incoming links.
