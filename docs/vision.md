@@ -44,7 +44,7 @@ Storyteller remains deliberately focused. It does **not** aim to:
 - enable **real-time collaboration**, multi-user, authentication, or permission management;
 - do **AI generation**, **cloud sync** as SaaS, or impose **guided questionnaires / prose templates**.
 
-Versioning is left to **Git**. The visual link graph is deferred to a later version (see [roadmap](roadmap.md)).
+Versioning is left to **Git**.
 
 ## MVP Success Criteria
 

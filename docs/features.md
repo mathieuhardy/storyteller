@@ -46,7 +46,7 @@ This document lists **Storyteller** features grouped by domain, with a priority 
 | Respect `enabled_types`: only show/offer active `type`s | MVP |
 | Free-form `tags` and multiple `aliases` per entry | MVP |
 | UI for enabling/disabling `type`s (modularity acknowledged) | v2 |
-| User-defined custom `type`s | later |
+| User-defined custom `type`s | v2 |
 | Custom fields added to a `type` | later |
 
 > Type modularity is a locked decision: `enabled_types` exists and is respected from MVP; only the **toggle UI** is deferred to v2.
@@ -65,8 +65,8 @@ This document lists **Storyteller** features grouped by domain, with a priority 
 | On rename: keep old `title` as `alias` (links continue to resolve) | MVP |
 | Embedded images: `![[file]]` and `![](assets/…)` | MVP |
 | Click-navigation on a `wikilink` (opens entry or `stub`) | MVP |
-| Automatic `wikilink` rewriting in all files on rename | v2 |
-| `wikilink` autocompletion in editor | v2 |
+| Automatic `wikilink` rewriting in all files on rename | MVP |
+| `wikilink` autocompletion in editor | MVP |
 | Link graph (visualized relationships) | v2 |
 
 ## D. Views & Search
@@ -132,7 +132,6 @@ The following items are **explicitly out of scope** for Storyteller (the tool st
 - Manuscript writing / prose editor.
 - Timeline / narrative chronology.
 - Interactive maps and clickable pins.
-- Link graph (deferred to **v2**, not in MVP).
 - Real-time collaboration, multi-user, authentication, permissions/secrets.
 - AI / content generation.
 - Cloud sync / SaaS.

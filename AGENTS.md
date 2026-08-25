@@ -86,6 +86,9 @@ Inside `storyteller-core/src/`: `parse` (frontmatter/body), `model` (entry shape
 
 ### Build & Test
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full build-from-source walkthrough (prerequisites,
+Docker, Nix, the desktop app's system dependencies). Quick reference:
+
 ```sh
 cargo test                      # whole workspace
 cargo clippy --all-targets      # must be warning-free
