@@ -79,7 +79,7 @@ HTTP wrapper on top of `core`. Serves the API (see [api.md](api.md)) and, in pro
 
 ### storyteller-tauri (webview binary)
 
-**Tauri v2** wrapper on top of the same `core`. Embeds the front in a webview and provides the native app experience (desktop, then Android path). Target for AppImage/.deb packages and the APK spike.
+**Tauri v2** shell around `storyteller-server`'s own router, run in-process on a loopback port ([ADR 0019](adr/0019-tauri-reuses-the-http-router.md)) — not a separate wrapper on `core` with its own IPC surface. The webview loads from that local server, which already embeds the built front ([ADR 0016](adr/0016-embed-frontend-in-server-binary.md)), so the desktop app is the exact same API + front as the self-host binary, just windowed instead of served over the network. M7: the desktop target (AppImage/.deb) is built and verified; the Android path is the still-open APK spike.
 
 > The transport mode between front and core in Tauri context (local HTTP vs. IPC commands) is undecided → see §6 and ADR.
 

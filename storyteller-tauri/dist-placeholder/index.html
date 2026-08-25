@@ -1,0 +1,10 @@
+<!doctype html>
+<!--
+  Never served. storyteller-tauri points its window at the in-process axum
+  server (WebviewUrl::External), which already embeds the real built frontend
+  (rust-embed, ADR 0016) — this file exists only so `frontendDist` in
+  tauri.conf.json resolves to a path that is always present in a checkout,
+  the same way storyteller-server's `#[allow_missing]` keeps `cargo build`
+  from requiring `npm run build` first. See ADR 0019.
+-->
+<title>unused</title>

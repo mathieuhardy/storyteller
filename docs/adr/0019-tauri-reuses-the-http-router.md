@@ -1,0 +1,34 @@
+# ADR 0019 — `storyteller-tauri` reuses the HTTP router in-process, no native IPC command surface
+
+- **Status**: Accepted
+- **Date**: 2026-08-25
+
+## Context
+
+`docs/api.md` §1 has flagged an open question since M0: "the same logical contract must work over HTTP (`storyteller-server` binary) or **Tauri IPC/commands** (`storyteller-tauri` webview)... decided in architecture.md / a dedicated ADR." `storyteller-server/src/lib.rs`'s own module doc already states the intended shape of the answer without formalizing it: the server "holds no business logic: it parses requests, calls the core, and serializes the result — that is what keeps the server and the Tauri webview behaving identically."
+
+M7 (`docs/roadmap.md`) now needs `storyteller-tauri` to exist as more than an aspiration: a packaged desktop app (AppImage/.deb via `cargo tauri build`). Two shapes were on the table for how its webview talks to `storyteller-core`:
+
+1. **Native Tauri commands**: a `#[tauri::command]` per operation, called from the frontend via `invoke()`, each one re-implementing (or thinly wrapping) what a `storyteller-server` route already does.
+2. **The same HTTP router, run in-process**: bind `storyteller-server`'s `axum::Router` to a loopback port inside the Tauri process, and point the webview's URL at it.
+
+## Decision
+
+**`storyteller-tauri` runs `storyteller-server`'s router in-process**, bound to an OS-assigned `127.0.0.1` port (`storyteller-tauri/src/main.rs`), and opens its window with `WebviewUrl::External(http://127.0.0.1:<port>/)` rather than Tauri's own asset-serving. No `#[tauri::command]` exists; the frontend's abstract API client (`docs/api.md` §1, "transport-agnostic") keeps talking plain HTTP, unaware it is running inside a desktop shell instead of a browser tab. Project bootstrap, the watcher, and the embedded SPA (`rust-embed`, [ADR 0016](0016-embed-frontend-in-server-binary.md)) are exactly what `storyteller-server`'s own `main.rs` does — `storyteller-tauri`'s `main.rs` is a thin variant of it (OS-assigned port instead of a fixed `--bind`, no CLI flag parsing, a native window instead of "print the URL and wait").
+
+`tauri.conf.json`'s `build.frontendDist` points at a tiny, always-present, git-tracked placeholder (`storyteller-tauri/dist-placeholder/index.html`) rather than `../frontend/build`. That directory is never actually served — the window loads from the in-process server, which embeds the *real* built frontend itself. `tauri::generate_context!()` validates `frontendDist` exists **at compile time**, with no equivalent of `rust-embed`'s `#[allow_missing]` escape hatch; pointing it at `frontend/build` (gitignored, produced only by `npm run build`) would mean `cargo build`/`cargo test` at the workspace root — documented in `AGENTS.md` as requiring no frontend build — breaks the moment `storyteller-tauri` joins `[workspace] members`. The placeholder keeps that promise intact for the new crate the same way `#[allow_missing]` keeps it for `storyteller-server`.
+
+## Consequences
+
+- **Zero duplicated API surface.** Every route `storyteller-server` serves — CRUD, links, search, assets, the graph, custom types, SSE — is automatically available to the desktop app, with no second implementation to keep in sync. A new endpoint added to `storyteller-server` needs no matching change in `storyteller-tauri` at all.
+- **The frontend is transport-agnostic in practice, not just in principle.** `frontend/src/lib/api/client.ts` already routes every call through `fetch` against `/api/v1/...`; nothing in the frontend needed to change to run inside the Tauri shell. The "GUI consumes a stable API" invariant (`AGENTS.md`) now covers three consumers of the exact same contract: a browser tab, the Docker/Nix self-host binary, and the desktop app.
+- **Verified end-to-end in this environment, not just compiled.** `cargo build -p storyteller-tauri` succeeds; the built binary opens a real window (confirmed against a live X server: the process stays running, the embedded server binds and logs "project opened" against the sample fixture, and does not panic or exit early). `cargo tauri build` produces both `Storyteller_0.1.0_amd64.AppImage` and `Storyteller_0.1.0_amd64.deb`, and the AppImage itself was run standalone with the same result. This is the Linux desktop target fully exercised, not "authored to standard patterns but unverified" the way M6's Nix packaging was.
+- **A loopback port per launch, with no fixed number.** Binding `127.0.0.1:0` avoids clashing with a `storyteller-server` instance that might already be running on the default `8787` — the two can coexist. The chosen port is never surfaced to the user; only the webview needs it.
+- **No native desktop affordances yet.** The launcher screen's "open a folder" is still a typed/pasted path (the same `<input>` the browser-hosted app uses via `POST /projects/open`), not a native OS folder picker — `tauri-plugin-dialog` was deliberately left out of this pass to keep the surface to "make the existing app open in a window," matching the "spec or spike" bar for M7. A native picker is a natural, separately-scoped follow-up once the shell itself is proven out.
+- **The process is the unit of lifetime.** Unlike `storyteller-server`, which shuts down gracefully on Ctrl-C so a long-running service can drain cleanly, `storyteller-tauri` leaks its Tokio runtime (`Box::leak`) rather than tearing the embedded server down when the window closes — a desktop app's whole process exits together, so there is no "keep the process alive, stop just the server" state worth building.
+
+## Alternatives Considered
+
+- **Native `#[tauri::command]`s mirroring each route.** Rejected: doubles the API surface to maintain (an HTTP handler and an IPC command for every operation, forever kept in sync by hand), and forks the frontend into two code paths (`fetch` vs `invoke()`) depending on which shell it runs in — directly against "no API bypass on front side" (`docs/roadmap.md` M4 DoD) and the already-stated design intent in `storyteller-server/src/lib.rs`.
+- **`frontendDist` pointed at `../frontend/build`.** The naturally "correct-looking" choice, since that is where the real built assets live — rejected because it is unused at runtime (the window never loads from Tauri's own asset protocol) and, worse, breaks `cargo build`/`cargo test` for anyone who has not run `npm run build`, silently narrowing `AGENTS.md`'s documented "no frontend needed for the Rust-only workflow" promise the moment this crate joined the workspace.
+- **A fixed, well-known port** (e.g. reusing `8787`) for the embedded server. Rejected: it would either collide with a concurrently running `storyteller-server` (a real scenario during development of this very crate) or need its own conflict-detection/retry logic for no benefit — nothing external needs to reach this port, so letting the OS pick one is strictly simpler.

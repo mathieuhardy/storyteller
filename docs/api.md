@@ -11,7 +11,7 @@ This document describes the **contract** between the backend ([`storyteller-core
 - **JSON over HTTP**, **resource-oriented**. Standard HTTP verbs (`GET`/`POST`/`PATCH`/`DELETE`), plural paths (`/entities`, `/types`…), body and responses in `application/json` (except raw [asset](glossary.md) serving).
 - **No authentication state**: single-user, local / self-host tool (no auth, no tokens, no permissions). See [principles](principles.md).
 - Entry paths are expressed relative to the active [project](glossary.md) root (e.g., `characters/aria.md`).
-- **Open question — final transport.** The same logical contract must work over HTTP (`storyteller-server` binary) or **Tauri IPC/commands** (`storyteller-tauri` webview). The endpoints below describe the reference HTTP form; their exact mapping to Tauri commands (and the equivalent SSE event mechanism) is decided in [architecture.md](architecture.md) / a dedicated ADR. The frontend consumes an **abstract client layer** to avoid hard-coding transport.
+- **Transport, settled ([ADR 0019](adr/0019-tauri-reuses-the-http-router.md)).** `storyteller-tauri` (M7) runs this exact HTTP contract in-process on a loopback port and points its webview at it — there is no separate Tauri IPC command surface, and no second contract to keep in sync. The frontend consumes an **abstract client layer** (`fetch` against `/api/v1/...`) that stays identical across the browser-hosted, self-host, and desktop deployments.
 
 All routes are prefixed by API version: `/api/v1/…` (see [§6](#6-errors--versioning)).
 
@@ -32,6 +32,7 @@ This document is the **target contract**; it is delivered milestone by milestone
 | **M5** ✅ | `GET /search` and `q` on `/entities` — FTS5 (`entries_fts`, accent-insensitive, per-term prefix matching); index schema bumped to v2 so an existing on-disk cache gets rebuilt with the new table. |
 | **M7** (custom types) ✅ | Types declared in `.storyteller/types.yaml` merge into `GET /types`/`GET /types/{type}` alongside the built-ins ([ADR 0017](adr/0017-custom-types.md)); `TypeResponse` gained `custom: bool`. |
 | **M7** (graph) ✅ | `GET /graph` — the whole project as nodes/edges, from the index ([ADR 0008](adr/0008-no-graph-in-mvp.md)). |
+| **M7** (desktop shell) ✅ | `storyteller-tauri` serves this same contract in-process on a loopback port ([ADR 0019](adr/0019-tauri-reuses-the-http-router.md)) — no new endpoints, no IPC command surface. |
 
 ---
 

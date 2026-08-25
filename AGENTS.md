@@ -10,7 +10,7 @@
 
 > **Docs before code.** The specs come first and stay authoritative: any code that deviates from them is either wrong, or must be accompanied by the doc update that makes it right. **The GUI is designed AFTER** the documentation, never before.
 
-**Current state**: M0–M6 are done (specs, core + read-only API, non-destructive CRUD + watcher, links/stubs, SvelteKit frontend, FTS search + saved views, Docker/Nix packaging) — the M1–M6 MVP is complete. **M7** (v2+) is in progress: the media gallery, custom types ([ADR 0017](docs/adr/0017-custom-types.md)) and the link graph ([ADR 0008](docs/adr/0008-no-graph-in-mvp.md), [ADR 0018](docs/adr/0018-hand-rolled-graph-layout.md)) have landed; packaged desktop and the Android APK spike are not started. See the [roadmap](docs/roadmap.md) for the milestone table and [api.md](docs/api.md#implementation-status) for what the API serves today.
+**Current state**: M0–M6 are done (specs, core + read-only API, non-destructive CRUD + watcher, links/stubs, SvelteKit frontend, FTS search + saved views, Docker/Nix packaging) — the M1–M6 MVP is complete. **M7** (v2+) is in progress: the media gallery, custom types ([ADR 0017](docs/adr/0017-custom-types.md)), the link graph ([ADR 0008](docs/adr/0008-no-graph-in-mvp.md), [ADR 0018](docs/adr/0018-hand-rolled-graph-layout.md)) and the desktop shell ([ADR 0019](docs/adr/0019-tauri-reuses-the-http-router.md), `storyteller-tauri` → AppImage/.deb) have landed; only the Android APK spike is not started. See the [roadmap](docs/roadmap.md) for the milestone table and [api.md](docs/api.md#implementation-status) for what the API serves today.
 
 ---
 
@@ -74,8 +74,8 @@ Rust workspace + separate frontend:
 storyteller/
   storyteller-core/     (lib) model, markdown/YAML parsing, index, links
   storyteller-server/   (bin) HTTP server, exposes the API — depends on core
-  storyteller-tauri/    (bin) desktop/mobile webview — depends on core   [M7]
-  frontend/             SvelteKit + Tailwind (ADR 0013) — scaffold + shell  [M4, wip]
+  storyteller-tauri/    (bin) desktop webview, runs the server's router in-process (ADR 0019)   [M7, Android APK pending]
+  frontend/             SvelteKit + Tailwind (ADR 0013), consumed by both binaries
   tests/fixtures/       reference project, shared by both crates' tests
   docs/                 specs (see "Read First")
 ```
@@ -91,9 +91,10 @@ cargo test                      # whole workspace
 cargo clippy --all-targets      # must be warning-free
 cargo fmt --all
 cargo run -p storyteller-server -- --project /path/to/my-novel
+cargo tauri dev                 # desktop shell, from storyteller-tauri/ (needs `cargo install tauri-cli`)
 ```
 
-The server then serves `http://127.0.0.1:8787/api/v1/…`. `tests/fixtures/sample-project` is a ready-made project to point it at.
+The server then serves `http://127.0.0.1:8787/api/v1/…`. `tests/fixtures/sample-project` is a ready-made project to point it at. `cargo build`/`cargo test` never require `npm run build` first — `storyteller-server` embeds nothing without it ([ADR 0016](docs/adr/0016-embed-frontend-in-server-binary.md)) and `storyteller-tauri` points its own `frontendDist` at a placeholder it never actually serves ([ADR 0019](docs/adr/0019-tauri-reuses-the-http-router.md)).
 
 ### Language
 
@@ -121,7 +122,6 @@ Quick reminder — **OUT OF SCOPE** (do not implement, not even "as a bonus"):
 - Manuscript writing / prose editor.
 - Timeline / narrative chronology.
 - Interactive maps and pins (maps are **static images** referenced).
-- Link graph (deferred to **v2**).
 - Real-time collaboration, multi-user, authentication, permissions/secrets.
 - AI / content generation.
 - Cloud sync / SaaS.

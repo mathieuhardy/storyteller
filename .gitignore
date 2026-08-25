@@ -1,6 +1,11 @@
 # Rust build artifacts
 /target
 
+# Tauri: JSON schemas generated at build time for capability autocompletion.
+# gen/android, gen/apple (mobile, not in yet) are meant to be committed once
+# `tauri android/ios init` has run and produced project-specific files.
+storyteller-tauri/gen/schemas
+
 # Storyteller index: disposable cache, rebuilt from the markdown files.
 # Matches any project folder, including the test fixtures.
 **/.storyteller/cache.sqlite

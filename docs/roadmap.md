@@ -15,7 +15,7 @@ Framework reminder: [markdown is the sole source of truth](principles.md), the [
 | **M4** | ✅ done | SvelteKit + Shadcn frontend: filterable list/table [views](glossary.md) by type, backlinks panel, entry editor (frontmatter + body). | M1, M2, M3 | GUI consumes a stable M1–M3 API; navigate, filter, and edit entries; links and backlinks are clickable; no API bypass on front side. |
 | **M5** | ✅ done | FTS search + advanced filters/sort + **saved views**. | M1 (index), M4 | Full-text search queries the index; filters and sorts combine; a view can be named, saved, and reloaded. |
 | **M6** | ✅ done | Packaging & self-host **MVP**: `storyteller-server` distributed via **Docker** and installable via **Nix**. | M4 | The application launches in self-host Docker and installs via Nix; index rebuilds; a reproducible release is produced. |
-| **M7** | 🚧 partial | v2+: packaged desktop (`storyteller-tauri` → AppImage/.deb), **link graph**, **media gallery**, **custom types**, Android APK spike. | M6 | Each v2 item is scoped (spec or spike); none blocks the M1–M6 MVP. |
+| **M7** | 🚧 partial | v2+: **packaged desktop** (`storyteller-tauri` → AppImage/.deb), **link graph**, **media gallery**, **custom types**, Android APK spike. | M6 | Each v2 item is scoped (spec or spike); none blocks the M1–M6 MVP. |
 
 ### M1 — What Landed
 
@@ -94,8 +94,16 @@ M6 is done (Docker verified live; Nix authored to standard nixpkgs patterns but 
   against the index's `links` table. The frontend lays it out with a hand-rolled force simulation and
   renders it as plain SVG — no charting/graph library added ([ADR 0018](adr/0018-hand-rolled-graph-layout.md)).
   Hover highlights a node's direct neighbors, click navigates to the entry, wheel/drag zoom and pan.
+- **Packaged desktop** (`storyteller-tauri`, [ADR 0019](adr/0019-tauri-reuses-the-http-router.md)): a Tauri v2
+  shell that runs `storyteller-server`'s own router in-process on a loopback port and points its window at
+  it — no separate IPC command surface, no duplicated API, the frontend unaware it isn't in a browser tab.
+  `cargo tauri build` produces `Storyteller_0.1.0_amd64.AppImage` and `Storyteller_0.1.0_amd64.deb`; both
+  were built **and run** in this environment (unlike M6's Nix packaging, this is verified end-to-end, not
+  just authored to standard patterns). No native folder picker yet — the launcher's typed/pasted path,
+  already shared with the browser-hosted app, works unchanged inside the webview.
 
-Remaining M7 items (packaged desktop, Android APK spike) are not started.
+Remaining M7 item: the Android APK spike (depends on `storyteller-tauri`, now that it exists) is not started —
+this session's environment has no Android SDK/NDK to attempt it.
 
 ## Critical Path
 

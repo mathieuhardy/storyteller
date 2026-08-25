@@ -1,5 +1,5 @@
 [workspace]
-members = ["storyteller-core", "storyteller-server"]
+members = ["storyteller-core", "storyteller-server", "storyteller-tauri"]
 resolver = "2"
 
 [workspace.package]

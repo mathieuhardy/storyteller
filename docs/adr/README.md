@@ -48,3 +48,4 @@ For overall product context, see [vision](../vision.md) and [principles](../prin
 | [0016](0016-embed-frontend-in-server-binary.md) | The built frontend is embedded into `storyteller-server` at compile time | Accepted |
 | [0017](0017-custom-types.md) | Custom types are declared in `.storyteller/types.yaml` and merged into the catalog at runtime | Accepted |
 | [0018](0018-hand-rolled-graph-layout.md) | The link graph uses a hand-rolled force layout, no charting/graph library | Accepted |
+| [0019](0019-tauri-reuses-the-http-router.md) | `storyteller-tauri` reuses the HTTP router in-process, no native IPC command surface | Accepted |
