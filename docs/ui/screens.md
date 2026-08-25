@@ -1,7 +1,9 @@
 # Screens — Écrans & endpoints
 
-Les cinq surfaces du MVP, chacune avec son rôle, sa structure et les **endpoints** consommés
-([api.md](../api.md)). L'UI ne fait que consommer l'API. Maquettes de référence dans [`mockups/`](mockups/).
+Les surfaces de l'application, chacune avec son rôle, sa structure et les **endpoints** consommés
+([api.md](../api.md)). L'UI ne fait que consommer l'API. Maquettes de référence dans [`mockups/`](mockups/)
+pour les cinq écrans du MVP (§1-5) ; §6 (v2/M7) n'a pas de maquette dédiée, même traitement que
+Recherche (M5) — spec ici, implémentation directe contre l'API existante.
 
 ## Mapping écran → endpoints (vue d'ensemble)
 
@@ -13,6 +15,7 @@ Les cinq surfaces du MVP, chacune avec son rôle, sa structure et les **endpoint
 | Vue liste/table | `GET /entities?type=…&tag=…&<field>=…&sort=…&page=…`, `GET /types/{type}` (colonnes) |
 | Éditeur | `GET /types/{type}` (formulaire), `POST`/`PATCH /entities`, `POST /entities/{slug}/rename` |
 | Chantier | `GET /stubs`, `GET /entities/{slug}/links` (ambigus), `POST /entities` (création), réécriture de lien |
+| Galerie médias | `GET /assets`, `POST /assets` (upload) |
 
 Toutes les vues écoutent `GET /events` pour se rafraîchir ([states.md](states.md) §6).
 
@@ -114,3 +117,32 @@ Deux onglets : **À créer (stubs)** et **Liens ambigus**.
 
 > Il n'existe **pas** d'endpoint « create-from-stub » dédié : c'est un `POST /entities` ordinaire alimenté
 > par les données du stub.
+
+## 6. Galerie médias {#galerie}
+
+*(v2, [M7](../roadmap.md#m7))* — le backend (`/assets`, [M4](../roadmap.md#m4--what-landed)) exposait déjà
+lister/servir/uploader ; il manquait un écran pour **parcourir visuellement** ce que l'éditeur accumule
+côté champs image ([features.md](../features.md) §E).
+
+Route `/gallery`, listée dans le nav (section « Médias », sous « Chantier »).
+
+- **Grille** : une **carte** par fichier sous `assets/` (`GET /assets` → `{ path, kind, size }`), triée par
+  `path`. `kind: "image"` affiche une vignette (`GET /assets/{path}`, `object-fit: cover`) ; `kind: "file"`
+  affiche une icône générique + l'extension. Pas de `width`/`height` server-side (§3 de l'API) — la vignette
+  se contente de recadrer, aucune dimension intrinsèque affichée.
+- **Filtre nom de fichier** : champ texte, **filtrage client** (pas de paramètre serveur sur `/assets`) —
+  même raisonnement d'échelle que l'agrégation client du Chantier (§5) : correct au volume
+  mono-utilisateur/local visé ([principles.md](../principles.md)), à pousser côté serveur si un projet
+  dépasse largement cette échelle.
+- **Import** : bouton **Ajouter** → `POST /assets` (`multipart/form-data`), même flux que
+  `ImageFieldEditor` de l'éditeur (composants.md §4) ; nom aplati à un nom de fichier nu par le serveur,
+  `409` sur collision signalé inline. Rafraîchit la grille sur `assets.changed` ([SSE](../api.md#5-event-stream-sse)).
+- **Détail** (clic sur une carte) : modale avec aperçu plein cadre, `path`, `kind`, taille formatée, et un
+  bouton **Copier le lien** qui place `![[path]]` dans le presse-papiers (syntaxe d'embed —
+  [linking.md](../linking.md)) pour un collage direct dans le corps d'une fiche.
+- **Vide** : aucun asset → message + action **Ajouter**. Recherche sans résultat → « Aucun résultat » +
+  effacement du filtre ([states.md](states.md) §1).
+
+Pas de suppression depuis cet écran : un asset référencé ailleurs (`cover`, embed…) ne doit pas disparaître
+silencieusement sans vérifier ses usages — hors scope MVP de cette itération, laissé à une gestion manuelle
+du dossier `assets/` (cohérent avec « markdown = source de vérité », [principles.md](../principles.md)).

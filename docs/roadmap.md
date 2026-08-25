@@ -15,7 +15,7 @@ Framework reminder: [markdown is the sole source of truth](principles.md), the [
 | **M4** | ✅ done | SvelteKit + Shadcn frontend: filterable list/table [views](glossary.md) by type, backlinks panel, entry editor (frontmatter + body). | M1, M2, M3 | GUI consumes a stable M1–M3 API; navigate, filter, and edit entries; links and backlinks are clickable; no API bypass on front side. |
 | **M5** | ✅ done | FTS search + advanced filters/sort + **saved views**. | M1 (index), M4 | Full-text search queries the index; filters and sorts combine; a view can be named, saved, and reloaded. |
 | **M6** | ✅ done | Packaging & self-host **MVP**: `storyteller-server` distributed via **Docker** and installable via **Nix**. | M4 | The application launches in self-host Docker and installs via Nix; index rebuilds; a reproducible release is produced. |
-| **M7** | — | v2+: packaged desktop (`storyteller-tauri` → AppImage/.deb), link graph, media gallery, custom types, Android APK spike. | M6 | Each v2 item is scoped (spec or spike); none blocks the M1–M6 MVP. |
+| **M7** | 🚧 partial | v2+: packaged desktop (`storyteller-tauri` → AppImage/.deb), link graph, **media gallery**, custom types, Android APK spike. | M6 | Each v2 item is scoped (spec or spike); none blocks the M1–M6 MVP. |
 
 ### M1 — What Landed
 
@@ -69,6 +69,17 @@ M5 is done.
 - **`flake.nix`**: added `packages.default`/`storyteller-server`/`frontend` and `apps.default` (`nix run`) alongside the pre-existing dev shell, same embed-before-compile structure as the Dockerfile (`buildNpmPackage` output copied into place via `postPatch` before `buildRustPackage`). **Not verified end-to-end** — this session has no `nix` binary available to actually run `nix build`. `frontend`'s `npmDepsHash` is `pkgs.lib.fakeHash`, a deliberate placeholder: a real value can only come from Nix actually fetching `frontend/package-lock.json`'s dependency tree, which needs network access this session doesn't have either. Whoever runs `nix build` first will see the mismatch error report the real hash to paste in — the standard, expected way to fill this in.
 
 M6 is done (Docker verified live; Nix authored to standard nixpkgs patterns but unverified — see above).
+
+### M7 — What Landed So Far {#m7}
+
+- **Media gallery** (`/gallery`, [docs/ui/screens.md](ui/screens.md#galerie)): visual browsing of everything
+  under `assets/`, on top of M4's already-shipped `/assets` endpoints — no backend change needed. Grid of
+  thumbnails (images) / generic-file cards, client-side filename filter (same reasoning as the Chantier's
+  client-side aggregation — fine at local/single-user scale), upload via the existing `POST /assets` flow,
+  and a detail modal with a "copy `![[path]]`" action for pasting into an entry body. No delete action —
+  removing a still-referenced asset needs usage-checking that's out of scope for this pass.
+
+Remaining M7 items (packaged desktop, link graph, custom types, Android APK spike) are not started.
 
 ## Critical Path
 

@@ -34,6 +34,8 @@ export const fr: Messages = {
 	'nav.types': 'Types',
 	'nav.workshop': 'Chantier',
 	'nav.stubs': 'À créer',
+	'nav.media': 'Médias',
+	'nav.gallery': 'Galerie',
 
 	'breadcrumb.project': 'Projet',
 
@@ -185,6 +187,23 @@ export const fr: Messages = {
 	'workshop.scopeAllHint': 'Réécrit partout où ce texte est ambigu ({count} au total).',
 	'workshop.nonDestructiveHint': 'Édition non destructive du/des fichier(s) source.',
 	'workshop.rewriteAction': 'Réécrire le lien',
+
+	'gallery.title': 'Galerie médias',
+	'gallery.subtitle':
+		"Tous les fichiers sous assets/ — parcourir, ajouter, copier un lien à coller dans une fiche.",
+	'gallery.filterPlaceholder': 'Filtrer par nom de fichier…',
+	'gallery.upload': 'Ajouter…',
+	'gallery.uploading': 'Téléversement…',
+	'gallery.empty': 'Aucun asset pour le moment — ajoutez le premier.',
+	'gallery.noResults': 'Aucun résultat pour « {query} ».',
+	'gallery.clearFilter': 'Effacer le filtre',
+	'gallery.copyLink': 'Copier le lien',
+	'gallery.copied': 'Copié !',
+	'gallery.path': 'Chemin',
+	'gallery.size': 'Taille',
+	'gallery.kind': 'Type',
+	'gallery.kindImage': 'Image',
+	'gallery.kindFile': 'Fichier',
 
 	'type.project': 'Projet',
 	'type.character': 'Personnage',

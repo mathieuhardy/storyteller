@@ -18,7 +18,9 @@
 		| 'square-plus'
 		| 'alert-triangle'
 		| 'edit'
-		| 'external-link';
+		| 'external-link'
+		| 'image'
+		| 'file';
 
 	const PATHS: Record<IconName, string[]> = {
 		search: ['M11 11m-8 0a8 8 0 1 0 16 0a8 8 0 1 0 -16 0', 'M21 21l-4.3-4.3'],
@@ -48,7 +50,13 @@
 		'square-plus': ['M4 4h16v16H4z', 'M12 8v8', 'M8 12h8'],
 		'alert-triangle': ['M12 9v4', 'M12 17h.01', 'M10.3 3.2L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.2a2 2 0 0 0-3.4 0z'],
 		edit: ['M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z', 'M15 5l4 4'],
-		'external-link': ['M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6', 'M15 3h6v6', 'M10 14L21 3']
+		'external-link': ['M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6', 'M15 3h6v6', 'M10 14L21 3'],
+		image: [
+			'M3 5h18v14H3z',
+			'M9 10m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0',
+			'M21 15l-5-5L5 21'
+		],
+		file: ['M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z', 'M14 2v6h6']
 	};
 </script>
 

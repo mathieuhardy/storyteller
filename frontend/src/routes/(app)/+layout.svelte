@@ -31,6 +31,7 @@
 	const activeSlug = $derived(page.params.slug ?? null);
 	const activeWorkshop = $derived(page.url.pathname === '/stubs');
 	const activeSearch = $derived(page.url.pathname === '/search');
+	const activeGallery = $derived(page.url.pathname === '/gallery');
 
 	const breadcrumb = $derived.by(() => {
 		const crumbs: { label: string; href?: string }[] = [
@@ -46,6 +47,8 @@
 			crumbs.push({ label: t('nav.stubs') });
 		} else if (activeSearch) {
 			crumbs.push({ label: t('search.action') });
+		} else if (activeGallery) {
+			crumbs.push({ label: t('nav.gallery') });
 		} else {
 			crumbs.push({ label: t('dashboard.title') });
 		}
@@ -68,6 +71,7 @@
 			stubsCount={data.stubsCount}
 			{activeType}
 			{activeWorkshop}
+			{activeGallery}
 		/>
 		<main>
 			{@render children()}

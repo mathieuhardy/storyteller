@@ -36,6 +36,8 @@ export const en = {
 	'nav.types': 'Types',
 	'nav.workshop': 'Workshop',
 	'nav.stubs': 'To create',
+	'nav.media': 'Media',
+	'nav.gallery': 'Gallery',
 
 	'breadcrumb.project': 'Project',
 
@@ -187,6 +189,22 @@ export const en = {
 	'workshop.scopeAllHint': 'Rewrite everywhere this text is ambiguous ({count} total).',
 	'workshop.nonDestructiveHint': 'Non-destructive edit of the source file(s).',
 	'workshop.rewriteAction': 'Rewrite the link',
+
+	'gallery.title': 'Media gallery',
+	'gallery.subtitle': 'Every file under assets/ — browse, upload, and copy a link to paste into an entry.',
+	'gallery.filterPlaceholder': 'Filter by filename…',
+	'gallery.upload': 'Add…',
+	'gallery.uploading': 'Uploading…',
+	'gallery.empty': 'No assets yet — add the first one.',
+	'gallery.noResults': 'No results for “{query}”.',
+	'gallery.clearFilter': 'Clear filter',
+	'gallery.copyLink': 'Copy link',
+	'gallery.copied': 'Copied!',
+	'gallery.path': 'Path',
+	'gallery.size': 'Size',
+	'gallery.kind': 'Kind',
+	'gallery.kindImage': 'Image',
+	'gallery.kindFile': 'File',
 
 	'type.project': 'Project',
 	'type.character': 'Character',

@@ -11,7 +11,8 @@
 		types,
 		stubsCount = 0,
 		activeType = null,
-		activeWorkshop = false
+		activeWorkshop = false,
+		activeGallery = false
 	}: {
 		projectName: string;
 		entriesCount: number;
@@ -19,6 +20,7 @@
 		stubsCount?: number;
 		activeType?: string | null;
 		activeWorkshop?: boolean;
+		activeGallery?: boolean;
 	} = $props();
 
 	function monogram(label: string): string {
@@ -63,6 +65,14 @@
 			{#if stubsCount > 0}
 				<span class="count stub mono">{formatNumber(stubsCount)}</span>
 			{/if}
+		</a>
+	</div>
+
+	<div class="section">
+		<p class="label">{t('nav.media')}</p>
+		<a class="item" class:active={activeGallery} href="/gallery">
+			<span class="media-ico" aria-hidden="true"><Icon name="image" size={15} /></span>
+			<span class="iname">{t('nav.gallery')}</span>
 		</a>
 	</div>
 </nav>
@@ -190,5 +200,15 @@
 		border-radius: 7px;
 		background: var(--stub-soft);
 		color: var(--stub);
+	}
+	.media-ico {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 24px;
+		height: 24px;
+		border-radius: 7px;
+		background: var(--accent-soft);
+		color: var(--accent);
 	}
 </style>
