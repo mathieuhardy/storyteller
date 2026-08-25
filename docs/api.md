@@ -105,9 +105,13 @@ An [entry](glossary.md) is serialized as follows (the `frontmatter` keys are **i
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/api/v1/types` | List **enabled** types (`enabled_types`) and their field schemas (name, FR label, kind, required/optional, link semantics if any). Base for dynamically generating forms. |
-| `GET` | `/api/v1/types/{type}` | Detailed schema of a type (mirrors the [catalog](data-model.md)). |
+| `GET` | `/api/v1/types` | List **enabled** types (`enabled_types`) and their field schemas (name, FR label, kind, required/optional, link semantics if any, and `custom: bool`). Base for dynamically generating forms. |
+| `GET` | `/api/v1/types/{type}` | Detailed schema of a type (mirrors the [catalog](data-model.md), built-in or [custom](data-model.md#custom-types)). |
 | `PATCH` | `/api/v1/types/{type}` | Enable/disable a type: `{ enabled: bool }` (updates `.storyteller/config.yaml`). |
+
+Custom types ([ADR 0017](adr/0017-custom-types.md)), declared in `.storyteller/types.yaml`, are merged into
+this same catalog — there is no separate endpoint for them; `custom: true` on a `TypeResponse` is the only
+thing distinguishing one from a built-in.
 
 ### Links, Backlinks & Stubs
 

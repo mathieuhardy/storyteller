@@ -144,13 +144,13 @@ pub async fn create(
     State(state): State<SharedState>,
     Json(body): Json<CreateBody>,
 ) -> ApiResult<impl IntoResponse> {
-    if types::type_schema(&body.type_name).is_none() {
+    let active = state.require_project()?;
+    if types::type_schema(&body.type_name, active.project().custom_types()).is_none() {
         return Err(ApiError::bad_request(format!(
             "unknown type `{}`; create needs one of the catalog types",
             body.type_name
         )));
     }
-    let active = state.require_project()?;
     if !active.project().config().is_enabled(&body.type_name) {
         return Err(ApiError::bad_request(format!(
             "type `{}` is disabled for creation in this project",

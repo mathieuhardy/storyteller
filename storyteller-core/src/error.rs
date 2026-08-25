@@ -85,6 +85,9 @@ pub mod codes {
     pub const DUPLICATE_SLUG: &str = "duplicate_slug";
     /// The file is not valid UTF-8; its content cannot be interpreted.
     pub const ENCODING_ERROR: &str = "encoding_error";
+    /// A custom type in `.storyteller/types.yaml` is malformed (bad name,
+    /// folder/name collision, enum without values…) and was dropped.
+    pub const INVALID_TYPE_DEFINITION: &str = "invalid_type_definition";
 }
 
 /// A non-fatal, per-entry problem. Surfaced in the entry's `errors` array so

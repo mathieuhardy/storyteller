@@ -75,7 +75,7 @@ Cardinal principle of the project: **markdown files are the sole source of truth
 
 ## type
 
-Schema of an [entity](#entity), declared by the required `type` field of the [frontmatter](#frontmatter). The type drives the expected fields of the entry and its folder; types are modular (activatable/deactivatable via `enabled_types`). The ~11 default types: `project`, `character`, `location`, `faction`, `object`, `culture`, `system`, `species`, `chapter`, `note`, `concept`. See [data model](data-model.md).
+Schema of an [entity](#entity), declared by the required `type` field of the [frontmatter](#frontmatter). The type drives the expected fields of the entry and its folder; types are modular (activatable/deactivatable via `enabled_types`). The ~11 default types: `project`, `character`, `location`, `faction`, `object`, `culture`, `system`, `species`, `chapter`, `note`, `concept`. A project may also declare its own **custom types** in `.storyteller/types.yaml`, merged into the same catalog ([ADR 0017](adr/0017-custom-types.md)). See [data model](data-model.md).
 
 ## view
 

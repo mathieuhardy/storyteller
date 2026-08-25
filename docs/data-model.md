@@ -272,6 +272,7 @@ my-novel/
   project.md                    # project type entry (root)
   .storyteller/
     config.yaml                 # enabled_types, schema_version
+    types.yaml                  # custom types, optional (§7)
     cache.sqlite                # index (gitignored, rebuildable)
   characters/
   locations/
@@ -357,6 +358,46 @@ Types are **activatable/deactivatable** via `enabled_types` in `config.yaml`.
 - Re-enabling the type makes them fully available again.
 
 Modularity is a display/creation preference, **never** a destructive operation on data.
+
+### Custom Types
+
+Beyond the 11 built-ins, a project may declare its own types in `.storyteller/types.yaml`
+([ADR 0017](adr/0017-custom-types.md)) — optional; most projects have none:
+
+```yaml
+types:
+  - name: artifact
+    label: Artéfact
+    folder: artifacts
+    fields:
+      - name: origin
+        label: Origine
+        kind: text
+      - name: rarity
+        label: Rareté
+        kind: enum
+        enum_values: [common, rare, legendary]
+      - name: owner
+        label: Propriétaire
+        kind: link
+        link_targets: [character]
+```
+
+- `name`/`folder`: snake_case, unique across built-in **and** custom types.
+- `fields[].kind`: one of the value types from the [legend](#4-catalog-of-the-11-types) above
+  (`text`, `number`, `boolean`, `enum`, `list`, `link`, `link-list`, `image`, `image-list`,
+  `number-or-text`, `list-or-text`); `enum_values` required for (and only for) `enum`.
+- `fields[].name`: snake_case, unique within the type, and may not shadow a
+  [common field](#2-common-fields-for-all-entries) (`type`, `title`, `aliases`,
+  `tags`, `cover`, `created`, `updated`).
+- Every custom field is optional (no `required` toggle in this iteration — same MVP-tier permissiveness
+  as the built-ins, see the module note in `storyteller-core::types`).
+
+A type that fails validation is **dropped with a diagnostic**, not fatal to the file — the rest of
+`types.yaml` still loads (golden rule 5). Once declared, a custom type behaves exactly like a built-in
+one: it appears in `GET /types`, is offered for creation, gets a generated form, is listed/filtered/searched
+like any other type, and can itself be [enabled/disabled](#7-type-modularity). `link_targets` is purely
+informative, same as for built-ins ([linking.md](linking.md) §2): it is never enforced at write time.
 
 ---
 

@@ -36,6 +36,7 @@
 
 pub mod assets;
 pub mod config;
+pub mod custom_types;
 pub mod error;
 pub mod index;
 pub mod links;

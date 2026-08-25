@@ -9,11 +9,13 @@ use std::path::{Component, Path, PathBuf};
 use walkdir::WalkDir;
 
 use crate::config::{ProjectConfig, STORYTELLER_DIR};
+use crate::custom_types;
 use crate::error::{codes, Diagnostic, Error, Result};
 use crate::links::{self, LinkOccurrence};
 use crate::model::{Entry, Frontmatter, Value};
 use crate::normalize::normalize;
 use crate::parse::parse_document;
+use crate::types::TypeSchema;
 use crate::{types, write};
 
 /// Keys the app owns and callers may not set through create/update: they would
@@ -30,6 +32,10 @@ pub const ENTRY_EXTENSION: &str = "md";
 pub struct Project {
     root: PathBuf,
     config: ProjectConfig,
+    /// Types declared in `.storyteller/types.yaml`, merged with the built-in
+    /// catalog everywhere a [`TypeSchema`] is looked up
+    /// ([ADR 0017](../../docs/adr/0017-custom-types.md)).
+    custom_types: &'static [TypeSchema],
 }
 
 impl Project {
@@ -44,8 +50,12 @@ impl Project {
         }
         // Canonicalize once so that later containment checks are meaningful.
         let root = root.canonicalize().map_err(|e| Error::io(&root, e))?;
-        let config = ProjectConfig::load(&root);
-        Ok(Self { root, config })
+        let (custom_types, config) = load_types_and_config(&root);
+        Ok(Self {
+            root,
+            config,
+            custom_types,
+        })
     }
 
     pub fn root(&self) -> &Path {
@@ -56,9 +66,18 @@ impl Project {
         &self.config
     }
 
-    /// Re-reads `.storyteller/config.yaml` from disk.
+    /// The project's custom types, merged with the built-ins wherever a type
+    /// is looked up (`docs/data-model.md` §7).
+    pub fn custom_types(&self) -> &'static [TypeSchema] {
+        self.custom_types
+    }
+
+    /// Re-reads `.storyteller/config.yaml` and `.storyteller/types.yaml` from
+    /// disk.
     pub fn reload_config(&mut self) {
-        self.config = ProjectConfig::load(&self.root);
+        let (custom_types, config) = load_types_and_config(&self.root);
+        self.custom_types = custom_types;
+        self.config = config;
     }
 
     /// Enables or disables a type for **creation** (`PATCH /types/{type}`,
@@ -66,7 +85,7 @@ impl Project {
     /// that type (`docs/data-model.md` §7) — it only changes what
     /// `POST /entities` and the type picker offer going forward.
     pub fn set_type_enabled(&mut self, type_name: &str, enabled: bool) -> Result<()> {
-        if types::type_schema(type_name).is_none() {
+        if types::type_schema(type_name, self.custom_types).is_none() {
             return Err(Error::UnknownType(type_name.to_string()));
         }
         let already = self.config.is_enabled(type_name);
@@ -140,7 +159,7 @@ impl Project {
             std::io::ErrorKind::NotFound => Error::EntryNotFound(relative_path.to_string()),
             _ => Error::io(&absolute, err),
         })?;
-        Ok(entry_from_bytes(relative_path, &bytes))
+        Ok(entry_from_bytes(self.custom_types, relative_path, &bytes))
     }
 
     /// Reads every entry of the project.
@@ -178,7 +197,7 @@ impl Project {
         body: &str,
         now: &str,
     ) -> Result<Entry> {
-        let folder = types::folder_for(type_name)
+        let folder = types::folder_for(type_name, self.custom_types)
             .ok_or_else(|| Error::UnknownType(type_name.to_string()))?;
         let slug = write::slugify(title).ok_or_else(|| Error::InvalidTitle(title.to_string()))?;
         let relative = if folder.is_empty() {
@@ -205,7 +224,7 @@ impl Project {
 
         let contents = write::assemble(&write::serialize_frontmatter(&built), body);
         self.write_file(&absolute, &contents)?;
-        Ok(entry_from_bytes(&relative, contents.as_bytes()))
+        Ok(entry_from_bytes(self.custom_types, &relative, contents.as_bytes()))
     }
 
     /// Updates an entry non-destructively: merges the provided frontmatter keys,
@@ -236,7 +255,7 @@ impl Project {
         let yaml = write::edit_frontmatter(raw, &upserts);
         let contents = write::assemble(&yaml, body.unwrap_or(&document.body));
         self.write_file(&absolute, &contents)?;
-        Ok(entry_from_bytes(relative, contents.as_bytes()))
+        Ok(entry_from_bytes(self.custom_types, relative, contents.as_bytes()))
     }
 
     /// Deletes an entry file. Links that targeted it turn into [stubs](../glossary.md)
@@ -348,7 +367,7 @@ impl Project {
         }
 
         Ok(RenameOutcome {
-            entry: entry_from_bytes(&new_relative, contents.as_bytes()),
+            entry: entry_from_bytes(self.custom_types, &new_relative, contents.as_bytes()),
             rewritten_paths,
         })
     }
@@ -393,6 +412,19 @@ pub struct RenameOutcome {
 
 /// Displayed title of a frontmatter, falling back to the slug (mirrors
 /// [`Entry::title`], usable before an `Entry` exists).
+/// Loads `.storyteller/types.yaml` and `.storyteller/config.yaml` together —
+/// in that order, since `enabled_types` validates and defaults against custom
+/// types too ([ADR 0017](../../docs/adr/0017-custom-types.md)). Any diagnostic
+/// from loading custom types is folded into the config's `errors`, the
+/// existing bucket for "the project opened, but something about its
+/// configuration is off."
+fn load_types_and_config(root: &Path) -> (&'static [TypeSchema], ProjectConfig) {
+    let (custom_types, mut diagnostics) = custom_types::load(root);
+    let mut config = ProjectConfig::load(root, custom_types);
+    config.errors.append(&mut diagnostics);
+    (custom_types, config)
+}
+
 fn title_of(frontmatter: &Frontmatter, slug: &str) -> String {
     frontmatter
         .get("title")
@@ -454,7 +486,11 @@ fn rewrite_source(source: &str, rewrite: &links::Rewrite) -> Option<String> {
 }
 
 /// Builds an [`Entry`] from raw file bytes.
-pub fn entry_from_bytes(relative_path: &str, bytes: &[u8]) -> Entry {
+pub fn entry_from_bytes(
+    custom_types: &'static [TypeSchema],
+    relative_path: &str,
+    bytes: &[u8],
+) -> Entry {
     let slug = slug_of(relative_path);
 
     let Ok(source) = std::str::from_utf8(bytes) else {
@@ -476,9 +512,9 @@ pub fn entry_from_bytes(relative_path: &str, bytes: &[u8]) -> Entry {
     };
 
     let document = parse_document(source);
-    let (type_name, mut errors) = types::resolve_type(&document.frontmatter);
+    let (type_name, mut errors) = types::resolve_type(&document.frontmatter, custom_types);
     errors.extend(document.diagnostics);
-    errors.extend(types::validate(&type_name, &document.frontmatter));
+    errors.extend(types::validate(&type_name, &document.frontmatter, custom_types));
 
     Entry {
         slug,
@@ -655,7 +691,7 @@ mod tests {
 
     #[test]
     fn entry_without_type_degrades_to_note() {
-        let entry = entry_from_bytes("notes/vrac.md", b"---\ntitle: Vrac\n---\ntexte\n");
+        let entry = entry_from_bytes(&[], "notes/vrac.md", b"---\ntitle: Vrac\n---\ntexte\n");
         assert_eq!(entry.type_name, "note");
         assert_eq!(entry.errors[0].code, codes::MISSING_REQUIRED_FIELD);
     }
@@ -663,6 +699,7 @@ mod tests {
     #[test]
     fn entry_with_broken_yaml_is_still_readable() {
         let entry = entry_from_bytes(
+            &[],
             "factions/faction-x.md",
             b"---\ntype: faction\ntitle: Faction X\nleader: \"[[??\n---\n# Faction X\n",
         );
@@ -677,7 +714,7 @@ mod tests {
 
     #[test]
     fn non_utf8_file_is_flagged_and_left_untouched() {
-        let entry = entry_from_bytes("notes/latin1.md", b"---\ntitle: Cit\xe9\n---\n");
+        let entry = entry_from_bytes(&[], "notes/latin1.md", b"---\ntitle: Cit\xe9\n---\n");
         assert_eq!(entry.errors[0].code, codes::ENCODING_ERROR);
         assert!(entry.body.is_empty());
         assert!(entry.frontmatter.is_empty());

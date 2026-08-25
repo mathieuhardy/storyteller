@@ -15,7 +15,7 @@ Framework reminder: [markdown is the sole source of truth](principles.md), the [
 | **M4** | ✅ done | SvelteKit + Shadcn frontend: filterable list/table [views](glossary.md) by type, backlinks panel, entry editor (frontmatter + body). | M1, M2, M3 | GUI consumes a stable M1–M3 API; navigate, filter, and edit entries; links and backlinks are clickable; no API bypass on front side. |
 | **M5** | ✅ done | FTS search + advanced filters/sort + **saved views**. | M1 (index), M4 | Full-text search queries the index; filters and sorts combine; a view can be named, saved, and reloaded. |
 | **M6** | ✅ done | Packaging & self-host **MVP**: `storyteller-server` distributed via **Docker** and installable via **Nix**. | M4 | The application launches in self-host Docker and installs via Nix; index rebuilds; a reproducible release is produced. |
-| **M7** | 🚧 partial | v2+: packaged desktop (`storyteller-tauri` → AppImage/.deb), link graph, **media gallery**, custom types, Android APK spike. | M6 | Each v2 item is scoped (spec or spike); none blocks the M1–M6 MVP. |
+| **M7** | 🚧 partial | v2+: packaged desktop (`storyteller-tauri` → AppImage/.deb), link graph, **media gallery**, **custom types**, Android APK spike. | M6 | Each v2 item is scoped (spec or spike); none blocks the M1–M6 MVP. |
 
 ### M1 — What Landed
 
@@ -78,8 +78,17 @@ M6 is done (Docker verified live; Nix authored to standard nixpkgs patterns but 
   client-side aggregation — fine at local/single-user scale), upload via the existing `POST /assets` flow,
   and a detail modal with a "copy `![[path]]`" action for pasting into an entry body. No delete action —
   removing a still-referenced asset needs usage-checking that's out of scope for this pass.
+- **Custom types** ([ADR 0017](adr/0017-custom-types.md), [data-model.md §7](data-model.md#custom-types)):
+  a project can declare its own types in `.storyteller/types.yaml`, merged into the same catalog the 11
+  built-ins live in (`storyteller-core::types`), leaked to `'static` at project-open so every existing
+  `TypeSchema`-consuming function — parsing, validation, the index, the `/types` routes — needed no shape
+  change, only a `custom_types` parameter threaded through. The frontend needed **zero changes**: creation,
+  editing, listing, filtering, and search of a custom-typed entry all work through the existing
+  schema-driven screens (M4). One known, documented gap: the nav/type-picker's `typeLabel()` falls back to
+  the raw type name for a custom type rather than its own `label` — cosmetic, left as a follow-up. No GUI
+  type-builder in this pass; `types.yaml` is hand-authored, like `config.yaml`'s `enabled_types` already is.
 
-Remaining M7 items (packaged desktop, link graph, custom types, Android APK spike) are not started.
+Remaining M7 items (packaged desktop, link graph, Android APK spike) are not started.
 
 ## Critical Path
 

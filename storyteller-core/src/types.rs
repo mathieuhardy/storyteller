@@ -14,13 +14,13 @@
 //! flags *wrong* values, not *absent* ones — except `type` and `title`, which
 //! views need to display anything at all.
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::error::{codes, Diagnostic};
 use crate::model::{Frontmatter, Value, FALLBACK_TYPE};
 
 /// Value kind of a field (`docs/data-model.md` §4, "Value type legend").
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum FieldKind {
     Text,
@@ -362,14 +362,22 @@ pub fn catalog() -> &'static [TypeSchema] {
     CATALOG
 }
 
-/// Looks up a type by name.
-pub fn type_schema(name: &str) -> Option<&'static TypeSchema> {
-    catalog().iter().find(|t| t.name == name)
+/// The built-in catalog plus a project's custom types
+/// ([ADR 0017](../../docs/adr/0017-custom-types.md)), in that order.
+pub fn all_types(
+    custom: &'static [TypeSchema],
+) -> impl Iterator<Item = &'static TypeSchema> {
+    catalog().iter().chain(custom.iter())
+}
+
+/// Looks up a type by name, built-in or custom.
+pub fn type_schema(name: &str, custom: &'static [TypeSchema]) -> Option<&'static TypeSchema> {
+    all_types(custom).find(|t| t.name == name)
 }
 
 /// Folder of a type, or `None` for an unknown type.
-pub fn folder_for(type_name: &str) -> Option<&'static str> {
-    type_schema(type_name).map(|t| t.folder)
+pub fn folder_for(type_name: &str, custom: &'static [TypeSchema]) -> Option<&'static str> {
+    type_schema(type_name, custom).map(|t| t.folder)
 }
 
 /// Effective type of an entry, and the diagnostics that go with it.
@@ -377,7 +385,10 @@ pub fn folder_for(type_name: &str) -> Option<&'static str> {
 /// * `type` missing → [`FALLBACK_TYPE`] + warning;
 /// * `type` present but unknown → kept **verbatim** + warning. Discarding it
 ///   would lose user data, and the type may simply come from a newer version.
-pub fn resolve_type(frontmatter: &Frontmatter) -> (String, Vec<Diagnostic>) {
+pub fn resolve_type(
+    frontmatter: &Frontmatter,
+    custom: &'static [TypeSchema],
+) -> (String, Vec<Diagnostic>) {
     let mut diagnostics = Vec::new();
     let declared = frontmatter
         .get("type")
@@ -396,7 +407,7 @@ pub fn resolve_type(frontmatter: &Frontmatter) -> (String, Vec<Diagnostic>) {
             );
             (FALLBACK_TYPE.to_string(), diagnostics)
         }
-        Some(name) if type_schema(name).is_some() => (name.to_string(), diagnostics),
+        Some(name) if type_schema(name, custom).is_some() => (name.to_string(), diagnostics),
         Some(name) => {
             diagnostics.push(
                 Diagnostic::warning(codes::UNKNOWN_TYPE, format!("unknown type `{name}`"))
@@ -412,7 +423,11 @@ pub fn resolve_type(frontmatter: &Frontmatter) -> (String, Vec<Diagnostic>) {
 /// Only reports what is actually wrong (see the module note on the MVP tier):
 /// a missing `title`, and values that contradict their declared kind. Unknown
 /// keys are never reported — they are legitimate and preserved.
-pub fn validate(type_name: &str, frontmatter: &Frontmatter) -> Vec<Diagnostic> {
+pub fn validate(
+    type_name: &str,
+    frontmatter: &Frontmatter,
+    custom: &'static [TypeSchema],
+) -> Vec<Diagnostic> {
     let mut diagnostics = Vec::new();
 
     let has_title = frontmatter
@@ -431,7 +446,7 @@ pub fn validate(type_name: &str, frontmatter: &Frontmatter) -> Vec<Diagnostic> {
 
     // An unknown type has no schema to validate against; `resolve_type` already
     // warned about it.
-    let Some(schema) = type_schema(type_name) else {
+    let Some(schema) = type_schema(type_name, custom) else {
         return diagnostics;
     };
 
@@ -591,7 +606,7 @@ mod tests {
             for field in schema.all_fields() {
                 for target in field.link_targets {
                     assert!(
-                        type_schema(target).is_some(),
+                        type_schema(target, &[]).is_some(),
                         "{}.{} points to unknown type {target}",
                         schema.name,
                         field.name
@@ -603,21 +618,21 @@ mod tests {
 
     #[test]
     fn missing_type_degrades_to_note() {
-        let (type_name, diagnostics) = resolve_type(&fm(&[]));
+        let (type_name, diagnostics) = resolve_type(&fm(&[]), &[]);
         assert_eq!(type_name, FALLBACK_TYPE);
         assert_eq!(diagnostics[0].code, codes::MISSING_REQUIRED_FIELD);
     }
 
     #[test]
     fn unknown_type_is_kept_verbatim_and_flagged() {
-        let (type_name, diagnostics) = resolve_type(&fm(&[("type", "prophecy".into())]));
+        let (type_name, diagnostics) = resolve_type(&fm(&[("type", "prophecy".into())]), &[]);
         assert_eq!(type_name, "prophecy");
         assert_eq!(diagnostics[0].code, codes::UNKNOWN_TYPE);
     }
 
     #[test]
     fn known_type_is_clean() {
-        let (type_name, diagnostics) = resolve_type(&fm(&[("type", "character".into())]));
+        let (type_name, diagnostics) = resolve_type(&fm(&[("type", "character".into())]), &[]);
         assert_eq!(type_name, "character");
         assert!(diagnostics.is_empty());
     }
@@ -630,6 +645,7 @@ mod tests {
                 ("title", "Le Fêlure".into()),
                 ("chapter_status", "en-cours".into()),
             ]),
+            &[],
         );
         assert_eq!(diagnostics.len(), 1);
         assert_eq!(diagnostics[0].code, codes::INVALID_FIELD_VALUE);
@@ -641,12 +657,14 @@ mod tests {
         let diagnostics = validate(
             "chapter",
             &fm(&[("title", "X".into()), ("order", "troisième".into())]),
+            &[],
         );
         assert_eq!(diagnostics[0].field.as_deref(), Some("order"));
 
         let diagnostics = validate(
             "species",
             &fm(&[("title", "X".into()), ("intelligent", "oui".into())]),
+            &[],
         );
         assert_eq!(diagnostics[0].field.as_deref(), Some("intelligent"));
     }
@@ -660,6 +678,7 @@ mod tests {
                 ("order", Value::Null),
                 ("my_own_field", "peu importe".into()),
             ]),
+            &[],
         );
         assert!(diagnostics.is_empty(), "{diagnostics:?}");
     }
@@ -668,13 +687,13 @@ mod tests {
     fn validate_is_permissive_on_mvp_fields_left_blank() {
         // A character with nothing but a title is valid: the MVP tier is scope,
         // not a constraint.
-        let diagnostics = validate("character", &fm(&[("title", "Aria".into())]));
+        let diagnostics = validate("character", &fm(&[("title", "Aria".into())]), &[]);
         assert!(diagnostics.is_empty(), "{diagnostics:?}");
     }
 
     #[test]
     fn validate_reports_missing_title() {
-        let diagnostics = validate("character", &fm(&[("type", "character".into())]));
+        let diagnostics = validate("character", &fm(&[("type", "character".into())]), &[]);
         assert_eq!(diagnostics[0].field.as_deref(), Some("title"));
         assert_eq!(diagnostics[0].code, codes::MISSING_REQUIRED_FIELD);
     }
@@ -682,7 +701,8 @@ mod tests {
     #[test]
     fn validate_tolerates_number_or_text_fields() {
         for age in [Value::from(24), Value::from("la trentaine")] {
-            let diagnostics = validate("character", &fm(&[("title", "A".into()), ("age", age)]));
+            let diagnostics =
+                validate("character", &fm(&[("title", "A".into()), ("age", age)]), &[]);
             assert!(diagnostics.is_empty(), "{diagnostics:?}");
         }
     }

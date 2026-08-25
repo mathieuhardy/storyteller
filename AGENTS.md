@@ -10,7 +10,7 @@
 
 > **Docs before code.** The specs come first and stay authoritative: any code that deviates from them is either wrong, or must be accompanied by the doc update that makes it right. **The GUI is designed AFTER** the documentation, never before.
 
-**Current state**: M0–M6 are done (specs, core + read-only API, non-destructive CRUD + watcher, links/stubs, SvelteKit frontend, FTS search + saved views, Docker/Nix packaging) — the M1–M6 MVP is complete. **M7** (v2+) is in progress: the media gallery has landed; packaged desktop, link graph, custom types and the Android APK spike are not started. See the [roadmap](docs/roadmap.md) for the milestone table and [api.md](docs/api.md#implementation-status) for what the API serves today.
+**Current state**: M0–M6 are done (specs, core + read-only API, non-destructive CRUD + watcher, links/stubs, SvelteKit frontend, FTS search + saved views, Docker/Nix packaging) — the M1–M6 MVP is complete. **M7** (v2+) is in progress: the media gallery and custom types ([ADR 0017](docs/adr/0017-custom-types.md)) have landed; packaged desktop, link graph, and the Android APK spike are not started. See the [roadmap](docs/roadmap.md) for the milestone table and [api.md](docs/api.md#implementation-status) for what the API serves today.
 
 ---
 
@@ -82,7 +82,7 @@ storyteller/
 
 `storyteller-core` depends on neither binary; both binaries (`server`, `tauri`) **share** `core`. See [architecture.md](docs/architecture.md) for details.
 
-Inside `storyteller-core/src/`: `parse` (frontmatter/body), `model` (entry shape), `types` (type catalog), `normalize` (match keys), `links` (extraction + resolution), `project` (reads the files), `index/` (SQLite cache), `config`, `error`.
+Inside `storyteller-core/src/`: `parse` (frontmatter/body), `model` (entry shape), `types` (type catalog), `custom_types` (user-declared types, `types.yaml`), `normalize` (match keys), `links` (extraction + resolution), `project` (reads the files), `index/` (SQLite cache), `config`, `error`.
 
 ### Build & Test
 
