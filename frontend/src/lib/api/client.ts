@@ -9,6 +9,7 @@ import type {
 	Entry,
 	EntrySummary,
 	Frontmatter,
+	Graph,
 	OutgoingLink,
 	Backlink,
 	Page,
@@ -132,6 +133,9 @@ export const getBacklinks = (slug: string, fetchImpl: Fetch = fetch): Promise<Ba
 
 export const getStubs = (fetchImpl: Fetch = fetch): Promise<Stub[]> =>
 	request('/stubs', undefined, fetchImpl);
+
+export const getGraph = (fetchImpl: Fetch = fetch): Promise<Graph> =>
+	request('/graph', undefined, fetchImpl);
 
 // --- Search -----------------------------------------------------------------
 

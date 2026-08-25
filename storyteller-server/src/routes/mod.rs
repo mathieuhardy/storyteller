@@ -7,6 +7,7 @@
 mod assets;
 mod entities;
 mod events;
+mod graph;
 pub(crate) mod meta;
 mod projects;
 mod search;
@@ -41,6 +42,7 @@ pub fn router(state: SharedState) -> Router {
         .route("/entities/{slug}/backlinks", get(entities::backlinks))
         .route("/entities/{slug}/links", get(entities::links))
         .route("/stubs", get(entities::stubs))
+        .route("/graph", get(graph::get))
         .route("/search", get(search::search))
         .route("/assets", get(assets::list).post(assets::upload))
         .route("/assets/{*path}", get(assets::serve))

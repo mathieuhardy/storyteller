@@ -141,6 +141,37 @@ pub struct Stub {
     pub sources: Vec<String>,
 }
 
+/// A node in the [link graph](../../docs/adr/0018-hand-rolled-graph-layout.md) —
+/// every entry, so isolated ones are visible too. Shape of `GET /graph`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GraphNode {
+    pub slug: String,
+    #[serde(rename = "type")]
+    pub type_name: String,
+    pub title: String,
+    pub has_errors: bool,
+}
+
+/// One resolved, entry-to-entry link. Unlike [`OutgoingLink`], a stub or an
+/// ambiguous link has no single target entry and is never an edge; a repeated
+/// link between the same two entries (several fields, several mentions) is
+/// collapsed to one — the graph shows *that* two entries are connected, not
+/// how many times.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GraphEdge {
+    pub source: String,
+    pub target: String,
+}
+
+/// The whole project as a network: every entry, and every resolved
+/// entry-to-entry link between them. Shape of `GET /graph`
+/// ([ADR 0008](../../docs/adr/0008-no-graph-in-mvp.md)).
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct Graph {
+    pub nodes: Vec<GraphNode>,
+    pub edges: Vec<GraphEdge>,
+}
+
 /// Extracts every wikilink from a markdown body.
 ///
 /// Offsets are relative to the body. Note that occurrences inside fenced code

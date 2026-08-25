@@ -15,7 +15,7 @@ Framework reminder: [markdown is the sole source of truth](principles.md), the [
 | **M4** | ✅ done | SvelteKit + Shadcn frontend: filterable list/table [views](glossary.md) by type, backlinks panel, entry editor (frontmatter + body). | M1, M2, M3 | GUI consumes a stable M1–M3 API; navigate, filter, and edit entries; links and backlinks are clickable; no API bypass on front side. |
 | **M5** | ✅ done | FTS search + advanced filters/sort + **saved views**. | M1 (index), M4 | Full-text search queries the index; filters and sorts combine; a view can be named, saved, and reloaded. |
 | **M6** | ✅ done | Packaging & self-host **MVP**: `storyteller-server` distributed via **Docker** and installable via **Nix**. | M4 | The application launches in self-host Docker and installs via Nix; index rebuilds; a reproducible release is produced. |
-| **M7** | 🚧 partial | v2+: packaged desktop (`storyteller-tauri` → AppImage/.deb), link graph, **media gallery**, **custom types**, Android APK spike. | M6 | Each v2 item is scoped (spec or spike); none blocks the M1–M6 MVP. |
+| **M7** | 🚧 partial | v2+: packaged desktop (`storyteller-tauri` → AppImage/.deb), **link graph**, **media gallery**, **custom types**, Android APK spike. | M6 | Each v2 item is scoped (spec or spike); none blocks the M1–M6 MVP. |
 
 ### M1 — What Landed
 
@@ -87,8 +87,15 @@ M6 is done (Docker verified live; Nix authored to standard nixpkgs patterns but 
   schema-driven screens (M4). One known, documented gap: the nav/type-picker's `typeLabel()` falls back to
   the raw type name for a custom type rather than its own `label` — cosmetic, left as a follow-up. No GUI
   type-builder in this pass; `types.yaml` is hand-authored, like `config.yaml`'s `enabled_types` already is.
+- **Link graph** (`/graph`, [docs/ui/screens.md](ui/screens.md#graphe)): the visualization layer
+  [ADR 0008](adr/0008-no-graph-in-mvp.md) deferred to v2, now that its stated prerequisite — the backlinks
+  index — has existed since M1. `GET /graph` (new, [ADR 0008](adr/0008-no-graph-in-mvp.md)) serves the whole
+  project as nodes (every entry) and edges (every resolved, deduplicated entry-to-entry link) in one query
+  against the index's `links` table. The frontend lays it out with a hand-rolled force simulation and
+  renders it as plain SVG — no charting/graph library added ([ADR 0018](adr/0018-hand-rolled-graph-layout.md)).
+  Hover highlights a node's direct neighbors, click navigates to the entry, wheel/drag zoom and pan.
 
-Remaining M7 items (packaged desktop, link graph, Android APK spike) are not started.
+Remaining M7 items (packaged desktop, Android APK spike) are not started.
 
 ## Critical Path
 

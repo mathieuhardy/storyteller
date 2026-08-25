@@ -172,3 +172,23 @@ export interface AssetInfo {
 	kind: 'image' | 'file';
 	size: number;
 }
+
+/** A node in the link graph — every entry (`GET /graph`, docs/api.md §3). */
+export interface GraphNode {
+	slug: string;
+	type: string;
+	title: string;
+	has_errors: boolean;
+}
+
+/** One resolved, deduplicated entry-to-entry link (`GET /graph`). */
+export interface GraphEdge {
+	source: string;
+	target: string;
+}
+
+/** The whole project as a network (`GET /graph`, docs/api.md §3). */
+export interface Graph {
+	nodes: GraphNode[];
+	edges: GraphEdge[];
+}

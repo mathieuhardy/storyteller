@@ -47,3 +47,4 @@ For overall product context, see [vision](../vision.md) and [principles](../prin
 | [0015](0015-markdown-rendering-in-core.md) | Markdown rendering happens in `core` | Accepted |
 | [0016](0016-embed-frontend-in-server-binary.md) | The built frontend is embedded into `storyteller-server` at compile time | Accepted |
 | [0017](0017-custom-types.md) | Custom types are declared in `.storyteller/types.yaml` and merged into the catalog at runtime | Accepted |
+| [0018](0018-hand-rolled-graph-layout.md) | The link graph uses a hand-rolled force layout, no charting/graph library | Accepted |

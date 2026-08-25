@@ -12,7 +12,8 @@
 		stubsCount = 0,
 		activeType = null,
 		activeWorkshop = false,
-		activeGallery = false
+		activeGallery = false,
+		activeGraph = false
 	}: {
 		projectName: string;
 		entriesCount: number;
@@ -21,6 +22,7 @@
 		activeType?: string | null;
 		activeWorkshop?: boolean;
 		activeGallery?: boolean;
+		activeGraph?: boolean;
 	} = $props();
 
 	function monogram(label: string): string {
@@ -73,6 +75,14 @@
 		<a class="item" class:active={activeGallery} href="/gallery">
 			<span class="media-ico" aria-hidden="true"><Icon name="image" size={15} /></span>
 			<span class="iname">{t('nav.gallery')}</span>
+		</a>
+	</div>
+
+	<div class="section">
+		<p class="label">{t('nav.explore')}</p>
+		<a class="item" class:active={activeGraph} href="/graph">
+			<span class="media-ico" aria-hidden="true"><Icon name="network" size={15} /></span>
+			<span class="iname">{t('nav.graph')}</span>
 		</a>
 	</div>
 </nav>

@@ -2,7 +2,7 @@
 
 Les surfaces de l'application, chacune avec son rôle, sa structure et les **endpoints** consommés
 ([api.md](../api.md)). L'UI ne fait que consommer l'API. Maquettes de référence dans [`mockups/`](mockups/)
-pour les cinq écrans du MVP (§1-5) ; §6 (v2/M7) n'a pas de maquette dédiée, même traitement que
+pour les cinq écrans du MVP (§1-5) ; §6-7 (v2/M7) n'ont pas de maquette dédiée, même traitement que
 Recherche (M5) — spec ici, implémentation directe contre l'API existante.
 
 ## Mapping écran → endpoints (vue d'ensemble)
@@ -16,6 +16,7 @@ Recherche (M5) — spec ici, implémentation directe contre l'API existante.
 | Éditeur | `GET /types/{type}` (formulaire), `POST`/`PATCH /entities`, `POST /entities/{slug}/rename` |
 | Chantier | `GET /stubs`, `GET /entities/{slug}/links` (ambigus), `POST /entities` (création), réécriture de lien |
 | Galerie médias | `GET /assets`, `POST /assets` (upload) |
+| Graphe des liens | `GET /graph` |
 
 Toutes les vues écoutent `GET /events` pour se rafraîchir ([states.md](states.md) §6).
 
@@ -146,3 +147,26 @@ Route `/gallery`, listée dans le nav (section « Médias », sous « Chantier �
 Pas de suppression depuis cet écran : un asset référencé ailleurs (`cover`, embed…) ne doit pas disparaître
 silencieusement sans vérifier ses usages — hors scope MVP de cette itération, laissé à une gestion manuelle
 du dossier `assets/` (cohérent avec « markdown = source de vérité », [principles.md](../principles.md)).
+
+## 7. Graphe des liens {#graphe}
+
+*(v2, [M7](../roadmap.md#m7))* — la vue réseau différée par [ADR 0008](../adr/0008-no-graph-in-mvp.md) :
+« les fondations sont déjà là (l'index des rétroliens), il ne manque que la couche de visualisation ».
+
+Route `/graph`, listée dans le nav (section « Explorer », sous « Médias »).
+
+- **Données** : `GET /graph` (une seule requête) → `{ nodes, edges }`. `nodes` = toutes les entrées (même
+  isolées) ; `edges` = liens **résolus** uniquement, dédupliqués par paire — un stub ou un lien ambigu n'a
+  pas de cible unique et n'apparaît jamais comme arête.
+- **Disposition** : calculée côté client, un algorithme de forces (Fruchterman-Reingold) fait maison
+  ([ADR 0018](../adr/0018-hand-rolled-graph-layout.md)) — pas de dépendance de graphe/charting ajoutée.
+  Recalculée à chaque chargement de l'écran (pas de disposition persistée).
+- **Rendu** : SVG brut, cercles + lignes, teintes Atelier existantes (`--accent` par défaut, `--danger`
+  pour une entrée en diagnostic, `--faint` pour un nœud isolé) — pas de palette catégorielle par type,
+  cohérent avec le graphique de répartition du tableau de bord.
+- **Interactions** : survol = surbrillance du nœud et de ses voisins directs (arêtes + nœuds), reste atténué ;
+  clic = navigation vers `/entry/{slug}` ; molette/glisser = zoom et panoramique (`viewBox` SVG).
+- **Vide** : aucune entrée → même traitement vide que les autres écrans ([states.md](states.md) §1).
+
+Pas d'édition depuis cet écran (repositionnement manuel, épinglage) — lecture et navigation seulement,
+conforme à la portée « juste une couche de visualisation » de l'ADR 0008.

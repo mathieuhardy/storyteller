@@ -466,6 +466,24 @@ async fn stubs_group_unresolved_targets_with_their_sources() {
 }
 
 #[tokio::test]
+async fn graph_lists_every_entry_and_only_resolved_edges() {
+    let server = TestServer::new();
+    let body = server.get_ok("/api/v1/graph").await;
+
+    let nodes = body["nodes"].as_array().unwrap();
+    assert_eq!(nodes.len(), 14);
+    assert!(nodes.iter().any(|n| n["slug"] == "aria-solane"));
+
+    let edges = body["edges"].as_array().unwrap();
+    assert!(!edges.is_empty());
+    let slugs: Vec<&str> = nodes.iter().map(|n| n["slug"].as_str().unwrap()).collect();
+    assert!(edges
+        .iter()
+        .all(|e| slugs.contains(&e["source"].as_str().unwrap())
+            && slugs.contains(&e["target"].as_str().unwrap())));
+}
+
+#[tokio::test]
 async fn creating_an_entry_from_a_stub_resolves_the_link() {
     let server = TestServer::new();
 
@@ -724,7 +742,7 @@ async fn writing_to_an_unknown_slug_is_a_404() {
 #[tokio::test]
 async fn an_unknown_endpoint_returns_the_normalized_error_body() {
     let server = TestServer::new();
-    let (status, body) = server.get("/api/v1/graph").await;
+    let (status, body) = server.get("/api/v1/nonexistent").await;
     assert_eq!(status, StatusCode::NOT_FOUND);
     assert_eq!(error_code(&body), "not_found");
 }

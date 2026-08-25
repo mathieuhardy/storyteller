@@ -36,6 +36,8 @@ export const fr: Messages = {
 	'nav.stubs': 'À créer',
 	'nav.media': 'Médias',
 	'nav.gallery': 'Galerie',
+	'nav.explore': 'Explorer',
+	'nav.graph': 'Graphe',
 
 	'breadcrumb.project': 'Projet',
 
@@ -204,6 +206,11 @@ export const fr: Messages = {
 	'gallery.kind': 'Type',
 	'gallery.kindImage': 'Image',
 	'gallery.kindFile': 'Fichier',
+
+	'graph.title': 'Graphe des liens',
+	'graph.subtitle': "Toutes les entrées et leurs connexions. Survolez pour surligner, cliquez pour ouvrir.",
+	'graph.empty': 'Aucune entrée pour le moment.',
+	'graph.nodeCount': '{count} entrées, {edges} liens',
 
 	'type.project': 'Projet',
 	'type.character': 'Personnage',

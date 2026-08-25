@@ -14,7 +14,12 @@ use serde_json::json;
 #[tokio::test]
 async fn routes_needing_a_project_answer_503_before_one_is_open() {
     let server = TestServer::empty();
-    for uri in ["/api/v1/project", "/api/v1/entities", "/api/v1/stubs"] {
+    for uri in [
+        "/api/v1/project",
+        "/api/v1/entities",
+        "/api/v1/stubs",
+        "/api/v1/graph",
+    ] {
         let (status, body) = server.get(uri).await;
         assert_eq!(status, StatusCode::SERVICE_UNAVAILABLE, "{uri}: {body}");
         assert_eq!(error_code(&body), "no_project", "{uri}: {body}");

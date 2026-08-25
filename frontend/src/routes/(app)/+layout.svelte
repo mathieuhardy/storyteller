@@ -32,6 +32,7 @@
 	const activeWorkshop = $derived(page.url.pathname === '/stubs');
 	const activeSearch = $derived(page.url.pathname === '/search');
 	const activeGallery = $derived(page.url.pathname === '/gallery');
+	const activeGraph = $derived(page.url.pathname === '/graph');
 
 	const breadcrumb = $derived.by(() => {
 		const crumbs: { label: string; href?: string }[] = [
@@ -49,6 +50,8 @@
 			crumbs.push({ label: t('search.action') });
 		} else if (activeGallery) {
 			crumbs.push({ label: t('nav.gallery') });
+		} else if (activeGraph) {
+			crumbs.push({ label: t('nav.graph') });
 		} else {
 			crumbs.push({ label: t('dashboard.title') });
 		}
@@ -72,6 +75,7 @@
 			{activeType}
 			{activeWorkshop}
 			{activeGallery}
+			{activeGraph}
 		/>
 		<main>
 			{@render children()}

@@ -30,6 +30,8 @@ This document is the **target contract**; it is delivered milestone by milestone
 | **M4** (assets) ✅ | `GET /assets`, `GET /assets/{path}`, `POST /assets` (`multipart/form-data`) — list, serve, and upload files under `assets/`; broadcasts `assets.changed`. Width/height are never populated (no image-decoding dependency added for it); an upload keeps only the bare filename (flattened, no subfolders) and refuses to overwrite an existing one. |
 | **M4** (render) ✅ | `?render=html` on `GET /entities/{slug}` — [ADR 0015](adr/0015-markdown-rendering-in-core.md) settled rendering in `core`. Wikilinks become `<a class="wikilink resolved">`/`<span class="wikilink stub\|ambiguous">`; `![[file]]` embeds resolve against `assets/` by filename (an `<img>`, or a visible "not found" block); the plain `![](assets/...)` form is left as `pulldown-cmark` renders it. Any `render` value other than `html` is a `400`. |
 | **M5** ✅ | `GET /search` and `q` on `/entities` — FTS5 (`entries_fts`, accent-insensitive, per-term prefix matching); index schema bumped to v2 so an existing on-disk cache gets rebuilt with the new table. |
+| **M7** (custom types) ✅ | Types declared in `.storyteller/types.yaml` merge into `GET /types`/`GET /types/{type}` alongside the built-ins ([ADR 0017](adr/0017-custom-types.md)); `TypeResponse` gained `custom: bool`. |
+| **M7** (graph) ✅ | `GET /graph` — the whole project as nodes/edges, from the index ([ADR 0008](adr/0008-no-graph-in-mvp.md)). |
 
 ---
 
@@ -124,6 +126,12 @@ thing distinguishing one from a built-in.
 | `GET` | `/api/v1/stubs` | List all project [stubs](glossary.md): wikilink targets without a corresponding entry, with count and list of referencing entries (for suggesting creation). |
 
 <a id="links--outgoing"></a>
+
+### Graph
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/v1/graph` | The whole project as a network ([ADR 0008](adr/0008-no-graph-in-mvp.md)): `{ nodes: [{ slug, type, title, has_errors }], edges: [{ source, target }] }`. `nodes` is every entry, so an entry with no links still appears. `edges` is every **resolved** entry-to-entry link, deduplicated per pair — a stub or an ambiguous link has no single target and is never an edge; several links between the same two entries collapse to one. |
 
 ### Search
 

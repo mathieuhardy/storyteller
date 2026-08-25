@@ -38,6 +38,8 @@ export const en = {
 	'nav.stubs': 'To create',
 	'nav.media': 'Media',
 	'nav.gallery': 'Gallery',
+	'nav.explore': 'Explore',
+	'nav.graph': 'Graph',
 
 	'breadcrumb.project': 'Project',
 
@@ -205,6 +207,11 @@ export const en = {
 	'gallery.kind': 'Kind',
 	'gallery.kindImage': 'Image',
 	'gallery.kindFile': 'File',
+
+	'graph.title': 'Link graph',
+	'graph.subtitle': 'Every entry and how they connect. Hover to highlight, click to open.',
+	'graph.empty': 'No entries yet.',
+	'graph.nodeCount': '{count} entries, {edges} links',
 
 	'type.project': 'Project',
 	'type.character': 'Character',

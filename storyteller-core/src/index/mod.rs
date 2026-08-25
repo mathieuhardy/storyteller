@@ -31,7 +31,8 @@ use sha2::{Digest, Sha256};
 use crate::config::STORYTELLER_DIR;
 use crate::error::{Diagnostic, Error, Result};
 use crate::links::{
-    self, Backlink, LinkContext, LinkOccurrence, OutgoingLink, Resolution, Resolver, Stub,
+    self, Backlink, Graph, GraphEdge, GraphNode, LinkContext, LinkOccurrence, OutgoingLink,
+    Resolution, Resolver, Stub,
 };
 use crate::model::{Entry, EntrySummary, Value};
 use crate::normalize::normalize;
@@ -300,6 +301,45 @@ impl Index {
             }
         }
         Ok(grouped)
+    }
+
+    /// The whole project as a network: every entry as a node, every resolved
+    /// entry-to-entry link as an edge ([ADR 0008](../../docs/adr/0008-no-graph-in-mvp.md)).
+    /// A stub or an ambiguous link has no single target and is never an edge; a
+    /// repeated link between the same two entries collapses to one.
+    pub fn graph(&self) -> Result<Graph> {
+        let mut nodes_stmt = self
+            .conn
+            .prepare("SELECT slug, type, title, has_errors FROM entries ORDER BY slug")?;
+        let nodes = nodes_stmt
+            .query_map([], |row| {
+                let has_errors: i64 = row.get(3)?;
+                Ok(GraphNode {
+                    slug: row.get(0)?,
+                    type_name: row.get(1)?,
+                    title: row.get(2)?,
+                    has_errors: has_errors != 0,
+                })
+            })?
+            .collect::<rusqlite::Result<Vec<_>>>()?;
+
+        let mut edges_stmt = self.conn.prepare(
+            "SELECT DISTINCT source_slug, target_slug
+             FROM links
+             WHERE status = 'resolved' AND is_embed = 0 AND source_slug != target_slug
+             ORDER BY source_slug, target_slug",
+        )?;
+        let edges = edges_stmt
+            .query_map([], |row| {
+                Ok(GraphEdge {
+                    source: row.get(0)?,
+                    // `status = 'resolved'` guarantees target_slug is set.
+                    target: row.get(1)?,
+                })
+            })?
+            .collect::<rusqlite::Result<Vec<_>>>()?;
+
+        Ok(Graph { nodes, edges })
     }
 
     /// Diagnostics recorded for an entry.

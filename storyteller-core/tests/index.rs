@@ -335,6 +335,53 @@ fn embeds_are_not_links_and_never_create_stubs() {
 }
 
 #[test]
+fn graph_includes_every_entry_as_a_node() {
+    let fixture = Fixture::new();
+    let (_project, index) = fixture.indexed();
+
+    let graph = index.graph().unwrap();
+    assert_eq!(graph.nodes.len(), 14);
+    assert!(graph.nodes.iter().any(|n| n.slug == "aria-solane"));
+    // Every edge connects two entries that are actually nodes — a stub or an
+    // ambiguous link never appears (no single target to draw a line to).
+    assert!(graph.edges.iter().all(|edge| {
+        graph.nodes.iter().any(|n| n.slug == edge.source)
+            && graph.nodes.iter().any(|n| n.slug == edge.target)
+    }));
+}
+
+#[test]
+fn graph_collapses_repeated_links_between_the_same_pair() {
+    let fixture = Fixture::new();
+    fixture.write(
+        "notes/liens.md",
+        "---\ntype: note\ntitle: Liens\nrelated:\n  - \"[[Aria Solane]]\"\n---\n[[Aria Solane]] à nouveau.\n",
+    );
+    let (_project, index) = fixture.indexed();
+
+    let graph = index.graph().unwrap();
+    let count = graph
+        .edges
+        .iter()
+        .filter(|e| e.source == "liens" && e.target == "aria-solane")
+        .count();
+    assert_eq!(count, 1, "two mentions of the same target is still one edge");
+}
+
+#[test]
+fn graph_excludes_self_links() {
+    let fixture = Fixture::new();
+    fixture.write("notes/auto.md", "---\ntype: note\ntitle: Auto\n---\n[[Auto]]\n");
+    let (_project, index) = fixture.indexed();
+
+    let graph = index.graph().unwrap();
+    assert!(!graph
+        .edges
+        .iter()
+        .any(|e| e.source == "auto" && e.target == "auto"));
+}
+
+#[test]
 fn diagnostics_are_attached_to_the_offending_entry() {
     let fixture = Fixture::new();
     let (_project, index) = fixture.indexed();
