@@ -26,7 +26,7 @@ export const load: PageLoad = async ({ fetch }) => {
 	const [stubs, entities, types] = await Promise.all([
 		getStubs(fetch),
 		fetchAllEntities(fetch),
-		getTypes(fetch)
+		getTypes({}, fetch)
 	]);
 
 	const linksByEntity = await Promise.all(

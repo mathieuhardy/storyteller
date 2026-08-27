@@ -213,6 +213,19 @@ export const en = {
 	'graph.empty': 'No entries yet.',
 	'graph.nodeCount': '{count} entries, {edges} links',
 
+	'nav.settings': 'Settings',
+
+	'settings.types.title': 'Types',
+	'settings.types.subtitle': 'Enable or disable types for entry creation.',
+	'settings.types.builtIn': 'Built-in types',
+	'settings.types.custom': 'Custom types',
+	'settings.types.folder': 'Folder: {folder}',
+	'settings.types.entryCount': '{count} entries',
+	'settings.types.enabled': 'Enabled',
+	'settings.types.disabled': 'Disabled',
+	'settings.types.errorUpdating': 'Could not update type.',
+	'settings.types.noCustom': 'No custom types defined.',
+
 	'type.project': 'Project',
 	'type.character': 'Character',
 	'type.location': 'Location',

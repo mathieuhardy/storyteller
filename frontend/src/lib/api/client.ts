@@ -89,8 +89,15 @@ export const getVersion = (fetchImpl: Fetch = fetch): Promise<VersionResponse> =
 
 // --- Types ----------------------------------------------------------------
 
-export const getTypes = (fetchImpl: Fetch = fetch): Promise<TypeResponse[]> =>
-	request('/types', undefined, fetchImpl);
+export const getTypes = (
+	opts: { all?: boolean } = {},
+	fetchImpl: Fetch = fetch
+): Promise<TypeResponse[]> => {
+	const params = new URLSearchParams();
+	if (opts.all) params.set('all', 'true');
+	const query = params.toString();
+	return request(`/types${query ? `?${query}` : ''}`, undefined, fetchImpl);
+};
 
 export const getType = (type: string, fetchImpl: Fetch = fetch): Promise<TypeResponse> =>
 	request(`/types/${encodeURIComponent(type)}`, undefined, fetchImpl);

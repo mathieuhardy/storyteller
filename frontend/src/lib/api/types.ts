@@ -116,6 +116,7 @@ export interface TypeResponse {
 	label: string;
 	folder: string;
 	enabled: boolean;
+	custom: boolean;
 	fields: FieldSchema[];
 }
 

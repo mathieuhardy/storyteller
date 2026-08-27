@@ -212,6 +212,19 @@ export const fr: Messages = {
 	'graph.empty': 'Aucune entrée pour le moment.',
 	'graph.nodeCount': '{count} entrées, {edges} liens',
 
+	'nav.settings': 'Paramètres',
+
+	'settings.types.title': 'Types',
+	'settings.types.subtitle': 'Activer ou désactiver les types pour la création d\'entrées.',
+	'settings.types.builtIn': 'Types intégrés',
+	'settings.types.custom': 'Types personnalisés',
+	'settings.types.folder': 'Dossier : {folder}',
+	'settings.types.entryCount': '{count} entrées',
+	'settings.types.enabled': 'Activé',
+	'settings.types.disabled': 'Désactivé',
+	'settings.types.errorUpdating': 'Impossible de mettre à jour le type.',
+	'settings.types.noCustom': 'Aucun type personnalisé défini.',
+
 	'type.project': 'Projet',
 	'type.character': 'Personnage',
 	'type.location': 'Lieu',

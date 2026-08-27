@@ -33,6 +33,7 @@
 	const activeSearch = $derived(page.url.pathname === '/search');
 	const activeGallery = $derived(page.url.pathname === '/gallery');
 	const activeGraph = $derived(page.url.pathname === '/graph');
+	const activeSettings = $derived(page.url.pathname.startsWith('/settings'));
 
 	const breadcrumb = $derived.by(() => {
 		const crumbs: { label: string; href?: string }[] = [
@@ -52,6 +53,11 @@
 			crumbs.push({ label: t('nav.gallery') });
 		} else if (activeGraph) {
 			crumbs.push({ label: t('nav.graph') });
+		} else if (activeSettings) {
+			crumbs.push({ label: t('nav.settings') });
+			if (page.url.pathname === '/settings/types') {
+				crumbs.push({ label: t('settings.types.title') });
+			}
 		} else {
 			crumbs.push({ label: t('dashboard.title') });
 		}
@@ -76,6 +82,7 @@
 			{activeWorkshop}
 			{activeGallery}
 			{activeGraph}
+			{activeSettings}
 		/>
 		<main>
 			{@render children()}
