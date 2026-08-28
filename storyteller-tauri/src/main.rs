@@ -22,6 +22,7 @@ fn main() {
         .init();
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let project = std::env::var_os("STORYTELLER_PROJECT").map(PathBuf::from);
 

@@ -14,6 +14,7 @@ export const en = {
 	'action.open': 'Open',
 	'action.create': 'Create',
 	'action.openFolder': 'Open a folder…',
+	'action.browseFolder': 'Browse…',
 	'action.newProject': 'New project',
 
 	'search.placeholder': 'Search…',
@@ -52,8 +53,8 @@ export const en = {
 	'launcher.entries': '{count} entries',
 	'launcher.openTitle': 'Open a project folder',
 	'launcher.pathLabel': 'Folder path on this machine',
-	'launcher.pathHint':
-		'In browser mode, type the server-side folder path. A native picker comes with the desktop app.',
+	'launcher.pathHint': 'Type the server-side folder path.',
+	'launcher.pathHintDesktop': 'Browse for a folder, or paste a path directly.',
 	'launcher.opening': 'Opening…',
 	'launcher.openError': 'Could not open that folder.',
 

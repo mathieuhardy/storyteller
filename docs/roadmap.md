@@ -99,8 +99,13 @@ M6 is done (Docker verified live; Nix authored to standard nixpkgs patterns but 
   it — no separate IPC command surface, no duplicated API, the frontend unaware it isn't in a browser tab.
   `cargo tauri build` produces `Storyteller_0.1.0_amd64.AppImage` and `Storyteller_0.1.0_amd64.deb`; both
   were built **and run** in this environment (unlike M6's Nix packaging, this is verified end-to-end, not
-  just authored to standard patterns). No native folder picker yet — the launcher's typed/pasted path,
-  already shared with the browser-hosted app, works unchanged inside the webview.
+  just authored to standard patterns).
+- **Native folder picker** for the desktop app: `tauri-plugin-dialog` integrated, the launcher detects
+  Tauri context via `window.__TAURI__` and shows a "Browse…" button that opens the native OS folder picker
+  — the browser-hosted app's launcher stays exactly as it was (typed/pasted path only).
+- **Type settings screen** (`/settings/types`): lists every type — built-in and custom alike — with a
+  toggle wired to the existing `PATCH /types/{type}` endpoint, persisting enable/disable to
+  `.storyteller/config.yaml`. No backend work needed; the endpoint existed since M4.
 
 Remaining M7 item: the Android APK spike (depends on `storyteller-tauri`, now that it exists) is not started —
 this session's environment has no Android SDK/NDK to attempt it.
@@ -156,26 +161,9 @@ investigate rather than leaving it unconditionally excluded.
 
 ## Planned Next
 
-Four items, picked out of the gaps above and out of "Ideas Under Investigation," as the next
+Two items, picked out of the gaps above and out of "Ideas Under Investigation," as the next
 things worth building — small and independent enough that they don't need a numbered milestone
 or a shared Definition of Done the way M0–M7 did.
-
-### Type enable/disable settings screen
-
-`PATCH /types/{type}` has existed since M4 (`storyteller-server/src/routes/types.rs`);
-`setTypeEnabled` is already exposed client-side (`frontend/src/lib/api/client.ts`) with no screen
-calling it. Needs a settings screen (e.g. `/settings/types`) listing every type — built-in and
-custom alike — with a toggle wired to the existing endpoint. No backend work.
-
-### Native folder picker for the desktop app
-
-Today `storyteller-tauri`'s launcher takes the same typed/pasted path as the browser-hosted app
-([ADR 0019](adr/0019-tauri-reuses-the-http-router.md)). Needs `tauri-plugin-dialog` (a new Tauri
-dependency), a capability/permission grant in `storyteller-tauri`'s config, and a frontend
-affordance that calls it — but *only* when running inside the Tauri webview, so the
-browser-hosted app's launcher stays exactly as it is today. The real design question: how the
-frontend detects "am I running inside Tauri" without leaking that distinction into the
-transport-agnostic API client, which is the whole point of ADR 0019.
 
 ### CI: package-on-tag release automation
 

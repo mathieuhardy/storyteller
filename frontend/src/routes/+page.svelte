@@ -6,15 +6,23 @@
 	import Button from '$components/Button.svelte';
 	import Icon from '$components/Icon.svelte';
 	import { openProject, ApiError } from '$api/client';
+	import { isTauri, pickFolder } from '$lib/tauri';
 	import { t, formatNumber, formatRelative } from '$i18n/index.svelte';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 
+	const nativePicker = isTauri();
+
 	let showPathForm = $state(false);
 	let pathInput = $state('');
 	let opening = $state(false);
 	let errorMessage = $state('');
+
+	async function browse() {
+		const path = await pickFolder();
+		if (path) pathInput = path;
+	}
 
 	async function open(path: string) {
 		if (!path.trim() || opening) return;
@@ -71,11 +79,17 @@
 						autocomplete="off"
 						spellcheck="false"
 					/>
+					{#if nativePicker}
+						<Button type="button" onclick={browse} disabled={opening}>
+							<Icon name="folder" size={15} />
+							{t('action.browseFolder')}
+						</Button>
+					{/if}
 					<Button variant="primary" type="submit" disabled={opening}>
 						{opening ? t('launcher.opening') : t('action.open')}
 					</Button>
 				</div>
-				<p class="hint">{t('launcher.pathHint')}</p>
+				<p class="hint">{nativePicker ? t('launcher.pathHintDesktop') : t('launcher.pathHint')}</p>
 			</form>
 		{/if}
 

@@ -45,7 +45,7 @@ This document lists **Storyteller** features grouped by domain, with a priority 
 | Light `frontmatter` validation by `type` schema (required fields, value types) | MVP |
 | Respect `enabled_types`: only show/offer active `type`s | MVP |
 | Free-form `tags` and multiple `aliases` per entry | MVP |
-| UI for enabling/disabling `type`s (modularity acknowledged) | v2 |
+| UI for enabling/disabling `type`s (`/settings/types` screen) | MVP |
 | User-defined custom `type`s | v2 |
 | Custom fields added to a `type` | later |
 

@@ -12,6 +12,7 @@ export const fr: Messages = {
 	'action.open': 'Ouvrir',
 	'action.create': 'Créer',
 	'action.openFolder': 'Ouvrir un dossier…',
+	'action.browseFolder': 'Parcourir…',
 	'action.newProject': 'Nouveau projet',
 
 	'search.placeholder': 'Rechercher…',
@@ -50,8 +51,8 @@ export const fr: Messages = {
 	'launcher.entries': '{count} entrées',
 	'launcher.openTitle': 'Ouvrir un dossier de projet',
 	'launcher.pathLabel': 'Chemin du dossier sur cette machine',
-	'launcher.pathHint':
-		"En mode navigateur, saisissez le chemin du dossier côté serveur. Un sélecteur natif viendra avec l'application de bureau.",
+	'launcher.pathHint': 'Saisissez le chemin du dossier côté serveur.',
+	'launcher.pathHintDesktop': 'Parcourez pour choisir un dossier, ou collez un chemin directement.',
 	'launcher.opening': 'Ouverture…',
 	'launcher.openError': "Impossible d'ouvrir ce dossier.",
 

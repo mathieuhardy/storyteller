@@ -15,6 +15,7 @@ storyteller-server = { path = "../storyteller-server" }
 anyhow = { workspace = true }
 axum = "0.8"
 tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
 tokio = { version = "1", features = ["rt-multi-thread"] }
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
