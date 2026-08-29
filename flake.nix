@@ -1,5 +1,5 @@
 {
-  description = "Rust nightly dev shell";
+  description = "Storyteller — personal knowledge base";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -13,8 +13,9 @@
       rust-overlay,
     }:
     let
+      system = "x86_64-linux";
       pkgs = import nixpkgs {
-        system = "x86_64-linux";
+        inherit system;
         overlays = [ rust-overlay.overlays.default ];
       };
 
@@ -23,20 +24,73 @@
       # `cargo build` — `#[derive(Embed)]` reads that folder at *compile*
       # time (storyteller-server/src/frontend.rs), so it must exist first.
       #
-      # `npmDepsHash` is a placeholder: Nix needs the real fixed-output hash
-      # of `frontend/package-lock.json`'s dependency tree, which can only be
-      # computed by actually fetching it. Run `nix build .#frontend`; it will
-      # fail with the correct hash to paste in here (standard Nix workflow —
-      # this can't be produced without network access to npm's registry).
+      # If `npmDepsHash` becomes stale after updating frontend dependencies,
+      # run `nix build .#frontend` — it will fail with the new hash to paste here.
       frontend = pkgs.buildNpmPackage {
         pname = "storyteller-frontend";
         version = "0.1.0";
         src = ./frontend;
-        npmDepsHash = pkgs.lib.fakeHash;
+        npmDepsHash = "sha256-fFd4006YltAzOd90u9jQ4j5FSKwwJKnBQY/vuZSVBq4=";
         installPhase = ''
           mkdir -p $out
           cp -r build/. $out/
         '';
+      };
+
+      storyteller-tauri = pkgs.rustPlatform.buildRustPackage {
+        pname = "storyteller";
+        version = "0.1.0";
+        src = ./.;
+        cargoLock.lockFile = ./Cargo.lock;
+
+        nativeBuildInputs = with pkgs; [
+          pkg-config
+          wrapGAppsHook3
+          copyDesktopItems
+        ];
+
+        buildInputs = with pkgs; [
+          webkitgtk_4_1
+          gtk3
+          libayatana-appindicator
+          librsvg
+          openssl
+        ];
+
+        cargoBuildFlags = [
+          "-p"
+          "storyteller-tauri"
+        ];
+
+        # Stage the frontend before cargo build (rust-embed reads at compile time)
+        postPatch = ''
+          mkdir -p frontend/build
+          cp -r ${frontend}/. frontend/build/
+        '';
+
+        postInstall = ''
+          # Install icon
+          mkdir -p $out/share/icons/hicolor/128x128/apps
+          cp storyteller-tauri/icons/128x128.png $out/share/icons/hicolor/128x128/apps/storyteller.png
+
+          # Rename binary for cleaner desktop integration
+          mv $out/bin/storyteller-tauri $out/bin/storyteller
+        '';
+
+        desktopItems = [
+          (pkgs.makeDesktopItem {
+            name = "storyteller";
+            exec = "storyteller";
+            icon = "storyteller";
+            desktopName = "Storyteller";
+            comment = "Personal knowledge base";
+            categories = [ "Office" "Utility" ];
+            terminal = false;
+          })
+        ];
+
+        doCheck = false;
+        meta.mainProgram = "storyteller";
       };
 
       storyteller-server = pkgs.rustPlatform.buildRustPackage {
@@ -49,42 +103,36 @@
           "-p"
           "storyteller-server"
         ];
-        # Same reason the Docker build stages the frontend before `cargo
-        # build`: the embed has to see real files at compile time.
         postPatch = ''
           mkdir -p frontend/build
           cp -r ${frontend}/. frontend/build/
         '';
-        # The workspace's own test suite runs `cargo test` directly (CI, or a
-        # contributor's machine) against whatever `frontend/build/` happens
-        # to exist there — usually nothing, which is exactly the "no
-        # frontend embedded" case those tests assert on (see
-        # `routes_are_versioned` in storyteller-server/tests/api.rs). Here a
-        # *real* frontend is always staged first, which would make that
-        # specific assertion fail for a reason that has nothing to do with
-        # whether the package itself is correct — so the package build
-        # doesn't re-run that suite.
         doCheck = false;
         meta.mainProgram = "storyteller-server";
       };
     in
     {
-      devShells.x86_64-linux.default = pkgs.mkShell {
+      devShells.${system}.default = pkgs.mkShell {
         buildInputs = [
           (pkgs.rust-bin.nightly.latest.default)
           pkgs.pkg-config
           pkgs.fuse3
+          # Tauri dev dependencies
+          pkgs.webkitgtk_4_1
+          pkgs.gtk3
+          pkgs.libayatana-appindicator
+          pkgs.librsvg
         ];
       };
 
-      packages.x86_64-linux = {
-        default = storyteller-server;
-        inherit storyteller-server frontend;
+      packages.${system} = {
+        default = storyteller-tauri;
+        inherit storyteller-tauri storyteller-server frontend;
       };
 
-      apps.x86_64-linux.default = {
+      apps.${system}.default = {
         type = "app";
-        program = "${storyteller-server}/bin/storyteller-server";
+        program = "${storyteller-tauri}/bin/storyteller";
       };
     };
 }
