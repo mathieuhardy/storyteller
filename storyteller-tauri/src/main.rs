@@ -13,6 +13,10 @@ use storyteller_server::{router, AppState};
 use tauri::{WebviewUrl, WebviewWindowBuilder};
 
 fn main() {
+    // Force X11 backend on Linux to work around webkit2gtk rendering issues on
+    // Wayland (https://github.com/tauri-apps/tauri/issues/12361).
+    #[cfg(target_os = "linux")]
+    std::env::set_var("GDK_BACKEND", "x11");
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {

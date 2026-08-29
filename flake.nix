@@ -77,6 +77,11 @@
           mv $out/bin/storyteller-tauri $out/bin/storyteller
         '';
 
+        # Force X11 backend to work around webkit2gtk rendering issues on Wayland
+        preFixup = ''
+          gappsWrapperArgs+=(--set GDK_BACKEND x11)
+        '';
+
         desktopItems = [
           (pkgs.makeDesktopItem {
             name = "storyteller";
@@ -123,6 +128,10 @@
           pkgs.libayatana-appindicator
           pkgs.librsvg
         ];
+        # Force X11 backend to work around webkit2gtk rendering issues on Wayland
+        shellHook = ''
+          export GDK_BACKEND=x11
+        '';
       };
 
       packages.${system} = {
