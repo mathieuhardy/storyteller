@@ -174,8 +174,8 @@ Release:
 
 - **Linux**: AppImage + `.deb` via `cargo tauri build` (the exact steps verified by hand this
   session, see [CONTRIBUTING.md](../CONTRIBUTING.md#desktop-app-storyteller-tauri)).
-- **Windows** (`.msi`) and **macOS** (`.dmg`/`.app`) via Tauri's cross-platform bundler on
-  `windows-latest`/`macos-latest` GitHub-hosted runners — untested on this session's Linux-only
+- ****macOS** (`.dmg`/`.app`) via Tauri's cross-platform bundler on
+  `macos-latest` GitHub-hosted runners — untested on this session's Linux-only
   environment, so a first pass here would be discovering what breaks, not a known-good path.
 - **Docker**: build the self-host image and push it to a registry (e.g. GHCR).
 - **Nix**: validate `nix build` succeeds against the flake (and, once the real `npmDepsHash` is
