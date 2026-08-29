@@ -236,5 +236,26 @@ export const fr: Messages = {
 	'type.species': 'Espèce',
 	'type.chapter': 'Chapitre',
 	'type.note': 'Note',
-	'type.concept': 'Concept'
+	'type.concept': 'Concept',
+
+	'nav.writing': 'Écriture',
+
+	'book.files': 'Fichiers',
+	'book.words': 'mots',
+	'book.noFileSelected': 'Aucun fichier sélectionné',
+	'book.backToDashboard': 'Retour au tableau de bord',
+	'book.saved': 'Enregistré',
+	'book.autoSave': 'Auto-save',
+	'book.autoSaveEnabled': 'Activer l\'auto-save',
+	'book.autoSaveInterval': 'Intervalle',
+	'book.displaySettings': 'Affichage',
+	'book.showLineBreaks': 'Afficher les retours à la ligne',
+	'book.lineHeight': 'Interligne',
+	'book.lineHeightCompact': 'Compact',
+	'book.lineHeightNormal': 'Normal',
+	'book.lineHeightSpacious': 'Aéré',
+	'book.selectFolders': 'Choisir les dossiers',
+	'book.noFolders': 'Aucun dossier trouvé',
+	'book.noFiles': 'Aucun fichier à afficher',
+	'book.loading': 'Chargement...'
 };

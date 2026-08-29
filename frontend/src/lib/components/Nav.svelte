@@ -89,6 +89,13 @@
 	</div>
 
 	<div class="section">
+		<a class="item writing" href="/book">
+			<span class="media-ico" aria-hidden="true"><Icon name="edit" size={15} /></span>
+			<span class="iname">{t('nav.writing')}</span>
+		</a>
+	</div>
+
+	<div class="section">
 		<p class="label">{t('nav.settings')}</p>
 		<a class="item" class:active={activeSettings} href="/settings/types">
 			<span class="media-ico" aria-hidden="true"><Icon name="settings" size={15} /></span>

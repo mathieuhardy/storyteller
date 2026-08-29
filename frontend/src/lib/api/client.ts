@@ -185,3 +185,45 @@ export const updateEntity = (
 	fetchImpl: Fetch = fetch
 ): Promise<Entry> =>
 	request(`/entities/${encodeURIComponent(slug)}`, { ...json(body), method: 'PATCH' }, fetchImpl);
+
+// --- Files (Book Mode) ------------------------------------------------------
+
+/** A file or directory entry from the files API. */
+export interface FileEntry {
+	path: string;
+	name: string;
+	is_dir: boolean;
+}
+
+/** Content of a file from the files API. */
+export interface FileContent {
+	path: string;
+	content: string;
+}
+
+/** Lists files and directories in a path. Only .md files are returned. */
+export const listFiles = (
+	path?: string,
+	fetchImpl: Fetch = fetch
+): Promise<FileEntry[]> => {
+	const params = new URLSearchParams();
+	if (path) params.set('path', path);
+	const query = params.toString();
+	return request(`/files${query ? `?${query}` : ''}`, undefined, fetchImpl);
+};
+
+/** Reads the raw content of a file. */
+export const readFile = (path: string, fetchImpl: Fetch = fetch): Promise<FileContent> =>
+	request(`/files/${path.split('/').map(encodeURIComponent).join('/')}`, undefined, fetchImpl);
+
+/** Writes raw content to a file. Only .md files are allowed. */
+export const writeFile = (
+	path: string,
+	content: string,
+	fetchImpl: Fetch = fetch
+): Promise<void> =>
+	request(
+		`/files/${path.split('/').map(encodeURIComponent).join('/')}`,
+		{ ...json({ content }), method: 'PUT' },
+		fetchImpl
+	);

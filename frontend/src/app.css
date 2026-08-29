@@ -204,3 +204,20 @@ body {
 		transition-duration: 0.001ms !important;
 	}
 }
+
+/* Book mode: darker theme optimized for long writing sessions. Applied when
+ * data-book-mode="true" is set on the document element. */
+:root[data-book-mode='true'] {
+	--book-bg: #0a0a0a;
+	--book-surface: #111111;
+	--book-border: #1a1a1a;
+	--bg: var(--book-bg);
+	--surface: var(--book-surface);
+	--surface-2: #151515;
+	--surface-3: #1a1a1a;
+	--border: var(--book-border);
+	--border-strong: #252525;
+	--text: #d4d4d4;
+	--muted: #8a8a8a;
+	--faint: #555555;
+}

@@ -237,7 +237,28 @@ export const en = {
 	'type.species': 'Species',
 	'type.chapter': 'Chapter',
 	'type.note': 'Note',
-	'type.concept': 'Concept'
+	'type.concept': 'Concept',
+
+	'nav.writing': 'Writing',
+
+	'book.files': 'Files',
+	'book.words': 'words',
+	'book.noFileSelected': 'No file selected',
+	'book.backToDashboard': 'Back to dashboard',
+	'book.saved': 'Saved',
+	'book.autoSave': 'Auto-save',
+	'book.autoSaveEnabled': 'Enable auto-save',
+	'book.autoSaveInterval': 'Interval',
+	'book.displaySettings': 'Display',
+	'book.showLineBreaks': 'Show line breaks',
+	'book.lineHeight': 'Line height',
+	'book.lineHeightCompact': 'Compact',
+	'book.lineHeightNormal': 'Normal',
+	'book.lineHeightSpacious': 'Spacious',
+	'book.selectFolders': 'Select folders',
+	'book.noFolders': 'No folders found',
+	'book.noFiles': 'No files to display',
+	'book.loading': 'Loading...'
 };
 
 export type MessageKey = keyof typeof en;
