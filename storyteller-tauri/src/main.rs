@@ -10,7 +10,7 @@
 use std::path::PathBuf;
 
 use storyteller_server::{router, AppState};
-use tauri::{WebviewUrl, WebviewWindowBuilder};
+use tauri::{ipc::CapabilityBuilder, Manager, WebviewUrl, WebviewWindowBuilder};
 
 fn main() {
     // Force X11 backend on Linux to work around webkit2gtk rendering issues on
@@ -43,9 +43,19 @@ fn main() {
             let port = runtime.block_on(bootstrap_and_serve(project));
             Box::leak(Box::new(runtime));
 
-            let url = format!("http://127.0.0.1:{port}/")
+            let url_str = format!("http://127.0.0.1:{port}/");
+            let url = url_str
                 .parse()
                 .expect("the embedded server's own URL must be valid");
+
+            // Grant IPC capabilities to the localhost URL so the dialog plugin works.
+            app.add_capability(
+                CapabilityBuilder::new("localhost-ipc")
+                    .permission("dialog:allow-open")
+                    .remote(url_str)
+                    .window("main"),
+            )?;
+
             WebviewWindowBuilder::new(app, "main", WebviewUrl::External(url))
                 .title("Storyteller")
                 .inner_size(1280.0, 800.0)

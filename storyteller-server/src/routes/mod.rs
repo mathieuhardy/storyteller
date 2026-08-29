@@ -5,6 +5,7 @@
 //! deliberately absent rather than stubbed.
 
 mod assets;
+mod dialog;
 mod entities;
 mod events;
 mod files;
@@ -52,6 +53,7 @@ pub fn router(state: SharedState) -> Router {
         .route("/events", get(events::stream))
         .route("/files", get(files::list))
         .route("/files/{*path}", get(files::read).put(files::write))
+        .route("/pick-folder", get(dialog::pick_folder))
         // Its own fallback: an unmatched path *under* `/api/v1` is a JSON
         // 404, never the frontend shell below it.
         .fallback(not_found)

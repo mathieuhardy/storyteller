@@ -127,6 +127,8 @@
           pkgs.gtk3
           pkgs.libayatana-appindicator
           pkgs.librsvg
+          # For native folder picker (zenity or kdialog)
+          pkgs.zenity
         ];
         # Force X11 backend to work around webkit2gtk rendering issues on Wayland
         shellHook = ''
