@@ -133,159 +133,63 @@ The milestone order is not arbitrary: each stage builds on invariants set by the
 
 In summary, the critical path is **M1 → M2 → M3 → M4 → M6**, with **M5** grafted onto M1's index and delivered via M4's front.
 
-## Left Aside & Known Gaps
-
-M7's headline items (packaged desktop, link graph, media gallery, custom types) are done; this
-section tracks what's genuinely still open, so it doesn't have to be rediscovered by reading every
-ADR.
-
-**The one real M7 remainder:**
-
-- **Android APK spike** (mobile packaging via `storyteller-tauri`) — the only unstarted M7 item.
-  Blocked in the authoring environment by a missing Android SDK/NDK, not by a design question.
-
-**Follow-ups documented alongside the M7 features that shipped:**
-
-- **No delete action in the media gallery.** Deleting a still-referenced asset needs
-  usage-checking first (`cover`, embeds, …) — deliberately out of the M7 gallery pass, and not
-  currently planned (see [Planned Next](#planned-next) for the three sibling gaps that are).
-
-**Still `v2`/`later`-tagged in [features.md](features.md), not yet built:**
-
-- Custom **fields** added to an existing built-in type (distinct from custom **types**, which are
-  done).
-- Schema migrations driven by `schema_version` (additive changes need none so far; nothing has
-  forced a breaking one yet).
-- Advanced combined queries/filters, beyond today's type/tag/field/sort combination.
-- "Bible" export (HTML/PDF/EPUB) and import from other tools (Obsidian, World Anvil, Campfire…) —
-  not locked decisions, treated as paths to investigate via ADR before any development.
-- Interactive pins/points on maps — blocked by the locked
-  [ADR 0007](adr/0007-static-maps-no-pins.md) ("static maps, no pins") unless a new ADR reopens it.
-
-**Remain out of scope permanently** (see [features](features.md)): manuscript writing/prose
-editor, timeline/chronology, interactive maps and pins, real-time collaboration/multi-user/auth,
-cloud sync/SaaS, guided questionnaires and imposed templates, built-in versioning (left to Git).
-AI/generation was in this list too — see the "Optional local AI drawer" idea under
-[Ideas Under Investigation](#ideas-under-investigation), which reopens it as something to
-investigate rather than leaving it unconditionally excluded.
-
 ## Planned Next
 
-One item, picked out of the gaps above, as the next thing worth building — small and independent
-enough that it doesn't need a numbered milestone or a shared Definition of Done the way M0–M7 did.
+Items approved for implementation, in priority order.
 
-### Custom type label localization in the nav
+### 1. Android APK spike
 
-`frontend/src/lib/i18n/index.svelte.ts`'s `typeLabel(name)` looks up a compile-time `type.<name>`
-catalog key and falls back to the raw `name` — it doesn't know about a custom type's own
-server-provided `label` (`GET /types` already returns it). `fieldLabel()` in the same file already
-does the "fall back to the server-provided label" pattern for fields
-([ADR 0017](adr/0017-custom-types.md) flagged this gap when custom types landed); `typeLabel`
-needs the equivalent, which means its call sites (`Nav.svelte`, `Topbar.svelte`'s new-entry
-picker, the list/table screen) need to start passing the type's label alongside its name, not
-just the bare name string they pass today.
+Mobile packaging via `storyteller-tauri`. Blocked in the current environment by missing Android
+SDK/NDK — needs a machine with the toolchain installed.
+
+### 2. Custom fields on built-in types
+
+Add custom fields to existing types (`character`, `location`, etc.) without creating a whole new
+type. Distinct from custom **types** (already done). Additive schema change.
+
+### 3. Character-to-character relationship fields
+
+`faction` already has `allies`/`rivals` (link-list fields), but `character` has no equivalent for
+relationships to *other characters*. Add `family`/`allies`/`rivals` link-lists on `character`,
+mirroring `faction`'s existing shape. Small schema change, no backend work beyond what link-list
+fields already do.
+
+### 4. Book mode — distraction-free manuscript editor
+
+A new project type alongside the existing "storyteller" worldbuilding mode. When opening a project
+as "book" instead of "storyteller", the interface switches to a focused writing environment:
+
+- **Left panel**: filesystem tree showing only `.md` files
+- **Center**: markdown editor with resizable width (preset sizes: narrow, medium, wide)
+- **Word count**: live count displayed in the UI
+- **Post-save scripts**: user-defined text replacements applied on save
+  - Replacements defined in a config file (e.g., `.storyteller/replacements.yaml`)
+  - Backend applies find/replace natively, no external script needed
+  - File watcher detects the modification and reloads the editor content automatically
+
+This is a significant feature that will need its own ADR to scope the backend changes (new project
+mode, replacement engine, different API surface) vs. what can reuse existing infrastructure
+(watcher, file serving).
 
 ## Ideas Under Investigation
 
-Not scheduled, no milestone number — exploratory paths in the sense `features.md`'s `later` tier
-already defines ("to be investigated," ADR or spike first). Recorded here so they aren't lost, not
-because they're committed.
+Exploratory paths — not scheduled, need ADR or spike first. Recorded so they aren't lost.
 
-### Optional local AI drawer
+### Optional local AI drawer *(uncertain)*
 
-An opt-in connection to a local AI backend (e.g. an OpenAI-compatible local server such as Ollama
-or llama.cpp) surfaced as a drawer that can suggest or draft content for the entry or field
-currently open — flesh out a character, suggest names, expand a location description.
+An opt-in connection to a local AI backend (Ollama, llama.cpp) for content suggestions. **This
+reopens a stated Non-Goal** — needs its own ADR before any implementation. Constraints: strictly
+opt-in, local-only (no cloud), never a required dependency.
 
-**This reopens a stated Non-Goal.** "AI / content generation" is currently listed as explicitly
-out of scope in [vision.md](vision.md)'s Non-Goals, [features.md](features.md)'s Out-of-Scope
-list, and the root README. It is not blocked by a locked ADR (no ADR currently states this
-exclusion — it's a vision/scope statement, not a numbered decision), but it shouldn't proceed on
-the strength of a roadmap line alone either: it needs its own ADR making the case that the project
-actually wants this, before any implementation. Whatever the design ends up being, it should stay
-consistent with the rest of the app's posture: **strictly opt-in** (the app works exactly as it
-does today with it disabled or absent), **local-only** (no cloud AI service, no telemetry, nothing
-sent anywhere by default — matching [ADR 0003](adr/0003-single-user-local.md)'s local-first
-stance), and **never a required dependency** (no user should need an AI backend installed to use
-Storyteller).
+**Status: uncertain** — keeping as an idea to revisit, not committed.
 
-### Move a block of text, or a whole file, within (or across) a project
+## Out of Scope
 
-Two sub-cases of quite different maturity:
+Permanently excluded (see [features.md](features.md)):
 
-- **Moving an entry to a different type/folder.** Closely related to the existing rename +
-  link-rewrite machinery ([ADR 0012](adr/0012-rename-link-rewriting.md)), but adds a new wrinkle:
-  the entry needs re-validating against the *new* type's schema, and a decision on what happens to
-  frontmatter fields that don't fit the new type (drop them? keep them as "preserved" unknown
-  keys, the way an already-unknown key is treated today?).
-- **Moving a block of body text from one entry to another.** Fuzzier. [Backlinks](glossary.md) are
-  entry-level today, not paragraph-level — if a wikilink lives inside the moved text, it's genuinely
-  unclear whether (or how) the backlink pointing at the *source* entry should "follow" the text to
-  the *destination* entry, or just stay put and now point at a paragraph that no longer exists
-  there.
-
-**Cross-project moves are an explicitly open question, not a committed sub-scope** — flagged as
-uncertain by design: it would need to reconcile asset references, two projects' differing type
-catalogs (including [custom types](adr/0017-custom-types.md)), and possible slug collisions between
-the source and destination projects. Worth investigating, not worth assuming an answer to yet.
-
-## From a Writer-Focused Reflection
-
-Not the technical backlog above — a pass reasoned from [vision.md](vision.md)'s own stated problem
-("you forget a character has green eyes in chapter 3," scattered context) and target user, asking
-what a novelist specifically would still miss. **None of these are approved work.** Recorded here
-so they aren't lost, but **before starting any item in this section, re-explain that specific item
-and get explicit confirmation first** — this is a record of ideas surfaced during reflection, not
-a backlog that's been agreed to.
-
-### Character-to-character relationship fields
-
-The strongest candidate here: `faction` already has `allies`/`rivals` (link-list fields), but
-`character` has no equivalent for relationships to *other characters* — family, rivalry, romance
-today only exist as free body text with no typed backlink. Small, additive schema change
-(`storyteller-core/src/types.rs`, e.g. `family`/`allies`/`rivals` link-lists on `character`,
-mirroring `faction`'s existing shape) — no backend or index work beyond what link-list fields
-already do. Attacks `vision.md`'s founding problem directly.
-
-### Cross-entry consistency checking
-
-Links and backlinks are exact, but nothing cross-checks *facts* — two entries asserting
-contradictory details about the same thing (an eye color that differs between two mentions) go
-unflagged today. More exploratory than the others here: needs a real design for what "the same
-fact" means and how false positives are avoided before it's even spec-shaped.
-
-### Relationship-specific graph view
-
-A filtered lens on the existing link graph — characters/factions only, for a family tree or
-allegiance map — rather than the whole project's network. Builds on the relationship fields above
-rather than needing new data of its own.
-
-### Filtered / scoped export
-
-Sharpens the already-`later`-tagged "Bible export" in [features.md](features.md): the real want is
-often a scoped export ("everything about this POV character," not the whole project) for reading
-before writing a scene, closer to a working aid than a publishing feature.
-
-### Sample project as an explorable first-launch option
-
-`tests/fixtures/sample-project` (already used by the test suite) could double as an optional,
-skippable example project offered on first launch, for someone not yet comfortable with
-markdown/YAML. Needs to be built carefully distinct from the "guided questionnaires / imposed
-templates" Non-Goal ([vision.md](vision.md)) — an example to explore and discard isn't a form to
-fill in, but that distinction has to be kept explicit in the design, not assumed.
-
-### Word count / progress aggregation
-
-`chapter.wordcount` already exists in the data model; nothing aggregates it into an
-"X / Y words" progress view. Small, no locked-decision conflict.
-
-### Tag management
-
-Tags are free-form text with no registry — no screen to see every tag project-wide, rename one, or
-merge near-duplicates that drift apart over a long project ("protagoniste" vs "protagonist").
-Useful past a certain project size, not urgent below it.
-
-**Deliberately not included:** an in-world chronology for worldbuilding (distinct from *manuscript*
-chronology) was considered and left out — [ADR 0001](adr/0001-no-timeline.md) already examined and
-rejected "structured timeline with imaginary calendars" as an alternative, so any version of this
-reopens that locked decision. Noted for the record, not proposed.
+- Timeline/chronology with imaginary calendars ([ADR 0001](adr/0001-no-timeline.md))
+- Interactive map pins ([ADR 0007](adr/0007-static-maps-no-pins.md))
+- Real-time collaboration / multi-user / auth
+- Cloud sync / SaaS
+- Guided questionnaires / imposed templates
+- Built-in versioning (use Git)
