@@ -122,6 +122,10 @@ M6 is done (Docker verified live; Nix authored to standard nixpkgs patterns but 
   shadowing common/existing fields, enum values required). Extensions are merged into the type's
   schema at load time — extended fields appear in forms, validation, and `/types/{type}`
   indistinguishably from native fields.
+- **Character-to-character relationship fields**: `character` now has `family`, `allies`, and
+  `rivals` link-list fields pointing to other characters, mirroring `faction`'s existing
+  `allies`/`rivals` shape. Pure schema addition — no backend work beyond what link-list fields
+  already do.
 
 Remaining M7 item: the Android APK spike (depends on `storyteller-tauri`, now that it exists) is not started —
 this session's environment has no Android SDK/NDK to attempt it.
@@ -148,14 +152,7 @@ Items approved for implementation, in priority order.
 Mobile packaging via `storyteller-tauri`. Blocked in the current environment by missing Android
 SDK/NDK — needs a machine with the toolchain installed.
 
-### 2. Character-to-character relationship fields
-
-`faction` already has `allies`/`rivals` (link-list fields), but `character` has no equivalent for
-relationships to *other characters*. Add `family`/`allies`/`rivals` link-lists on `character`,
-mirroring `faction`'s existing shape. Small schema change, no backend work beyond what link-list
-fields already do.
-
-### 3. Book mode — distraction-free manuscript editor
+### 2. Book mode — distraction-free manuscript editor
 
 A new project type alongside the existing "storyteller" worldbuilding mode. When opening a project
 as "book" instead of "storyteller", the interface switches to a focused writing environment:

@@ -129,6 +129,9 @@ Root entry of the project (file `project.md`, see §5).
 | `culture` | link `[[Culture]]` | opt |
 | `factions` | link-list `[[Faction]]` | opt |
 | `home` | link `[[Location]]` | opt |
+| `family` | link-list `[[Character]]` | opt |
+| `allies` | link-list `[[Character]]` | opt |
+| `rivals` | link-list `[[Character]]` | opt |
 | `status` | text | opt |
 | `portrait` | image | opt |
 | `age` | number or text | opt |
