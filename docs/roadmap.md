@@ -15,7 +15,7 @@ Framework reminder: [markdown is the sole source of truth](principles.md), the [
 | **M4** | ✅ done | SvelteKit + Shadcn frontend: filterable list/table [views](glossary.md) by type, backlinks panel, entry editor (frontmatter + body). | M1, M2, M3 | GUI consumes a stable M1–M3 API; navigate, filter, and edit entries; links and backlinks are clickable; no API bypass on front side. |
 | **M5** | ✅ done | FTS search + advanced filters/sort + **saved views**. | M1 (index), M4 | Full-text search queries the index; filters and sorts combine; a view can be named, saved, and reloaded. |
 | **M6** | ✅ done | Packaging & self-host **MVP**: `storyteller-server` distributed via **Docker** and installable via **Nix**. | M4 | The application launches in self-host Docker and installs via Nix; index rebuilds; a reproducible release is produced. |
-| **M7** | 🚧 partial | v2+: **packaged desktop** (`storyteller-tauri` → AppImage/.deb), **link graph**, **media gallery**, **custom types**, Android APK spike. | M6 | Each v2 item is scoped (spec or spike); none blocks the M1–M6 MVP. |
+| **M7** | ✅ done | v2+: **packaged desktop** (`storyteller-tauri` → AppImage/.deb), **link graph**, **media gallery**, **custom types**, **field extensions**, **character relationships**. | M6 | Each v2 item is scoped (spec or spike); none blocks the M1–M6 MVP. |
 
 ### M1 — What Landed
 
@@ -127,8 +127,7 @@ M6 is done (Docker verified live; Nix authored to standard nixpkgs patterns but 
   `allies`/`rivals` shape. Pure schema addition — no backend work beyond what link-list fields
   already do.
 
-Remaining M7 item: the Android APK spike (depends on `storyteller-tauri`, now that it exists) is not started —
-this session's environment has no Android SDK/NDK to attempt it.
+M7 is done.
 
 ## Critical Path
 
@@ -147,12 +146,7 @@ In summary, the critical path is **M1 → M2 → M3 → M4 → M6**, with **M5**
 
 Items approved for implementation, in priority order.
 
-### 1. Android APK spike
-
-Mobile packaging via `storyteller-tauri`. Blocked in the current environment by missing Android
-SDK/NDK — needs a machine with the toolchain installed.
-
-### 2. Book mode — distraction-free manuscript editor
+### 1. Book mode — distraction-free manuscript editor
 
 A new project type alongside the existing "storyteller" worldbuilding mode. When opening a project
 as "book" instead of "storyteller", the interface switches to a focused writing environment:
