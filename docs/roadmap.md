@@ -106,6 +106,16 @@ M6 is done (Docker verified live; Nix authored to standard nixpkgs patterns but 
 - **Type settings screen** (`/settings/types`): lists every type — built-in and custom alike — with a
   toggle wired to the existing `PATCH /types/{type}` endpoint, persisting enable/disable to
   `.storyteller/config.yaml`. No backend work needed; the endpoint existed since M4.
+- **CI: release workflow** (`.github/workflows/release.yml`): GitHub Actions pipeline triggered on
+  `v*` tags that builds desktop apps for Linux (AppImage, `.deb`), Windows (`.msi`), and macOS
+  (`.dmg`) via `cargo tauri build`, then creates a draft GitHub Release with all artifacts attached.
+  Includes `workflow_dispatch` for manual testing without pushing a tag. The `release` job only runs
+  on actual tag pushes (skipped on manual dispatch).
+- **Nix flake: Tauri desktop package**: `flake.nix` now builds `storyteller-tauri` as default
+  (`nix build`, `nix profile install .`), with proper NixOS desktop integration: `.desktop` file,
+  icon in `share/icons/hicolor/`, and the binary renamed to `storyteller`. The previous
+  `storyteller-server` package remains available as `nix build .#storyteller-server`. The
+  `npmDepsHash` placeholder is now filled in with the real hash.
 
 Remaining M7 item: the Android APK spike (depends on `storyteller-tauri`, now that it exists) is not started —
 this session's environment has no Android SDK/NDK to attempt it.
@@ -161,32 +171,8 @@ investigate rather than leaving it unconditionally excluded.
 
 ## Planned Next
 
-Two items, picked out of the gaps above and out of "Ideas Under Investigation," as the next
-things worth building — small and independent enough that they don't need a numbered milestone
-or a shared Definition of Done the way M0–M7 did.
-
-### CI: package-on-tag release automation
-
-There is currently no CI at all (`.github/` doesn't exist) and no automated release process —
-every package built so far (Docker, the AppImage/.deb this session) was built by hand. The idea: a
-`.github/workflows/` release pipeline triggered on `v*` tags that builds and attaches to a GitHub
-Release:
-
-- **Linux**: AppImage + `.deb` via `cargo tauri build` (the exact steps verified by hand this
-  session, see [CONTRIBUTING.md](../CONTRIBUTING.md#desktop-app-storyteller-tauri)).
-- ****macOS** (`.dmg`/`.app`) via Tauri's cross-platform bundler on
-  `macos-latest` GitHub-hosted runners — untested on this session's Linux-only
-  environment, so a first pass here would be discovering what breaks, not a known-good path.
-- **Docker**: build the self-host image and push it to a registry (e.g. GHCR).
-- **Nix**: validate `nix build` succeeds against the flake (and, once the real `npmDepsHash` is
-  filled in — see [flake.nix](../flake.nix) — publish a package rather than just checking it
-  builds).
-
-Open questions for whoever picks this up: the single source of truth for the version number
-(`Cargo.toml` vs. the git tag itself, and what happens if they disagree), and which platforms
-should gate the release (block it on failure) versus be best-effort (publish what succeeded, flag
-what didn't). Promoted here rather than left with the ideas below because it needs no product
-decision or ADR — just someone to write the workflow.
+One item, picked out of the gaps above, as the next thing worth building — small and independent
+enough that it doesn't need a numbered milestone or a shared Definition of Done the way M0–M7 did.
 
 ### Custom type label localization in the nav
 
