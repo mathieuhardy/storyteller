@@ -399,6 +399,34 @@ one: it appears in `GET /types`, is offered for creation, gets a generated form,
 like any other type, and can itself be [enabled/disabled](#7-type-modularity). `link_targets` is purely
 informative, same as for built-ins ([linking.md](linking.md) §2): it is never enforced at write time.
 
+### Field Extensions
+
+You can also **add fields to existing types** (built-in or custom) without redefining them entirely,
+via `field_extensions`:
+
+```yaml
+field_extensions:
+  character:
+    - name: profession
+      label: Profession
+      kind: text
+    - name: birthplace
+      label: Lieu de naissance
+      kind: link
+      link_targets: [location]
+  faction:
+    - name: alignment
+      label: Alignement
+      kind: enum
+      enum_values: [good, neutral, evil]
+```
+
+The same validation rules apply as for custom type fields: snake_case names, no shadowing of
+[common fields](#2-common-fields-for-all-entries) or the type's existing fields, enum fields must
+declare `enum_values`. An invalid extension is dropped with a diagnostic; valid ones are merged
+into the type's schema — the extended fields appear in forms, validation, and `GET /types/{type}`
+indistinguishably from native fields.
+
 ---
 
 ## 8. Extensibility & Schema Migration

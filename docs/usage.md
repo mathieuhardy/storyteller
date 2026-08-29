@@ -108,6 +108,11 @@ If the ~11 built-in types (character, location, faction, …) don't cover someth
 needs, declare your own in `.storyteller/types.yaml` — a name, a label, a folder, and a list of
 fields with their kinds (text, number, enum, link, …). A custom type behaves exactly like a
 built-in one everywhere: it gets a create form, a list/table screen, filtering, search, the works.
+
+You can also **extend existing types** (built-in or custom) with additional fields via
+`field_extensions` in the same file — useful when you want to track extra data on characters or
+locations without creating an entirely new type.
+
 See [data model §7](data-model.md#custom-types) for the exact file format.
 
 ## Editing files externally

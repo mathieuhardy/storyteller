@@ -36,6 +36,22 @@ types:
 
 `storyteller-core::custom_types::load(project_root)` parses the file and validates each declared type: `name`/field names snake_case, `name` and `folder` not colliding with a built-in or an earlier custom type in the same file, field names not shadowing a common field (`type`, `title`, `aliases`, `tags`, `cover`, `created`, `updated`), enum fields carrying values (and non-enum fields not carrying any). A type that fails validation is **dropped with a diagnostic**, not fatal to the file — golden rule 5, tolerance for imperfect data, applied to schema declarations the same way it already applies to entries. `link_targets` is *not* validated against known type names, matching `FieldSchema.link_targets`'s existing contract: "purely informative; a link to another type is not an error" (`types.rs` doc comment) — nothing at runtime enforces it, for built-ins or custom types alike.
 
+**Field extensions** allow adding fields to *existing* types (built-in or custom) without redefining the whole type:
+
+```yaml
+field_extensions:
+  character:
+    - name: profession
+      label: Profession
+      kind: text
+    - name: birthplace
+      label: Lieu de naissance
+      kind: link
+      link_targets: [location]
+```
+
+The same validation rules apply: snake_case names, no shadowing of common or existing fields, enum fields must have values. An invalid extension is dropped with a diagnostic; the rest still loads. Extensions are merged into the type's schema at load time, so the extended fields appear in `GET /types/{type}`, in forms, and in validation — indistinguishable from native fields.
+
 **The accepted `TypeSchema`s are leaked to `'static`** (`Box::leak`) rather than making the type carry owned `String`/`Vec` fields. `Project` gains a `custom_types: &'static [TypeSchema]` field, loaded once in `Project::open`/`reload_config`; `types::type_schema`, `folder_for`, `resolve_type`, `validate` and the new `all_types` all take a `custom: &'static [TypeSchema]` parameter and search built-ins-then-custom. Every existing call site threads `project.custom_types()` through; nothing downstream (index, search, the API's `TypeResponse`, the frontend) needed to change shape — a custom type is just one more `TypeSchema` value flowing through code that already treats `TypeSchema` generically.
 
 ## Consequences
