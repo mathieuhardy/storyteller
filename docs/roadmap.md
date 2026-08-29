@@ -116,6 +116,12 @@ M6 is done (Docker verified live; Nix authored to standard nixpkgs patterns but 
   icon in `share/icons/hicolor/`, and the binary renamed to `storyteller`. The previous
   `storyteller-server` package remains available as `nix build .#storyteller-server`. The
   `npmDepsHash` placeholder is now filled in with the real hash.
+- **Field extensions** ([ADR 0017](adr/0017-custom-types.md), [data-model.md §7](data-model.md#field-extensions)):
+  `types.yaml` now supports a `field_extensions` section to add fields to existing types (built-in
+  or custom) without redefining them. Same validation rules as custom type fields (snake_case, no
+  shadowing common/existing fields, enum values required). Extensions are merged into the type's
+  schema at load time — extended fields appear in forms, validation, and `/types/{type}`
+  indistinguishably from native fields.
 
 Remaining M7 item: the Android APK spike (depends on `storyteller-tauri`, now that it exists) is not started —
 this session's environment has no Android SDK/NDK to attempt it.
@@ -142,19 +148,14 @@ Items approved for implementation, in priority order.
 Mobile packaging via `storyteller-tauri`. Blocked in the current environment by missing Android
 SDK/NDK — needs a machine with the toolchain installed.
 
-### 2. Custom fields on built-in types
-
-Add custom fields to existing types (`character`, `location`, etc.) without creating a whole new
-type. Distinct from custom **types** (already done). Additive schema change.
-
-### 3. Character-to-character relationship fields
+### 2. Character-to-character relationship fields
 
 `faction` already has `allies`/`rivals` (link-list fields), but `character` has no equivalent for
 relationships to *other characters*. Add `family`/`allies`/`rivals` link-lists on `character`,
 mirroring `faction`'s existing shape. Small schema change, no backend work beyond what link-list
 fields already do.
 
-### 4. Book mode — distraction-free manuscript editor
+### 3. Book mode — distraction-free manuscript editor
 
 A new project type alongside the existing "storyteller" worldbuilding mode. When opening a project
 as "book" instead of "storyteller", the interface switches to a focused writing environment:
