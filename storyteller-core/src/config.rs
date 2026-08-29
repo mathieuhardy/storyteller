@@ -172,7 +172,7 @@ mod tests {
     #[test]
     fn missing_config_enables_every_type() {
         let dir = tempfile::tempdir().unwrap();
-        let config = ProjectConfig::load(dir.path(), &[]);
+        let config = ProjectConfig::load(dir.path(), types::catalog());
         assert_eq!(config.schema_version, CURRENT_SCHEMA_VERSION);
         assert_eq!(config.enabled_types.len(), types::catalog().len());
         assert!(config.errors.is_empty());
@@ -181,7 +181,7 @@ mod tests {
     #[test]
     fn reads_enabled_types_and_version() {
         let dir = write_config("schema_version: 1\nenabled_types:\n  - character\n  - chapter\n");
-        let config = ProjectConfig::load(dir.path(), &[]);
+        let config = ProjectConfig::load(dir.path(), types::catalog());
         assert_eq!(config.enabled_types, ["character", "chapter"]);
         assert!(config.is_enabled("chapter"));
         assert!(!config.is_enabled("faction"));
@@ -191,7 +191,7 @@ mod tests {
     #[test]
     fn unknown_enabled_type_is_dropped_and_flagged() {
         let dir = write_config("enabled_types:\n  - character\n  - dragon\n");
-        let config = ProjectConfig::load(dir.path(), &[]);
+        let config = ProjectConfig::load(dir.path(), types::catalog());
         assert_eq!(config.enabled_types, ["character"]);
         assert_eq!(config.errors[0].code, codes::UNKNOWN_TYPE);
     }
@@ -199,7 +199,7 @@ mod tests {
     #[test]
     fn broken_config_falls_back_to_defaults() {
         let dir = write_config("enabled_types: [character\n");
-        let config = ProjectConfig::load(dir.path(), &[]);
+        let config = ProjectConfig::load(dir.path(), types::catalog());
         assert_eq!(config.enabled_types.len(), types::catalog().len());
         assert_eq!(config.errors[0].code, codes::YAML_PARSE_ERROR);
     }
@@ -211,7 +211,7 @@ mod tests {
         config.enabled_types.retain(|t| t != "faction");
 
         config.save(dir.path()).unwrap();
-        let reloaded = ProjectConfig::load(dir.path(), &[]);
+        let reloaded = ProjectConfig::load(dir.path(), types::catalog());
         assert!(!reloaded.is_enabled("faction"));
         assert!(reloaded.is_enabled("character"));
         assert_eq!(reloaded.schema_version, CURRENT_SCHEMA_VERSION);

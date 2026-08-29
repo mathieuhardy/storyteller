@@ -88,6 +88,9 @@ pub mod codes {
     /// A custom type in `.storyteller/types.yaml` is malformed (bad name,
     /// folder/name collision, enum without values…) and was dropped.
     pub const INVALID_TYPE_DEFINITION: &str = "invalid_type_definition";
+    /// A field extension in `.storyteller/types.yaml` is malformed (unknown
+    /// target type, shadows existing field, invalid field name…) and was dropped.
+    pub const INVALID_FIELD_EXTENSION: &str = "invalid_field_extension";
 }
 
 /// A non-fatal, per-entry problem. Surfaced in the entry's `errors` array so

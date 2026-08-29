@@ -362,12 +362,64 @@ pub fn catalog() -> &'static [TypeSchema] {
     CATALOG
 }
 
-/// The built-in catalog plus a project's custom types
-/// ([ADR 0017](../../docs/adr/0017-custom-types.md)), in that order.
-pub fn all_types(
+/// Builds a merged catalog containing built-in types (with extensions applied)
+/// and custom types (also with extensions applied if any).
+///
+/// For each type that has extensions, a new `TypeSchema` is created with the
+/// original fields plus the extension fields, and leaked. Types without
+/// extensions use the original static schema. Custom types are appended at the
+/// end.
+pub fn merged_catalog(
+    extensions: &std::collections::HashMap<String, &'static [FieldSchema]>,
     custom: &'static [TypeSchema],
+) -> &'static [TypeSchema] {
+    let mut merged: Vec<TypeSchema> = Vec::with_capacity(catalog().len() + custom.len());
+
+    // Apply extensions to built-in types
+    for builtin in catalog() {
+        merged.push(apply_extensions(builtin, extensions));
+    }
+
+    // Apply extensions to custom types
+    for custom_type in custom {
+        merged.push(apply_extensions(custom_type, extensions));
+    }
+
+    Box::leak(merged.into_boxed_slice())
+}
+
+/// Applies field extensions to a type schema, returning a new schema if
+/// extensions exist or the original if not.
+fn apply_extensions(
+    schema: &TypeSchema,
+    extensions: &std::collections::HashMap<String, &'static [FieldSchema]>,
+) -> TypeSchema {
+    if let Some(ext_fields) = extensions.get(schema.name) {
+        let mut all_fields: Vec<FieldSchema> =
+            Vec::with_capacity(schema.fields.len() + ext_fields.len());
+        all_fields.extend(schema.fields.iter().cloned());
+        all_fields.extend(ext_fields.iter().cloned());
+
+        TypeSchema {
+            name: schema.name,
+            label: schema.label,
+            folder: schema.folder,
+            fields: Box::leak(all_fields.into_boxed_slice()),
+        }
+    } else {
+        schema.clone()
+    }
+}
+
+/// Iterates all types in the catalog.
+///
+/// The parameter should be the merged catalog from [`merged_catalog`], which
+/// contains built-in types (possibly with extensions) plus any custom types.
+/// For tests that only need built-ins, pass `catalog()` directly.
+pub fn all_types(
+    merged: &'static [TypeSchema],
 ) -> impl Iterator<Item = &'static TypeSchema> {
-    catalog().iter().chain(custom.iter())
+    merged.iter()
 }
 
 /// Looks up a type by name, built-in or custom.
@@ -606,7 +658,7 @@ mod tests {
             for field in schema.all_fields() {
                 for target in field.link_targets {
                     assert!(
-                        type_schema(target, &[]).is_some(),
+                        type_schema(target, catalog()).is_some(),
                         "{}.{} points to unknown type {target}",
                         schema.name,
                         field.name
@@ -618,21 +670,21 @@ mod tests {
 
     #[test]
     fn missing_type_degrades_to_note() {
-        let (type_name, diagnostics) = resolve_type(&fm(&[]), &[]);
+        let (type_name, diagnostics) = resolve_type(&fm(&[]), catalog());
         assert_eq!(type_name, FALLBACK_TYPE);
         assert_eq!(diagnostics[0].code, codes::MISSING_REQUIRED_FIELD);
     }
 
     #[test]
     fn unknown_type_is_kept_verbatim_and_flagged() {
-        let (type_name, diagnostics) = resolve_type(&fm(&[("type", "prophecy".into())]), &[]);
+        let (type_name, diagnostics) = resolve_type(&fm(&[("type", "prophecy".into())]), catalog());
         assert_eq!(type_name, "prophecy");
         assert_eq!(diagnostics[0].code, codes::UNKNOWN_TYPE);
     }
 
     #[test]
     fn known_type_is_clean() {
-        let (type_name, diagnostics) = resolve_type(&fm(&[("type", "character".into())]), &[]);
+        let (type_name, diagnostics) = resolve_type(&fm(&[("type", "character".into())]), catalog());
         assert_eq!(type_name, "character");
         assert!(diagnostics.is_empty());
     }
@@ -645,7 +697,7 @@ mod tests {
                 ("title", "Le Fêlure".into()),
                 ("chapter_status", "en-cours".into()),
             ]),
-            &[],
+            catalog(),
         );
         assert_eq!(diagnostics.len(), 1);
         assert_eq!(diagnostics[0].code, codes::INVALID_FIELD_VALUE);
@@ -657,14 +709,14 @@ mod tests {
         let diagnostics = validate(
             "chapter",
             &fm(&[("title", "X".into()), ("order", "troisième".into())]),
-            &[],
+            catalog(),
         );
         assert_eq!(diagnostics[0].field.as_deref(), Some("order"));
 
         let diagnostics = validate(
             "species",
             &fm(&[("title", "X".into()), ("intelligent", "oui".into())]),
-            &[],
+            catalog(),
         );
         assert_eq!(diagnostics[0].field.as_deref(), Some("intelligent"));
     }
@@ -678,7 +730,7 @@ mod tests {
                 ("order", Value::Null),
                 ("my_own_field", "peu importe".into()),
             ]),
-            &[],
+            catalog(),
         );
         assert!(diagnostics.is_empty(), "{diagnostics:?}");
     }
@@ -687,13 +739,13 @@ mod tests {
     fn validate_is_permissive_on_mvp_fields_left_blank() {
         // A character with nothing but a title is valid: the MVP tier is scope,
         // not a constraint.
-        let diagnostics = validate("character", &fm(&[("title", "Aria".into())]), &[]);
+        let diagnostics = validate("character", &fm(&[("title", "Aria".into())]), catalog());
         assert!(diagnostics.is_empty(), "{diagnostics:?}");
     }
 
     #[test]
     fn validate_reports_missing_title() {
-        let diagnostics = validate("character", &fm(&[("type", "character".into())]), &[]);
+        let diagnostics = validate("character", &fm(&[("type", "character".into())]), catalog());
         assert_eq!(diagnostics[0].field.as_deref(), Some("title"));
         assert_eq!(diagnostics[0].code, codes::MISSING_REQUIRED_FIELD);
     }
@@ -702,7 +754,7 @@ mod tests {
     fn validate_tolerates_number_or_text_fields() {
         for age in [Value::from(24), Value::from("la trentaine")] {
             let diagnostics =
-                validate("character", &fm(&[("title", "A".into()), ("age", age)]), &[]);
+                validate("character", &fm(&[("title", "A".into()), ("age", age)]), catalog());
             assert!(diagnostics.is_empty(), "{diagnostics:?}");
         }
     }

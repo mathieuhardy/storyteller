@@ -15,7 +15,7 @@
 //! at most a few kilobytes — nowhere near the size of the project itself,
 //! which the app already holds fully parsed in memory.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
 use serde::Deserialize;
@@ -31,6 +31,8 @@ pub const TYPES_FILE: &str = "types.yaml";
 struct RawTypes {
     #[serde(default)]
     types: Vec<RawType>,
+    #[serde(default)]
+    field_extensions: HashMap<String, Vec<RawField>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -55,19 +57,23 @@ struct RawField {
 
 /// Loads and validates `.storyteller/types.yaml`.
 ///
-/// A missing file is not an error — most projects have no custom types
-/// (golden rule 1: a plain markdown folder works out of the box). A type that
-/// fails validation is dropped with a diagnostic rather than aborting the
-/// whole file (golden rule 5, tolerance for imperfect data); the rest still
-/// loads.
+/// Returns the **merged catalog**: built-in types (with field extensions applied
+/// if any) plus custom types. A missing file is not an error — most projects
+/// have no custom types (golden rule 1: a plain markdown folder works out of the
+/// box). A type or extension that fails validation is dropped with a diagnostic
+/// rather than aborting the whole file (golden rule 5, tolerance for imperfect
+/// data); the rest still loads.
 pub fn load(project_root: &Path) -> (&'static [TypeSchema], Vec<Diagnostic>) {
     let path = project_root.join(STORYTELLER_DIR).join(TYPES_FILE);
     let raw = match std::fs::read_to_string(&path) {
         Ok(raw) => raw,
-        Err(err) if err.kind() == std::io::ErrorKind::NotFound => return (&[], Vec::new()),
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
+            // No types.yaml: return unmodified built-in catalog
+            return (types::merged_catalog(&HashMap::new(), &[]), Vec::new());
+        }
         Err(err) => {
             return (
-                &[],
+                types::merged_catalog(&HashMap::new(), &[]),
                 vec![Diagnostic::warning(
                     codes::YAML_PARSE_ERROR,
                     format!("cannot read {}: {err}", path.display()),
@@ -80,7 +86,7 @@ pub fn load(project_root: &Path) -> (&'static [TypeSchema], Vec<Diagnostic>) {
         Ok(parsed) => parsed,
         Err(err) => {
             return (
-                &[],
+                types::merged_catalog(&HashMap::new(), &[]),
                 vec![Diagnostic::warning(
                     codes::YAML_PARSE_ERROR,
                     format!("invalid {}: {err} — no custom type loaded", path.display()),
@@ -117,13 +123,147 @@ pub fn load(project_root: &Path) -> (&'static [TypeSchema], Vec<Diagnostic>) {
         }
     }
 
-    (leak_slice(accepted), diagnostics)
+    // Build and validate field extensions
+    let custom = leak_slice(accepted);
+    let (extensions, ext_diagnostics) = build_extensions(parsed.field_extensions, &names, custom);
+    diagnostics.extend(ext_diagnostics);
+
+    (types::merged_catalog(&extensions, custom), diagnostics)
 }
 
 fn is_snake_case(s: &str) -> bool {
     !s.is_empty()
         && s.chars()
             .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_')
+}
+
+/// Validates and builds field extensions for built-in and custom types.
+///
+/// Returns a map from type name to the leaked slice of extension fields, plus
+/// any diagnostics for invalid extensions (which are dropped).
+fn build_extensions(
+    extensions: HashMap<String, Vec<RawField>>,
+    known_types: &HashSet<String>,
+    custom_types: &'static [TypeSchema],
+) -> (HashMap<String, &'static [FieldSchema]>, Vec<Diagnostic>) {
+    let mut result = HashMap::new();
+    let mut diagnostics = Vec::new();
+    let common: HashSet<&str> = types::common_fields().iter().map(|f| f.name).collect();
+
+    for (type_name, raw_fields) in extensions {
+        // Check that the target type exists
+        if !known_types.contains(&type_name) {
+            diagnostics.push(
+                Diagnostic::warning(
+                    codes::INVALID_FIELD_EXTENSION,
+                    format!("field_extensions: unknown type `{type_name}`"),
+                )
+                .with_field("field_extensions"),
+            );
+            continue;
+        }
+
+        // Get existing fields from the target type to check for shadowing.
+        // Check built-ins first, then custom types.
+        let existing_fields: HashSet<&str> = types::type_schema(&type_name, types::catalog())
+            .or_else(|| custom_types.iter().find(|t| t.name == type_name))
+            .map(|s| s.fields.iter().map(|f| f.name).collect())
+            .unwrap_or_default();
+
+        let mut field_names: HashSet<String> = HashSet::new();
+        let mut fields = Vec::new();
+        let mut type_valid = true;
+
+        for raw_field in raw_fields {
+            if let Err(message) = validate_extension_field(
+                &raw_field,
+                &type_name,
+                &common,
+                &existing_fields,
+                &field_names,
+            ) {
+                diagnostics.push(
+                    Diagnostic::warning(codes::INVALID_FIELD_EXTENSION, message)
+                        .with_field("field_extensions"),
+                );
+                type_valid = false;
+                break;
+            }
+
+            field_names.insert(raw_field.name.clone());
+            fields.push(FieldSchema {
+                name: leak_str(raw_field.name),
+                label: leak_str(raw_field.label),
+                kind: raw_field.kind,
+                tier: Tier::Optional,
+                required: false,
+                enum_values: leak_slice(raw_field.enum_values.into_iter().map(leak_str).collect()),
+                link_targets: leak_slice(
+                    raw_field.link_targets.into_iter().map(leak_str).collect(),
+                ),
+            });
+        }
+
+        if type_valid && !fields.is_empty() {
+            result.insert(type_name, leak_slice(fields));
+        }
+    }
+
+    (result, diagnostics)
+}
+
+/// Validates a single extension field.
+fn validate_extension_field(
+    raw_field: &RawField,
+    type_name: &str,
+    common: &HashSet<&str>,
+    existing_fields: &HashSet<&str>,
+    declared_fields: &HashSet<String>,
+) -> Result<(), String> {
+    if !is_snake_case(&raw_field.name) {
+        return Err(format!(
+            "field_extensions[{type_name}]: field `{}` must be snake_case",
+            raw_field.name
+        ));
+    }
+    if common.contains(raw_field.name.as_str()) {
+        return Err(format!(
+            "field_extensions[{type_name}]: field `{}` shadows a common field",
+            raw_field.name
+        ));
+    }
+    if existing_fields.contains(raw_field.name.as_str()) {
+        return Err(format!(
+            "field_extensions[{type_name}]: field `{}` shadows an existing field",
+            raw_field.name
+        ));
+    }
+    if declared_fields.contains(&raw_field.name) {
+        return Err(format!(
+            "field_extensions[{type_name}]: field `{}` declared twice",
+            raw_field.name
+        ));
+    }
+    if raw_field.label.trim().is_empty() {
+        return Err(format!(
+            "field_extensions[{type_name}]: field `{}` has no label",
+            raw_field.name
+        ));
+    }
+    let is_enum = raw_field.kind == FieldKind::Enum;
+    if is_enum && raw_field.enum_values.is_empty() {
+        return Err(format!(
+            "field_extensions[{type_name}]: field `{}` is an enum without values",
+            raw_field.name
+        ));
+    }
+    if !is_enum && !raw_field.enum_values.is_empty() {
+        return Err(format!(
+            "field_extensions[{type_name}]: field `{}` is not an enum but declares values",
+            raw_field.name
+        ));
+    }
+    Ok(())
 }
 
 /// Validates one declared type against the names/folders already taken (built-in
@@ -217,6 +357,8 @@ fn leak_slice<T>(v: Vec<T>) -> &'static [T] {
 mod tests {
     use super::*;
 
+    const BUILTIN_COUNT: usize = 11;
+
     fn write_types(dir: &Path, contents: &str) {
         let storyteller = dir.join(STORYTELLER_DIR);
         std::fs::create_dir_all(&storyteller).unwrap();
@@ -226,8 +368,9 @@ mod tests {
     #[test]
     fn missing_file_is_not_an_error() {
         let dir = tempfile::tempdir().unwrap();
-        let (custom, diagnostics) = load(dir.path());
-        assert!(custom.is_empty());
+        let (catalog, diagnostics) = load(dir.path());
+        // Returns built-in types only
+        assert_eq!(catalog.len(), BUILTIN_COUNT);
         assert!(diagnostics.is_empty());
     }
 
@@ -255,18 +398,20 @@ types:
         link_targets: [character]
 "#,
         );
-        let (custom, diagnostics) = load(dir.path());
+        let (catalog, diagnostics) = load(dir.path());
         assert!(diagnostics.is_empty(), "{diagnostics:?}");
-        assert_eq!(custom.len(), 1);
-        let schema = &custom[0];
+        // 11 built-ins + 1 custom
+        assert_eq!(catalog.len(), BUILTIN_COUNT + 1);
+        // Custom types are appended at the end
+        let schema = &catalog[BUILTIN_COUNT];
         assert_eq!(schema.name, "artifact");
         assert_eq!(schema.label, "Artéfact");
         assert_eq!(schema.folder, "artifacts");
         assert_eq!(schema.fields.len(), 3);
         assert_eq!(schema.field("rarity").unwrap().enum_values, ["common", "rare", "legendary"]);
 
-        assert!(types::type_schema("artifact", custom).is_some());
-        assert_eq!(types::folder_for("artifact", custom), Some("artifacts"));
+        assert!(types::type_schema("artifact", catalog).is_some());
+        assert_eq!(types::folder_for("artifact", catalog), Some("artifacts"));
     }
 
     #[test]
@@ -276,8 +421,9 @@ types:
             dir.path(),
             "types:\n  - name: character\n    label: Doublon\n    folder: doublons\n",
         );
-        let (custom, diagnostics) = load(dir.path());
-        assert!(custom.is_empty());
+        let (catalog, diagnostics) = load(dir.path());
+        // Only built-ins, no custom type added
+        assert_eq!(catalog.len(), BUILTIN_COUNT);
         assert_eq!(diagnostics[0].code, codes::INVALID_TYPE_DEFINITION);
     }
 
@@ -288,8 +434,8 @@ types:
             dir.path(),
             "types:\n  - name: gizmo\n    label: Gadget\n    folder: characters\n",
         );
-        let (custom, diagnostics) = load(dir.path());
-        assert!(custom.is_empty());
+        let (catalog, diagnostics) = load(dir.path());
+        assert_eq!(catalog.len(), BUILTIN_COUNT);
         assert_eq!(diagnostics[0].code, codes::INVALID_TYPE_DEFINITION);
     }
 
@@ -308,9 +454,10 @@ types:
     folder: gizmos
 "#,
         );
-        let (custom, diagnostics) = load(dir.path());
-        assert_eq!(custom.len(), 1);
-        assert_eq!(custom[0].name, "gizmo");
+        let (catalog, diagnostics) = load(dir.path());
+        // 11 built-ins + 1 valid custom
+        assert_eq!(catalog.len(), BUILTIN_COUNT + 1);
+        assert_eq!(catalog[BUILTIN_COUNT].name, "gizmo");
         assert_eq!(diagnostics.len(), 1);
     }
 
@@ -321,8 +468,8 @@ types:
             dir.path(),
             "types:\n  - name: gizmo\n    label: Gadget\n    folder: gizmos\n    fields:\n      - name: state\n        label: État\n        kind: enum\n",
         );
-        let (custom, diagnostics) = load(dir.path());
-        assert!(custom.is_empty());
+        let (catalog, diagnostics) = load(dir.path());
+        assert_eq!(catalog.len(), BUILTIN_COUNT);
         assert_eq!(diagnostics[0].code, codes::INVALID_TYPE_DEFINITION);
     }
 
@@ -333,8 +480,8 @@ types:
             dir.path(),
             "types:\n  - name: gizmo\n    label: Gadget\n    folder: gizmos\n    fields:\n      - name: tags\n        label: Étiquettes\n        kind: list\n",
         );
-        let (custom, diagnostics) = load(dir.path());
-        assert!(custom.is_empty());
+        let (catalog, diagnostics) = load(dir.path());
+        assert_eq!(catalog.len(), BUILTIN_COUNT);
         assert_eq!(diagnostics[0].code, codes::INVALID_TYPE_DEFINITION);
     }
 
@@ -342,8 +489,190 @@ types:
     fn malformed_yaml_is_reported_and_yields_no_custom_type() {
         let dir = tempfile::tempdir().unwrap();
         write_types(dir.path(), "types: [not, a, mapping");
-        let (custom, diagnostics) = load(dir.path());
-        assert!(custom.is_empty());
+        let (catalog, diagnostics) = load(dir.path());
+        // Still returns built-ins even on parse error
+        assert_eq!(catalog.len(), BUILTIN_COUNT);
         assert_eq!(diagnostics[0].code, codes::YAML_PARSE_ERROR);
+    }
+
+    // --- Field extensions tests ---
+
+    #[test]
+    fn field_extension_adds_fields_to_builtin_type() {
+        let dir = tempfile::tempdir().unwrap();
+        write_types(
+            dir.path(),
+            r#"
+field_extensions:
+  character:
+    - name: profession
+      label: Profession
+      kind: text
+    - name: birthplace
+      label: Lieu de naissance
+      kind: link
+      link_targets: [location]
+"#,
+        );
+        let (catalog, diagnostics) = load(dir.path());
+        assert!(diagnostics.is_empty(), "{diagnostics:?}");
+        assert_eq!(catalog.len(), BUILTIN_COUNT);
+
+        let character = types::type_schema("character", catalog).unwrap();
+        assert!(character.field("profession").is_some());
+        assert!(character.field("birthplace").is_some());
+        assert_eq!(
+            character.field("birthplace").unwrap().link_targets,
+            &["location"]
+        );
+        // Original fields are still there
+        assert!(character.field("role").is_some());
+    }
+
+    #[test]
+    fn field_extension_with_enum() {
+        let dir = tempfile::tempdir().unwrap();
+        write_types(
+            dir.path(),
+            r#"
+field_extensions:
+  faction:
+    - name: alignment
+      label: Alignement
+      kind: enum
+      enum_values: [good, neutral, evil]
+"#,
+        );
+        let (catalog, diagnostics) = load(dir.path());
+        assert!(diagnostics.is_empty(), "{diagnostics:?}");
+
+        let faction = types::type_schema("faction", catalog).unwrap();
+        let alignment = faction.field("alignment").unwrap();
+        assert_eq!(alignment.kind, FieldKind::Enum);
+        assert_eq!(alignment.enum_values, &["good", "neutral", "evil"]);
+    }
+
+    #[test]
+    fn field_extension_rejects_unknown_type() {
+        let dir = tempfile::tempdir().unwrap();
+        write_types(
+            dir.path(),
+            r#"
+field_extensions:
+  unicorn:
+    - name: horn_color
+      label: Couleur de corne
+      kind: text
+"#,
+        );
+        let (catalog, diagnostics) = load(dir.path());
+        assert_eq!(catalog.len(), BUILTIN_COUNT);
+        assert_eq!(diagnostics.len(), 1);
+        assert_eq!(diagnostics[0].code, codes::INVALID_FIELD_EXTENSION);
+        assert!(diagnostics[0].message.contains("unicorn"));
+    }
+
+    #[test]
+    fn field_extension_rejects_shadowing_existing_field() {
+        let dir = tempfile::tempdir().unwrap();
+        write_types(
+            dir.path(),
+            r#"
+field_extensions:
+  character:
+    - name: role
+      label: Rôle (doublon)
+      kind: text
+"#,
+        );
+        let (catalog, diagnostics) = load(dir.path());
+        assert_eq!(catalog.len(), BUILTIN_COUNT);
+        assert_eq!(diagnostics.len(), 1);
+        assert_eq!(diagnostics[0].code, codes::INVALID_FIELD_EXTENSION);
+        assert!(diagnostics[0].message.contains("shadows"));
+    }
+
+    #[test]
+    fn field_extension_rejects_shadowing_common_field() {
+        let dir = tempfile::tempdir().unwrap();
+        write_types(
+            dir.path(),
+            r#"
+field_extensions:
+  character:
+    - name: tags
+      label: Étiquettes (doublon)
+      kind: list
+"#,
+        );
+        let (catalog, diagnostics) = load(dir.path());
+        assert_eq!(catalog.len(), BUILTIN_COUNT);
+        assert_eq!(diagnostics.len(), 1);
+        assert_eq!(diagnostics[0].code, codes::INVALID_FIELD_EXTENSION);
+        assert!(diagnostics[0].message.contains("common"));
+    }
+
+    #[test]
+    fn field_extension_can_target_custom_type() {
+        let dir = tempfile::tempdir().unwrap();
+        write_types(
+            dir.path(),
+            r#"
+types:
+  - name: artifact
+    label: Artéfact
+    folder: artifacts
+
+field_extensions:
+  artifact:
+    - name: rarity
+      label: Rareté
+      kind: enum
+      enum_values: [common, rare, legendary]
+"#,
+        );
+        let (catalog, diagnostics) = load(dir.path());
+        assert!(diagnostics.is_empty(), "{diagnostics:?}");
+        // 11 built-ins + 1 custom (extended)
+        assert_eq!(catalog.len(), BUILTIN_COUNT + 1);
+
+        let artifact = types::type_schema("artifact", catalog).unwrap();
+        assert!(artifact.field("rarity").is_some());
+    }
+
+    #[test]
+    fn field_extension_and_custom_types_work_together() {
+        let dir = tempfile::tempdir().unwrap();
+        write_types(
+            dir.path(),
+            r#"
+types:
+  - name: artifact
+    label: Artéfact
+    folder: artifacts
+    fields:
+      - name: origin
+        label: Origine
+        kind: text
+
+field_extensions:
+  character:
+    - name: profession
+      label: Profession
+      kind: text
+"#,
+        );
+        let (catalog, diagnostics) = load(dir.path());
+        assert!(diagnostics.is_empty(), "{diagnostics:?}");
+        assert_eq!(catalog.len(), BUILTIN_COUNT + 1);
+
+        // Custom type exists with its field
+        let artifact = types::type_schema("artifact", catalog).unwrap();
+        assert!(artifact.field("origin").is_some());
+
+        // Built-in type is extended
+        let character = types::type_schema("character", catalog).unwrap();
+        assert!(character.field("profession").is_some());
+        assert!(character.field("role").is_some()); // Original field still present
     }
 }
