@@ -43,9 +43,6 @@
 	class="editor-wrap"
 	style:--line-height={lineHeightValues[lineHeight]}
 >
-	{#if showLineBreaks}
-		<div class="breaks-overlay mono" bind:this={overlayEl} aria-hidden="true">{breaksOverlay}</div>
-	{/if}
 	<textarea
 		class="editor mono"
 		bind:this={textareaEl}
@@ -55,6 +52,9 @@
 		{placeholder}
 		spellcheck="false"
 	></textarea>
+	{#if showLineBreaks}
+		<div class="breaks-overlay mono" bind:this={overlayEl} aria-hidden="true">{breaksOverlay}</div>
+	{/if}
 </div>
 
 <style>
@@ -98,12 +98,13 @@
 		padding: 24px 32px;
 		font-size: 14px;
 		line-height: var(--line-height, 1.6);
-		color: var(--accent);
+		color: var(--faint);
 		white-space: pre-wrap;
 		word-wrap: break-word;
 		overflow: auto;
 		pointer-events: none;
 		box-sizing: border-box;
+		z-index: 1;
 		/* Hide scrollbars but allow scroll sync */
 		scrollbar-width: none;
 		-ms-overflow-style: none;
