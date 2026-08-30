@@ -31,17 +31,6 @@
 	{/snippet}
 
 	<div class="panel">
-		<p class="panel-label">{t('book.displaySettings')}</p>
-
-		<label class="toggle-row">
-			<input
-				type="checkbox"
-				checked={showLineBreaks}
-				onchange={(e) => onChange(e.currentTarget.checked, lineHeight)}
-			/>
-			<span>{t('book.showLineBreaks')}</span>
-		</label>
-
 		<p class="panel-label">{t('book.lineHeight')}</p>
 		<div class="height-options">
 			{#each lineHeights as { value, label } (value)}
@@ -89,17 +78,6 @@
 	}
 	.panel-label:first-child {
 		margin-top: 0;
-	}
-	.toggle-row {
-		display: flex;
-		align-items: center;
-		gap: 8px;
-		padding: 6px 4px;
-		font-size: 13px;
-		cursor: pointer;
-	}
-	.toggle-row input {
-		margin: 0;
 	}
 	.height-options {
 		display: flex;
