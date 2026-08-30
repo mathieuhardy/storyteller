@@ -84,7 +84,7 @@ export const openProject = (path: string, fetchImpl: Fetch = fetch): Promise<Pro
 
 /** Removes a project or book from the recent list (does not delete files). */
 export const removeRecent = (path: string, fetchImpl: Fetch = fetch): Promise<void> =>
-	request('/projects/recent', { method: 'DELETE', ...json({ path }) }, fetchImpl);
+	request('/projects/recent', { ...json({ path }), method: 'DELETE' }, fetchImpl);
 
 export const getProject = (fetchImpl: Fetch = fetch): Promise<ProjectResponse> =>
 	request('/project', undefined, fetchImpl);

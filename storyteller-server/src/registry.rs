@@ -98,7 +98,11 @@ impl Registry {
         let now = OffsetDateTime::now_utc()
             .format(&Rfc3339)
             .unwrap_or_default();
-        match self.records.iter_mut().find(|record| record.path == path) {
+        match self
+            .records
+            .iter_mut()
+            .find(|record| record.path == path && record.kind == RecordKind::Project)
+        {
             Some(record) => {
                 record.name = name.to_string();
                 record.entries = entries;
@@ -142,12 +146,15 @@ impl Registry {
         let now = OffsetDateTime::now_utc()
             .format(&Rfc3339)
             .unwrap_or_default();
-        match self.records.iter_mut().find(|record| record.path == path) {
+        match self
+            .records
+            .iter_mut()
+            .find(|record| record.path == path && record.kind == RecordKind::Book)
+        {
             Some(record) => {
                 record.name = name.to_string();
                 record.entries = entries;
                 record.last_opened = now;
-                record.kind = RecordKind::Book;
             }
             None => self.records.push(ProjectRecord {
                 path: path.to_string(),
