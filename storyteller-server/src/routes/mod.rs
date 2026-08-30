@@ -5,6 +5,7 @@
 //! deliberately absent rather than stubbed.
 
 mod assets;
+mod books;
 mod dialog;
 mod entities;
 mod events;
@@ -16,7 +17,7 @@ mod search;
 mod types;
 
 use axum::http::StatusCode;
-use axum::routing::{get, post};
+use axum::routing::{delete, get, post};
 use axum::Router;
 
 use crate::error::ApiError;
@@ -50,10 +51,15 @@ pub fn router(state: SharedState) -> Router {
         .route("/assets/{*path}", get(assets::serve))
         .route("/projects", get(projects::list))
         .route("/projects/open", post(projects::open))
+        .route("/projects/recent", delete(projects::remove_recent))
         .route("/events", get(events::stream))
         .route("/files", get(files::list))
         .route("/files/{*path}", get(files::read).put(files::write))
         .route("/pick-folder", get(dialog::pick_folder))
+        // Book mode endpoints (standalone markdown folders, no .storyteller/).
+        .route("/books/open", post(books::open))
+        .route("/books/files", get(books::list))
+        .route("/books/files/{*path}", get(books::read).put(books::write))
         // Its own fallback: an unmatched path *under* `/api/v1` is a JSON
         // 404, never the frontend shell below it.
         .fallback(not_found)

@@ -1,13 +1,11 @@
 <script lang="ts">
 	// Book mode: raw markdown editor with file tree sidebar.
+	// Works standalone — no Storyteller project required.
 	import { browser } from '$app/environment';
 	import BookTopbar from '$components/book/BookTopbar.svelte';
 	import FileTree from '$components/book/FileTree.svelte';
 	import RawEditor from '$components/book/RawEditor.svelte';
-	import { listFiles, readFile, writeFile } from '$api/client';
-	import type { LayoutData } from '../$types';
-
-	let { data }: { data: LayoutData } = $props();
+	import { listBookFiles, readBookFile, writeBookFile } from '$api/client';
 
 	// State
 	let currentFile = $state<string | null>(null);
@@ -116,7 +114,7 @@
 		}
 
 		try {
-			const file = await readFile(path);
+			const file = await readBookFile(path);
 			currentFile = path;
 			content = file.content;
 			originalContent = file.content;
@@ -131,7 +129,7 @@
 
 		isSaving = true;
 		try {
-			await writeFile(currentFile, content);
+			await writeBookFile(currentFile, content);
 			originalContent = content;
 			lastSaved = new Date();
 		} catch (err) {

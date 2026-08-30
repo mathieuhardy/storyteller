@@ -13,23 +13,34 @@ use axum::Json;
 use serde::{Deserialize, Serialize};
 
 use crate::error::ApiResult;
-use crate::registry::ProjectRecord;
+use crate::registry::{ProjectRecord, RecordKind};
 use crate::routes::meta::{project_response, ProjectResponse};
 use crate::state::SharedState;
 
 #[derive(Serialize)]
 pub struct ProjectsResponse {
-    /// Known projects, most-recently-opened first.
+    /// Known Storyteller projects, most-recently-opened first.
     items: Vec<ProjectRecord>,
-    /// Canonical path of the currently active project.
+    /// Known standalone books, most-recently-opened first.
+    books: Vec<ProjectRecord>,
+    /// Canonical path of the currently active project or book.
     active: String,
+    /// What kind of item is active: "project", "book", or null.
+    active_kind: Option<&'static str>,
 }
 
 /// `GET /api/v1/projects` — the recent-projects registry plus which is active.
 pub async fn list(State(state): State<SharedState>) -> Json<ProjectsResponse> {
+    let active_kind = match state.active_kind() {
+        Some(RecordKind::Project) => Some("project"),
+        Some(RecordKind::Book) => Some("book"),
+        None => None,
+    };
     Json(ProjectsResponse {
-        items: state.registry_records(),
+        items: state.registry_projects(),
+        books: state.registry_books(),
         active: state.active_root(),
+        active_kind,
     })
 }
 
@@ -52,4 +63,26 @@ pub async fn open(
 ) -> ApiResult<Json<ProjectResponse>> {
     let active = state.open(&PathBuf::from(body.path))?;
     Ok(Json(project_response(&active)?))
+}
+
+/// Body of `DELETE /api/v1/projects/recent`.
+#[derive(Deserialize)]
+pub struct RemoveBody {
+    /// Path of the record to remove from the recent list.
+    path: String,
+}
+
+/// `DELETE /api/v1/projects/recent` — remove a project or book from the recent list.
+///
+/// This only removes it from the launcher's recent list; it does not delete the
+/// folder on disk.
+pub async fn remove_recent(
+    State(state): State<SharedState>,
+    Json(body): Json<RemoveBody>,
+) -> ApiResult<axum::http::StatusCode> {
+    if state.registry_remove(&body.path) {
+        Ok(axum::http::StatusCode::NO_CONTENT)
+    } else {
+        Err(crate::error::ApiError::not_found("record not in recent list"))
+    }
 }

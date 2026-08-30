@@ -16,7 +16,16 @@ use serde::{Deserialize, Serialize};
 use time::format_description::well_known::Rfc3339;
 use time::OffsetDateTime;
 
-/// One known project. `path` is the canonical absolute folder path (the same
+/// Distinguishes Storyteller projects from standalone books (plain markdown folders).
+#[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum RecordKind {
+    #[default]
+    Project,
+    Book,
+}
+
+/// One known project or book. `path` is the canonical absolute folder path (the same
 /// string the API reports as the active project root).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProjectRecord {
@@ -24,9 +33,13 @@ pub struct ProjectRecord {
     /// Display name — the folder's base name; the launcher shows it.
     pub name: String,
     /// Entry count at the last open, for the launcher's "N entries" hint.
+    /// For books, this is the count of `.md` files.
     pub entries: usize,
     /// When the project was last opened, RFC 3339 / UTC.
     pub last_opened: String,
+    /// Whether this is a Storyteller project or a standalone book.
+    #[serde(default)]
+    pub kind: RecordKind,
 }
 
 /// The persisted list of known projects, most-recently-opened first.
@@ -96,6 +109,7 @@ impl Registry {
                 name: name.to_string(),
                 entries,
                 last_opened: now,
+                kind: RecordKind::Project,
             }),
         }
         self.records
@@ -105,6 +119,53 @@ impl Registry {
     /// The known projects, most-recently-opened first.
     pub fn records(&self) -> &[ProjectRecord] {
         &self.records
+    }
+
+    /// Returns only Storyteller projects (kind = Project), most-recently-opened first.
+    pub fn projects(&self) -> Vec<&ProjectRecord> {
+        self.records
+            .iter()
+            .filter(|r| r.kind == RecordKind::Project)
+            .collect()
+    }
+
+    /// Returns only standalone books (kind = Book), most-recently-opened first.
+    pub fn books(&self) -> Vec<&ProjectRecord> {
+        self.records
+            .iter()
+            .filter(|r| r.kind == RecordKind::Book)
+            .collect()
+    }
+
+    /// Records that a book folder was just opened, then reorders most-recent-first.
+    pub fn touch_book(&mut self, path: &str, name: &str, entries: usize) {
+        let now = OffsetDateTime::now_utc()
+            .format(&Rfc3339)
+            .unwrap_or_default();
+        match self.records.iter_mut().find(|record| record.path == path) {
+            Some(record) => {
+                record.name = name.to_string();
+                record.entries = entries;
+                record.last_opened = now;
+                record.kind = RecordKind::Book;
+            }
+            None => self.records.push(ProjectRecord {
+                path: path.to_string(),
+                name: name.to_string(),
+                entries,
+                last_opened: now,
+                kind: RecordKind::Book,
+            }),
+        }
+        self.records
+            .sort_by(|a, b| b.last_opened.cmp(&a.last_opened));
+    }
+
+    /// Removes a record by path. Returns `true` if found and removed.
+    pub fn remove(&mut self, path: &str) -> bool {
+        let before = self.records.len();
+        self.records.retain(|r| r.path != path);
+        self.records.len() < before
     }
 
     /// Persists the registry, creating the config directory if needed.

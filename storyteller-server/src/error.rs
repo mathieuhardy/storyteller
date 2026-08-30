@@ -38,6 +38,16 @@ impl ApiError {
         }
     }
 
+    /// No book is currently open. The client should use `POST /books/open`
+    /// to open one first.
+    pub fn no_book() -> Self {
+        Self {
+            status: StatusCode::SERVICE_UNAVAILABLE,
+            code: "no_book",
+            message: "no book open — use POST /books/open first".into(),
+        }
+    }
+
     pub fn bad_request(message: impl Into<String>) -> Self {
         Self {
             status: StatusCode::BAD_REQUEST,

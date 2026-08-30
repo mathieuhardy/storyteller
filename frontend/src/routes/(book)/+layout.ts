@@ -1,8 +1,7 @@
-// Book mode layout data loader. Fetches project info for file tree.
+// Book mode layout data loader. No project required — books are standalone.
 import type { LayoutLoad } from './$types';
-import { getProject } from '$api/client';
 
-export const load: LayoutLoad = async ({ fetch }) => {
-	const project = await getProject(fetch);
-	return { project };
+export const load: LayoutLoad = async () => {
+	// Books don't require project info — they work with their own file API.
+	return {};
 };

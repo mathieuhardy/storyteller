@@ -1,7 +1,8 @@
 <script lang="ts">
 	// File tree sidebar for book mode. Shows configurable folders.
+	// Uses book API for standalone operation — no project required.
 	import { onMount } from 'svelte';
-	import { listFiles, type FileEntry } from '$api/client';
+	import { listBookFiles, type FileEntry } from '$api/client';
 	import { t } from '$i18n/index.svelte';
 	import Icon from '$components/Icon.svelte';
 	import Popover from '$components/Popover.svelte';
@@ -32,14 +33,14 @@
 	async function loadRoot() {
 		isLoading = true;
 		try {
-			rootEntries = await listFiles();
+			rootEntries = await listBookFiles();
 			// Extract available folders from root
 			availableFolders = rootEntries.filter((e) => e.is_dir).map((e) => e.name);
 
 			// Load contents of selected folders
 			for (const folder of folders) {
 				if (availableFolders.includes(folder)) {
-					const entries = await listFiles(folder);
+					const entries = await listBookFiles(folder);
 					folderEntries.set(folder, entries);
 				}
 			}
@@ -52,7 +53,7 @@
 	}
 
 	async function loadChildren(path: string): Promise<FileEntry[]> {
-		return await listFiles(path);
+		return await listBookFiles(path);
 	}
 
 	function toggleFolder(folder: string) {
@@ -63,7 +64,7 @@
 
 		// Load folder contents if newly added
 		if (!folders.includes(folder)) {
-			listFiles(folder).then((entries) => {
+			listBookFiles(folder).then((entries) => {
 				folderEntries.set(folder, entries);
 				folderEntries = new Map(folderEntries);
 			});

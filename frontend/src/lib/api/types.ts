@@ -133,18 +133,31 @@ export interface ProjectResponse {
 	errors: Diagnostic[];
 }
 
-/** One known project in the launcher — item of `GET /projects`. */
+/** Kind of item in the launcher: project or book. */
+export type RecordKind = 'project' | 'book';
+
+/** One known project or book in the launcher — item of `GET /projects`. */
 export interface ProjectRecord {
 	path: string;
 	name: string;
 	entries: number;
 	last_opened: string;
+	kind?: RecordKind;
 }
 
-/** `GET /projects` — recent projects plus which one is active. */
+/** `GET /projects` — recent projects and books plus which one is active. */
 export interface ProjectsResponse {
 	items: ProjectRecord[];
+	books: ProjectRecord[];
 	active: string;
+	active_kind: 'project' | 'book' | null;
+}
+
+/** Response from `POST /books/open`. */
+export interface BookResponse {
+	root: string;
+	name: string;
+	files: number;
 }
 
 /** `GET /version`. */

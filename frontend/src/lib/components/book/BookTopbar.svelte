@@ -38,7 +38,7 @@
 </script>
 
 <header class="topbar">
-	<a class="brand" href="/dashboard" title={t('book.backToDashboard')}>
+	<a class="brand" href="/" title={t('book.backToDashboard')}>
 		<Icon name="feather" size={18} />
 	</a>
 

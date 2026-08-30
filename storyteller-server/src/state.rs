@@ -6,7 +6,7 @@
 //! [`Active`], while the things that must survive a switch — the SSE broadcast
 //! channel and the recent-projects [`Registry`] — stay on [`AppState`].
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard, RwLock};
 
 use storyteller_core::index::{Index, RebuildReport};
@@ -16,7 +16,7 @@ use storyteller_core::Result;
 use tokio::sync::broadcast;
 
 use crate::events::Event;
-use crate::registry::{ProjectRecord, Registry};
+use crate::registry::{ProjectRecord, RecordKind, Registry};
 
 /// How many change events the broadcast buffer holds. A GUI reloads on reconnect,
 /// so a slow client that lags past this simply refreshes — nothing is corrupted.
@@ -130,11 +130,11 @@ impl Active {
     }
 }
 
-/// The server's shared state: the swappable active project plus the pieces that
+/// The server's shared state: the swappable active project/book plus the pieces that
 /// outlive a project switch.
 pub struct AppState {
-    /// The active project, or `None` if no project is open yet (launcher-only mode).
-    active: RwLock<Option<Arc<Active>>>,
+    /// The active project or book, or `None` if nothing is open yet (launcher-only mode).
+    active: RwLock<Option<ActiveItem>>,
     events: broadcast::Sender<Event>,
     registry: Mutex<Registry>,
     watcher: Mutex<Option<crate::watcher::Watcher>>,
@@ -171,7 +171,7 @@ impl AppState {
             Some(path) => {
                 let active = Arc::new(Active::open(path)?);
                 record_open(&mut registry, &active);
-                Some(active)
+                Some(ActiveItem::Project(active))
             }
             None => None,
         };
@@ -185,12 +185,44 @@ impl AppState {
     }
 
     /// The active project, if any. Returns `None` in launcher-only mode before
-    /// a project is opened.
+    /// a project is opened, or if a book is open instead.
     pub fn current(&self) -> Option<Arc<Active>> {
-        self.active
+        match self
+            .active
             .read()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .clone()
+            .as_ref()
+        {
+            Some(ActiveItem::Project(active)) => Some(active.clone()),
+            _ => None,
+        }
+    }
+
+    /// The active book, if any. Returns `None` if no book is open or if a project is open.
+    pub fn current_book(&self) -> Option<Arc<BookState>> {
+        match self
+            .active
+            .read()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .as_ref()
+        {
+            Some(ActiveItem::Book(book)) => Some(book.clone()),
+            _ => None,
+        }
+    }
+
+    /// The kind of the currently active item, if any.
+    pub fn active_kind(&self) -> Option<RecordKind> {
+        match self
+            .active
+            .read()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .as_ref()
+        {
+            Some(ActiveItem::Project(_)) => Some(RecordKind::Project),
+            Some(ActiveItem::Book(_)) => Some(RecordKind::Book),
+            None => None,
+        }
     }
 
     /// The active project, or a normalized `503 no_project` if none is open yet
@@ -201,11 +233,16 @@ impl AppState {
         self.current().ok_or_else(crate::error::ApiError::no_project)
     }
 
+    /// The active book, or a normalized `503 no_book` if none is open yet.
+    pub fn require_book(&self) -> crate::error::ApiResult<Arc<BookState>> {
+        self.current_book().ok_or_else(crate::error::ApiError::no_book)
+    }
+
     /// (Re)starts the file watcher on the active project's folder. Replacing the
     /// stored handle drops the previous watcher, which stops its worker thread.
     /// A watcher that fails to start is not fatal: the API still serves and
     /// reindexes its own writes; only external edits go unnoticed. If no project
-    /// is open, the watcher is stopped.
+    /// is open (or a book is open instead), the watcher is stopped.
     pub fn start_watcher(self: &Arc<Self>) {
         let watcher = if self.current().is_some() {
             match crate::watcher::spawn(self.clone()) {
@@ -216,6 +253,7 @@ impl AppState {
                 }
             }
         } else {
+            // No project open (either launcher mode or book mode) — no watcher needed.
             None
         };
         *self.watcher.lock().unwrap_or_else(|p| p.into_inner()) = watcher;
@@ -225,7 +263,8 @@ impl AppState {
     /// it in, rewatches it, records it in the registry, and announces a rebuild.
     pub fn open(self: &Arc<Self>, root: &Path) -> Result<Arc<Active>> {
         let active = Arc::new(Active::open(root)?);
-        *self.active.write().unwrap_or_else(|p| p.into_inner()) = Some(active.clone());
+        *self.active.write().unwrap_or_else(|p| p.into_inner()) =
+            Some(ActiveItem::Project(active.clone()));
         self.start_watcher();
         {
             let mut registry = self.registry.lock().unwrap_or_else(|p| p.into_inner());
@@ -238,6 +277,28 @@ impl AppState {
             count: active.entry_count(),
         });
         Ok(active)
+    }
+
+    /// Opens a folder as a standalone book (`POST /books/open`).
+    pub fn open_book(self: &Arc<Self>, root: &Path) -> Result<Arc<BookState>> {
+        let book = Arc::new(BookState::open(root)?);
+        *self.active.write().unwrap_or_else(|p| p.into_inner()) =
+            Some(ActiveItem::Book(book.clone()));
+        // Stop any project watcher — books don't use it.
+        *self.watcher.lock().unwrap_or_else(|p| p.into_inner()) = None;
+        {
+            let mut registry = self.registry.lock().unwrap_or_else(|p| p.into_inner());
+            registry.touch_book(
+                &book.root().display().to_string(),
+                book.name(),
+                book.file_count(),
+            );
+            if let Err(err) = registry.save() {
+                tracing::warn!("cannot persist book registry: {err}");
+            }
+        }
+        tracing::info!(root = %book.root().display(), name = book.name(), "book opened");
+        Ok(book)
     }
 
     /// Reindexes external changes picked up by the [watcher](crate::watcher) and,
@@ -272,11 +333,52 @@ impl AppState {
             .to_vec()
     }
 
-    /// Canonical path of the active project's folder, or empty if none is open.
+    /// Returns only Storyteller projects from the registry.
+    pub fn registry_projects(&self) -> Vec<ProjectRecord> {
+        self.registry
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
+            .projects()
+            .into_iter()
+            .cloned()
+            .collect()
+    }
+
+    /// Returns only standalone books from the registry.
+    pub fn registry_books(&self) -> Vec<ProjectRecord> {
+        self.registry
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
+            .books()
+            .into_iter()
+            .cloned()
+            .collect()
+    }
+
+    /// Removes a record from the registry by path. Returns `true` if found.
+    pub fn registry_remove(&self, path: &str) -> bool {
+        let mut registry = self.registry.lock().unwrap_or_else(|p| p.into_inner());
+        let removed = registry.remove(path);
+        if removed {
+            if let Err(err) = registry.save() {
+                tracing::warn!("cannot persist registry after removal: {err}");
+            }
+        }
+        removed
+    }
+
+    /// Canonical path of the active project or book's folder, or empty if none is open.
     pub fn active_root(&self) -> String {
-        self.current()
-            .map(|a| a.project().root().display().to_string())
-            .unwrap_or_default()
+        match self
+            .active
+            .read()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .as_ref()
+        {
+            Some(ActiveItem::Project(active)) => active.project().root().display().to_string(),
+            Some(ActiveItem::Book(book)) => book.root().display().to_string(),
+            None => String::new(),
+        }
     }
 
     /// Subscribes to the change-event stream (SSE, `docs/api.md` §5).
@@ -310,4 +412,70 @@ fn project_name(root: &Path) -> String {
     root.file_name()
         .map(|name| name.to_string_lossy().into_owned())
         .unwrap_or_else(|| root.display().to_string())
+}
+
+/// A standalone book: a folder of markdown files without Storyteller's index/snapshot.
+pub struct BookState {
+    root: PathBuf,
+    name: String,
+}
+
+impl BookState {
+    /// Opens a folder as a book, counting its `.md` files.
+    fn open(root: &Path) -> Result<Self> {
+        let canonical = root.canonicalize().map_err(|_| {
+            storyteller_core::Error::ProjectNotFound(root.to_path_buf())
+        })?;
+        if !canonical.is_dir() {
+            return Err(storyteller_core::Error::ProjectNotFound(root.to_path_buf()));
+        }
+        let name = project_name(&canonical);
+        Ok(Self {
+            root: canonical,
+            name,
+        })
+    }
+
+    /// The canonical root folder.
+    pub fn root(&self) -> &Path {
+        &self.root
+    }
+
+    /// Display name (the folder's base name).
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    /// Counts `.md` files in the book folder (non-recursive, excluding hidden).
+    pub fn file_count(&self) -> usize {
+        count_md_files(&self.root)
+    }
+}
+
+/// Counts `.md` files recursively, excluding hidden files and directories.
+fn count_md_files(dir: &Path) -> usize {
+    let mut count = 0;
+    if let Ok(entries) = std::fs::read_dir(dir) {
+        for entry in entries.flatten() {
+            let name = entry.file_name();
+            let name_str = name.to_string_lossy();
+            if name_str.starts_with('.') {
+                continue;
+            }
+            if let Ok(ft) = entry.file_type() {
+                if ft.is_file() && name_str.ends_with(".md") {
+                    count += 1;
+                } else if ft.is_dir() {
+                    count += count_md_files(&entry.path());
+                }
+            }
+        }
+    }
+    count
+}
+
+/// The currently active item: either a Storyteller project or a standalone book.
+pub enum ActiveItem {
+    Project(Arc<Active>),
+    Book(Arc<BookState>),
 }

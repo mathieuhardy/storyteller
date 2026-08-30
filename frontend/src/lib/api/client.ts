@@ -6,6 +6,7 @@
 
 import type {
 	AssetInfo,
+	BookResponse,
 	Entry,
 	EntrySummary,
 	Frontmatter,
@@ -80,6 +81,10 @@ export const listProjects = (fetchImpl: Fetch = fetch): Promise<ProjectsResponse
 
 export const openProject = (path: string, fetchImpl: Fetch = fetch): Promise<ProjectResponse> =>
 	request('/projects/open', json({ path }), fetchImpl);
+
+/** Removes a project or book from the recent list (does not delete files). */
+export const removeRecent = (path: string, fetchImpl: Fetch = fetch): Promise<void> =>
+	request('/projects/recent', { method: 'DELETE', ...json({ path }) }, fetchImpl);
 
 export const getProject = (fetchImpl: Fetch = fetch): Promise<ProjectResponse> =>
 	request('/project', undefined, fetchImpl);
@@ -224,6 +229,36 @@ export const writeFile = (
 ): Promise<void> =>
 	request(
 		`/files/${path.split('/').map(encodeURIComponent).join('/')}`,
+		{ ...json({ content }), method: 'PUT' },
+		fetchImpl
+	);
+
+// --- Books (standalone markdown folders) -------------------------------------
+
+/** Opens a folder as a standalone book (no .storyteller directory required). */
+export const openBook = (path: string, fetchImpl: Fetch = fetch): Promise<BookResponse> =>
+	request('/books/open', json({ path }), fetchImpl);
+
+/** Lists files and directories in the active book. Only .md files are returned. */
+export const listBookFiles = (path?: string, fetchImpl: Fetch = fetch): Promise<FileEntry[]> => {
+	const params = new URLSearchParams();
+	if (path) params.set('path', path);
+	const query = params.toString();
+	return request(`/books/files${query ? `?${query}` : ''}`, undefined, fetchImpl);
+};
+
+/** Reads the raw content of a file from the active book. */
+export const readBookFile = (path: string, fetchImpl: Fetch = fetch): Promise<FileContent> =>
+	request(`/books/files/${path.split('/').map(encodeURIComponent).join('/')}`, undefined, fetchImpl);
+
+/** Writes raw content to a file in the active book. Only .md files are allowed. */
+export const writeBookFile = (
+	path: string,
+	content: string,
+	fetchImpl: Fetch = fetch
+): Promise<void> =>
+	request(
+		`/books/files/${path.split('/').map(encodeURIComponent).join('/')}`,
 		{ ...json({ content }), method: 'PUT' },
 		fetchImpl
 	);
