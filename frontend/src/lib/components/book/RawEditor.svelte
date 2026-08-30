@@ -20,24 +20,22 @@
 		spacious: '2.0'
 	};
 
-	// For showing line breaks, we overlay a div with the same content but with
-	// visible line break markers. This is purely visual.
-	const contentWithBreaks = $derived(
+	// For showing line breaks, create an overlay that shows only pilcrow marks
+	// at line endings. We replace each character with a space except newlines
+	// which get a pilcrow before them.
+	const breaksOverlay = $derived(
 		showLineBreaks
-			? content.replace(/\n/g, '\u00b6\n') // Pilcrow at end of each line
+			? content.replace(/[^\n]/g, ' ').replace(/\n/g, '\u00b6\n')
 			: ''
 	);
 </script>
 
 <div
 	class="editor-wrap"
-	class:show-breaks={showLineBreaks}
 	style:--line-height={lineHeightValues[lineHeight]}
 >
 	{#if showLineBreaks}
-		<div class="breaks-overlay" aria-hidden="true">
-			{contentWithBreaks}
-		</div>
+		<div class="breaks-overlay" aria-hidden="true">{breaksOverlay}</div>
 	{/if}
 	<textarea
 		class="editor mono"
@@ -78,7 +76,7 @@
 		cursor: not-allowed;
 	}
 
-	/* Line breaks overlay */
+	/* Line breaks overlay - shows only pilcrow marks at line endings */
 	.breaks-overlay {
 		position: absolute;
 		top: 0;
@@ -89,23 +87,12 @@
 		font-family: var(--font-mono);
 		font-size: 14px;
 		line-height: var(--line-height, 1.6);
-		color: transparent;
+		color: var(--accent);
+		opacity: 0.5;
 		white-space: pre-wrap;
 		word-wrap: break-word;
 		pointer-events: none;
 		overflow: hidden;
-	}
-
-	.show-breaks .editor {
-		/* Make textarea text invisible so we see the overlay */
-		color: transparent;
-		caret-color: var(--text);
-	}
-
-	/* Style the pilcrow marks */
-	.show-breaks .breaks-overlay {
-		color: var(--faint);
-		opacity: 0.4;
 	}
 
 	@media (max-width: 640px) {
