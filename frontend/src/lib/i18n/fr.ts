@@ -248,6 +248,7 @@ export const fr: Messages = {
 	'nav.writing': 'Écriture',
 
 	'book.files': 'Fichiers',
+	'book.home': 'Accueil',
 	'book.words': 'mots',
 	'book.noFileSelected': 'Aucun fichier sélectionné',
 	'book.backToDashboard': 'Retour au tableau de bord',

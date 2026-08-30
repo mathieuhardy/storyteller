@@ -61,7 +61,7 @@
 		height: 100%;
 		padding: 24px 32px;
 		border: 0;
-		background: var(--book-bg, var(--bg));
+		background: var(--bg);
 		color: var(--text);
 		font-size: 14px;
 		line-height: var(--line-height, 1.6);

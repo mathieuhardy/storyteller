@@ -196,8 +196,8 @@
 		flex-direction: column;
 		min-width: 0;
 		overflow: hidden;
-		background: var(--book-surface, var(--surface));
-		border-right: 1px solid var(--book-border, var(--border));
+		background: var(--surface);
+		border-right: 1px solid var(--border);
 	}
 
 	.main {

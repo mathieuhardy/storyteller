@@ -38,9 +38,12 @@
 </script>
 
 <header class="topbar">
-	<a class="brand" href="/" title={t('book.backToDashboard')}>
-		<Icon name="feather" size={18} />
+	<a class="home-link" href="/">
+		<Icon name="chevron-left" size={16} />
+		<span>{t('book.home')}</span>
 	</a>
+
+	<div class="divider"></div>
 
 	<div class="file-info">
 		{#if displayName}
@@ -102,23 +105,25 @@
 		gap: 8px;
 		height: 44px;
 		padding: 0 12px;
-		background: var(--book-surface, var(--surface));
-		border-bottom: 1px solid var(--book-border, var(--border));
+		background: var(--surface);
+		border-bottom: 1px solid var(--border);
 	}
 
-	.brand {
+	.home-link {
 		display: flex;
 		align-items: center;
-		justify-content: center;
-		width: 32px;
-		height: 32px;
+		gap: 4px;
+		padding: 4px 8px 4px 4px;
 		border-radius: var(--radius-sm);
-		color: var(--accent);
+		color: var(--muted);
 		text-decoration: none;
+		font-size: 13px;
+		font-weight: 500;
 	}
 
-	.brand:hover {
+	.home-link:hover {
 		background: var(--surface-2);
+		color: var(--text);
 	}
 
 	.file-info {

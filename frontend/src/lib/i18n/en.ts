@@ -249,6 +249,7 @@ export const en = {
 	'nav.writing': 'Writing',
 
 	'book.files': 'Files',
+	'book.home': 'Home',
 	'book.words': 'words',
 	'book.noFileSelected': 'No file selected',
 	'book.backToDashboard': 'Back to dashboard',
