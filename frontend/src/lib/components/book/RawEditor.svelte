@@ -6,12 +6,14 @@
 		content = $bindable(''),
 		showLineBreaks = false,
 		lineHeight = 'normal' as 'compact' | 'normal' | 'spacious',
+		editorWidth = 'full' as 'medium' | 'wide' | 'full',
 		disabled = false,
 		placeholder = ''
 	}: {
 		content?: string;
 		showLineBreaks?: boolean;
 		lineHeight?: 'compact' | 'normal' | 'spacious';
+		editorWidth?: 'medium' | 'wide' | 'full';
 		disabled?: boolean;
 		placeholder?: string;
 	} = $props();
@@ -20,6 +22,12 @@
 		compact: '1.4',
 		normal: '1.6',
 		spacious: '2.0'
+	};
+
+	const editorWidthValues = {
+		medium: '90ch',
+		wide: '110ch',
+		full: 'none'
 	};
 
 	let textareaEl: HTMLTextAreaElement | undefined = $state();
@@ -116,47 +124,58 @@
 </script>
 
 <div
-	class="editor-wrap"
+	class="editor-outer"
 	style:--line-height={lineHeightValues[lineHeight]}
+	style:--max-width={editorWidthValues[editorWidth]}
 >
-	<textarea
-		class="editor"
-		bind:this={textareaEl}
-		bind:value={content}
-		onscroll={onScroll}
-		onfocus={onFocus}
-		onblur={onBlur}
-		oninput={onInput}
-		onkeydown={onKeydown}
-		onkeyup={updateCursorPosition}
-		onclick={onClick}
-		onselect={updateCursorPosition}
-		{disabled}
-		{placeholder}
-		spellcheck="false"
-	></textarea>
-	<!-- Mirror element for cursor position calculation -->
-	<div class="cursor-mirror" bind:this={mirrorEl} aria-hidden="true"></div>
-	<!-- Custom cursor -->
-	{#if cursorVisible}
-		<div
-			class="custom-cursor"
-			bind:this={cursorEl}
-			style:left="{cursorX}px"
-			style:top="{cursorY}px"
-		></div>
-	{/if}
-	{#if showLineBreaks}
-		<div class="breaks-overlay" bind:this={overlayEl} aria-hidden="true">{breaksOverlay}</div>
-	{/if}
+	<div class="editor-wrap">
+		<textarea
+			class="editor"
+			bind:this={textareaEl}
+			bind:value={content}
+			onscroll={onScroll}
+			onfocus={onFocus}
+			onblur={onBlur}
+			oninput={onInput}
+			onkeydown={onKeydown}
+			onkeyup={updateCursorPosition}
+			onclick={onClick}
+			onselect={updateCursorPosition}
+			{disabled}
+			{placeholder}
+			spellcheck="false"
+		></textarea>
+		<!-- Mirror element for cursor position calculation -->
+		<div class="cursor-mirror" bind:this={mirrorEl} aria-hidden="true"></div>
+		<!-- Custom cursor -->
+		{#if cursorVisible}
+			<div
+				class="custom-cursor"
+				bind:this={cursorEl}
+				style:left="{cursorX}px"
+				style:top="{cursorY}px"
+			></div>
+		{/if}
+		{#if showLineBreaks}
+			<div class="breaks-overlay" bind:this={overlayEl} aria-hidden="true">{breaksOverlay}</div>
+		{/if}
+	</div>
 </div>
 
 <style>
-	.editor-wrap {
-		position: relative;
+	.editor-outer {
 		flex: 1;
 		min-height: 0;
 		overflow: hidden;
+		display: flex;
+		justify-content: center;
+	}
+
+	.editor-wrap {
+		position: relative;
+		width: 100%;
+		max-width: var(--max-width, none);
+		height: 100%;
 	}
 
 	.editor {

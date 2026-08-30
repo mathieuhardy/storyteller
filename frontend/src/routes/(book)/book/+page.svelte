@@ -23,6 +23,7 @@
 	// Display settings (persisted to localStorage)
 	let showLineBreaks = $state(false);
 	let lineHeight = $state<'compact' | 'normal' | 'spacious'>('normal');
+	let editorWidth = $state<'medium' | 'wide' | 'full'>('full');
 
 	// Folders to show in file tree (persisted to localStorage)
 	let visibleFolders = $state<string[]>(['chapters']);
@@ -41,6 +42,7 @@
 			const parsed = JSON.parse(savedDisplay);
 			showLineBreaks = parsed.showLineBreaks ?? false;
 			lineHeight = parsed.lineHeight ?? 'normal';
+			editorWidth = parsed.editorWidth ?? 'full';
 		}
 
 		const savedFolders = localStorage.getItem('book-mode-folders');
@@ -63,7 +65,7 @@
 		if (browser) {
 			localStorage.setItem(
 				'book-mode-display',
-				JSON.stringify({ showLineBreaks, lineHeight })
+				JSON.stringify({ showLineBreaks, lineHeight, editorWidth })
 			);
 		}
 	});
@@ -162,14 +164,16 @@
 		{autoSaveInterval}
 		{showLineBreaks}
 		{lineHeight}
+		{editorWidth}
 		onSave={save}
 		onAutoSaveChange={(enabled, interval) => {
 			autoSaveEnabled = enabled;
 			autoSaveInterval = interval;
 		}}
-		onDisplayChange={(breaks, height) => {
+		onDisplayChange={(breaks, height, width) => {
 			showLineBreaks = breaks;
 			lineHeight = height;
+			editorWidth = width;
 		}}
 	/>
 </div>
@@ -188,6 +192,7 @@
 		bind:content
 		{showLineBreaks}
 		{lineHeight}
+		{editorWidth}
 		disabled={!currentFile}
 		placeholder={currentFile ? '' : 'Select a file from the sidebar to start editing.'}
 	/>

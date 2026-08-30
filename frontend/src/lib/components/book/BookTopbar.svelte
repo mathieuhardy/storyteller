@@ -16,6 +16,7 @@
 		autoSaveInterval = 60_000,
 		showLineBreaks = false,
 		lineHeight = 'normal' as 'compact' | 'normal' | 'spacious',
+		editorWidth = 'full' as 'medium' | 'wide' | 'full',
 		onSave,
 		onAutoSaveChange,
 		onDisplayChange
@@ -29,9 +30,10 @@
 		autoSaveInterval?: number;
 		showLineBreaks?: boolean;
 		lineHeight?: 'compact' | 'normal' | 'spacious';
+		editorWidth?: 'medium' | 'wide' | 'full';
 		onSave?: () => void;
 		onAutoSaveChange?: (enabled: boolean, interval: number) => void;
-		onDisplayChange?: (showLineBreaks: boolean, lineHeight: 'compact' | 'normal' | 'spacious') => void;
+		onDisplayChange?: (showLineBreaks: boolean, lineHeight: 'compact' | 'normal' | 'spacious', editorWidth: 'medium' | 'wide' | 'full') => void;
 	} = $props();
 
 	const displayName = $derived(fileName ? fileName.split('/').pop() : null);
@@ -92,7 +94,8 @@
 	<DisplaySettings
 		{showLineBreaks}
 		{lineHeight}
-		onChange={(breaks, height) => onDisplayChange?.(breaks, height)}
+		{editorWidth}
+		onChange={(breaks, height, width) => onDisplayChange?.(breaks, height, width)}
 	/>
 </header>
 
