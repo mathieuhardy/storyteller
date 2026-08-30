@@ -107,6 +107,8 @@
 		padding: 0 12px;
 		background: var(--surface);
 		border-bottom: 1px solid var(--border);
+		position: relative;
+		z-index: 20;
 	}
 
 	.home-link {

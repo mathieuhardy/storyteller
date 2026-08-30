@@ -142,7 +142,6 @@
 		display: flex;
 		flex-direction: column;
 		height: 100%;
-		overflow: hidden;
 	}
 
 	.header {
@@ -151,6 +150,8 @@
 		justify-content: space-between;
 		padding: 12px;
 		border-bottom: 1px solid var(--border);
+		position: relative;
+		z-index: 10;
 	}
 
 	.title {
@@ -210,6 +211,7 @@
 	.tree-content {
 		flex: 1;
 		overflow-y: auto;
+		overflow-x: hidden;
 		padding: 8px;
 	}
 

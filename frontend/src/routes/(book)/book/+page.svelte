@@ -195,7 +195,6 @@
 		display: flex;
 		flex-direction: column;
 		min-width: 0;
-		overflow: hidden;
 		background: var(--surface);
 		border-right: 1px solid var(--border);
 	}
@@ -204,7 +203,6 @@
 		display: flex;
 		flex-direction: column;
 		min-width: 0;
-		overflow: hidden;
 	}
 
 	@media (max-width: 768px) {
