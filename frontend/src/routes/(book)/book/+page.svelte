@@ -151,16 +151,7 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<aside class="sidebar">
-	<FileTree
-		folders={visibleFolders}
-		{currentFile}
-		onSelect={selectFile}
-		onFoldersChange={(folders) => (visibleFolders = folders)}
-	/>
-</aside>
-
-<div class="main">
+<div class="topbar-row">
 	<BookTopbar
 		fileName={currentFile}
 		{wordCount}
@@ -181,6 +172,18 @@
 			lineHeight = height;
 		}}
 	/>
+</div>
+
+<aside class="sidebar">
+	<FileTree
+		folders={visibleFolders}
+		{currentFile}
+		onSelect={selectFile}
+		onFoldersChange={(folders) => (visibleFolders = folders)}
+	/>
+</aside>
+
+<div class="editor">
 	<RawEditor
 		bind:content
 		{showLineBreaks}
@@ -191,18 +194,24 @@
 </div>
 
 <style>
+	.topbar-row {
+		grid-column: 1 / -1;
+	}
+
 	.sidebar {
 		display: flex;
 		flex-direction: column;
 		min-width: 0;
+		min-height: 0;
 		background: var(--surface);
 		border-right: 1px solid var(--border);
 	}
 
-	.main {
+	.editor {
 		display: flex;
 		flex-direction: column;
 		min-width: 0;
+		min-height: 0;
 	}
 
 	@media (max-width: 768px) {

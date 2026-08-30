@@ -247,6 +247,7 @@ export const fr: Messages = {
 
 	'nav.writing': 'Écriture',
 
+	'book.title': 'Livre',
 	'book.files': 'Fichiers',
 	'book.home': 'Accueil',
 	'book.words': 'mots',

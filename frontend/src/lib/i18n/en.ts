@@ -248,6 +248,7 @@ export const en = {
 
 	'nav.writing': 'Writing',
 
+	'book.title': 'Book',
 	'book.files': 'Files',
 	'book.home': 'Home',
 	'book.words': 'words',

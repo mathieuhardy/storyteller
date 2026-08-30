@@ -12,6 +12,7 @@
 	.book-shell {
 		display: grid;
 		grid-template-columns: 240px 1fr;
+		grid-template-rows: auto 1fr;
 		height: 100vh;
 		min-height: 0;
 		background: var(--bg);

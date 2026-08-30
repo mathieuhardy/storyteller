@@ -38,12 +38,10 @@
 </script>
 
 <header class="topbar">
-	<a class="home-link" href="/">
-		<Icon name="chevron-left" size={16} />
-		<span>{t('book.home')}</span>
+	<a class="brand" href="/">
+		<Icon name="book-open" size={18} />
+		<span class="brand-name">{t('book.title')}</span>
 	</a>
-
-	<div class="divider"></div>
 
 	<div class="file-info">
 		{#if displayName}
@@ -102,8 +100,8 @@
 	.topbar {
 		display: flex;
 		align-items: center;
-		gap: 8px;
-		height: 44px;
+		gap: 10px;
+		height: 48px;
 		padding: 0 12px;
 		background: var(--surface);
 		border-bottom: 1px solid var(--border);
@@ -111,21 +109,18 @@
 		z-index: 20;
 	}
 
-	.home-link {
+	.brand {
 		display: flex;
 		align-items: center;
-		gap: 4px;
-		padding: 4px 8px 4px 4px;
-		border-radius: var(--radius-sm);
-		color: var(--muted);
+		gap: 7px;
+		color: var(--accent);
 		text-decoration: none;
-		font-size: 13px;
-		font-weight: 500;
+		font-weight: 700;
 	}
 
-	.home-link:hover {
-		background: var(--surface-2);
+	.brand-name {
 		color: var(--text);
+		font-size: 15px;
 	}
 
 	.file-info {
