@@ -20,13 +20,22 @@
 		spacious: '2.0'
 	};
 
-	// For showing line breaks, create an overlay that shows only pilcrow marks
-	// at line endings. We replace each character with a space except newlines
-	// which get a pilcrow before them.
+	let textareaEl: HTMLTextAreaElement | undefined = $state();
+	let overlayEl: HTMLDivElement | undefined = $state();
+
+	// Sync overlay scroll with textarea
+	function onScroll() {
+		if (overlayEl && textareaEl) {
+			overlayEl.scrollTop = textareaEl.scrollTop;
+			overlayEl.scrollLeft = textareaEl.scrollLeft;
+		}
+	}
+
+	// For showing line breaks, create an overlay with only pilcrow marks.
+	// Replace all non-newline characters with spaces to maintain positioning,
+	// then add pilcrow before each newline.
 	const breaksOverlay = $derived(
-		showLineBreaks
-			? content.replace(/[^\n]/g, ' ').replace(/\n/g, '\u00b6\n')
-			: ''
+		showLineBreaks ? content.replace(/[^\n]/g, '\u00A0').replace(/\n/g, '\u00b6\n') : ''
 	);
 </script>
 
@@ -35,11 +44,13 @@
 	style:--line-height={lineHeightValues[lineHeight]}
 >
 	{#if showLineBreaks}
-		<div class="breaks-overlay" aria-hidden="true">{breaksOverlay}</div>
+		<div class="breaks-overlay mono" bind:this={overlayEl} aria-hidden="true">{breaksOverlay}</div>
 	{/if}
 	<textarea
 		class="editor mono"
+		bind:this={textareaEl}
 		bind:value={content}
+		onscroll={onScroll}
 		{disabled}
 		{placeholder}
 		spellcheck="false"
@@ -55,6 +66,7 @@
 	}
 
 	.editor {
+		position: relative;
 		width: 100%;
 		height: 100%;
 		padding: 24px 32px;
@@ -76,23 +88,29 @@
 		cursor: not-allowed;
 	}
 
-	/* Line breaks overlay - shows only pilcrow marks at line endings */
+	/* Line breaks overlay - shows only pilcrow marks positioned to match text */
 	.breaks-overlay {
 		position: absolute;
 		top: 0;
 		left: 0;
-		right: 0;
-		bottom: 0;
+		width: 100%;
+		height: 100%;
 		padding: 24px 32px;
-		font-family: var(--font-mono);
 		font-size: 14px;
 		line-height: var(--line-height, 1.6);
 		color: var(--accent);
-		opacity: 0.5;
 		white-space: pre-wrap;
 		word-wrap: break-word;
+		overflow: auto;
 		pointer-events: none;
-		overflow: hidden;
+		box-sizing: border-box;
+		/* Hide scrollbars but allow scroll sync */
+		scrollbar-width: none;
+		-ms-overflow-style: none;
+	}
+
+	.breaks-overlay::-webkit-scrollbar {
+		display: none;
 	}
 
 	@media (max-width: 640px) {
