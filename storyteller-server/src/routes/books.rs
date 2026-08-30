@@ -101,6 +101,11 @@ pub async fn list(
             continue;
         }
 
+        // For directories, only include if they contain at least one .md file.
+        if is_dir && !contains_markdown(&entry.path()) {
+            continue;
+        }
+
         let relative_path = entry
             .path()
             .strip_prefix(&root)
@@ -207,6 +212,40 @@ fn parse_list_query(raw: Option<&str>) -> ListQuery {
         }
     }
     params
+}
+
+/// Returns `true` if the directory contains at least one `.md` file (recursively).
+fn contains_markdown(path: &Path) -> bool {
+    if !path.is_dir() {
+        return false;
+    }
+
+    let Ok(read_dir) = std::fs::read_dir(path) else {
+        return false;
+    };
+
+    for entry in read_dir.flatten() {
+        let file_name = entry.file_name().to_string_lossy().to_string();
+
+        // Skip hidden files/directories.
+        if file_name.starts_with('.') {
+            continue;
+        }
+
+        let Ok(file_type) = entry.file_type() else {
+            continue;
+        };
+
+        if file_type.is_file() && file_name.ends_with(".md") {
+            return true;
+        }
+
+        if file_type.is_dir() && contains_markdown(&entry.path()) {
+            return true;
+        }
+    }
+
+    false
 }
 
 /// Validates that a path does not escape the book root via `..` or symlinks.
