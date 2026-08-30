@@ -35,7 +35,7 @@
 	// Replace all non-newline characters with spaces to maintain positioning,
 	// then add pilcrow before each newline.
 	const breaksOverlay = $derived(
-		showLineBreaks ? content.replace(/[^\n]/g, '\u00A0').replace(/\n/g, '\u00b6\n') : ''
+		showLineBreaks ? content.replace(/[^\n]/g, ' ').replace(/\n/g, '\u00b6\n') : ''
 	);
 </script>
 
@@ -44,7 +44,7 @@
 	style:--line-height={lineHeightValues[lineHeight]}
 >
 	<textarea
-		class="editor mono"
+		class="editor"
 		bind:this={textareaEl}
 		bind:value={content}
 		onscroll={onScroll}
@@ -53,7 +53,7 @@
 		spellcheck="false"
 	></textarea>
 	{#if showLineBreaks}
-		<div class="breaks-overlay mono" bind:this={overlayEl} aria-hidden="true">{breaksOverlay}</div>
+		<div class="breaks-overlay" bind:this={overlayEl} aria-hidden="true">{breaksOverlay}</div>
 	{/if}
 </div>
 
@@ -73,10 +73,13 @@
 		border: 0;
 		background: var(--bg);
 		color: var(--text);
+		font-family: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Consolas', monospace;
 		font-size: 14px;
 		line-height: var(--line-height, 1.6);
 		resize: none;
 		outline: none;
+		white-space: pre-wrap;
+		word-wrap: break-word;
 	}
 
 	.editor::placeholder {
@@ -96,6 +99,7 @@
 		width: 100%;
 		height: 100%;
 		padding: 24px 32px;
+		font-family: ui-monospace, 'SF Mono', 'Cascadia Mono', 'Consolas', monospace;
 		font-size: 14px;
 		line-height: var(--line-height, 1.6);
 		color: var(--faint);
