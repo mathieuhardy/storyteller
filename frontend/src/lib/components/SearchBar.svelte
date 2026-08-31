@@ -7,16 +7,18 @@
 	let {
 		content = '',
 		visible = $bindable(false),
-		onNavigate = (_index: number, _start: number, _end: number) => {}
+		onNavigate = (_index: number, _start: number, _end: number, _explicit: boolean) => {}
 	}: {
 		content?: string;
 		visible?: boolean;
-		onNavigate?: (index: number, start: number, end: number) => void;
+		// explicit: true when user clicks prev/next or presses Enter, false when typing
+		onNavigate?: (index: number, start: number, end: number, explicit: boolean) => void;
 	} = $props();
 
 	let query = $state('');
 	let inputEl: HTMLInputElement | undefined = $state();
 	let currentIndex = $state(0);
+	let isExplicitNavigation = false;
 
 	// Find all matches
 	const matches = $derived.by(() => {
@@ -47,7 +49,8 @@
 	$effect(() => {
 		if (matches.length > 0 && currentIndex < matches.length) {
 			const match = matches[currentIndex];
-			onNavigate(currentIndex, match.start, match.end);
+			onNavigate(currentIndex, match.start, match.end, isExplicitNavigation);
+			isExplicitNavigation = false; // Reset after navigation
 		}
 	});
 
@@ -61,11 +64,13 @@
 
 	function goToNext() {
 		if (matchCount === 0) return;
+		isExplicitNavigation = true;
 		currentIndex = (currentIndex + 1) % matchCount;
 	}
 
 	function goToPrev() {
 		if (matchCount === 0) return;
+		isExplicitNavigation = true;
 		currentIndex = (currentIndex - 1 + matchCount) % matchCount;
 	}
 

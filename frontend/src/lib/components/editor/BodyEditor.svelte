@@ -97,9 +97,13 @@
 		}
 	}
 
-	function handleSearchNavigate(_index: number, start: number, end: number) {
+	function handleSearchNavigate(_index: number, start: number, end: number, explicit: boolean) {
 		if (!textarea) return;
-		// Don't focus textarea - keep focus in search input so user can continue typing
+		// Only focus textarea on explicit navigation (prev/next buttons, Enter key)
+		// This shows the selection highlight while keeping focus in search input when typing
+		if (explicit) {
+			textarea.focus();
+		}
 		textarea.setSelectionRange(start, end);
 		// Scroll selection into view
 		const textBefore = body.substring(0, start);

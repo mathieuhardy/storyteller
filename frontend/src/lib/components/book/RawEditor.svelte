@@ -164,9 +164,13 @@
 		});
 	}
 
-	function handleSearchNavigate(_index: number, start: number, end: number) {
+	function handleSearchNavigate(_index: number, start: number, end: number, explicit: boolean) {
 		if (!textareaEl) return;
-		// Don't focus textarea - keep focus in search input so user can continue typing
+		// Only focus textarea on explicit navigation (prev/next buttons, Enter key)
+		// This shows the selection highlight while keeping focus in search input when typing
+		if (explicit) {
+			textareaEl.focus();
+		}
 		textareaEl.setSelectionRange(start, end);
 		// Scroll the selection into view
 		const textBefore = content.substring(0, start);
@@ -175,6 +179,9 @@
 		const lineHeightPx = parseFloat(getComputedStyle(textareaEl).lineHeight) || 22;
 		const targetScroll = lineNumber * lineHeightPx - textareaEl.clientHeight / 2;
 		textareaEl.scrollTop = Math.max(0, targetScroll);
+		if (explicit) {
+			updateCursorPosition();
+		}
 	}
 
 	function onClick() {
