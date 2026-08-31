@@ -38,9 +38,6 @@
 
 	const matchCount = $derived(matches.length);
 
-	// Track previous match count to detect first match
-	let prevMatchCount = 0;
-
 	// Reset current index when matches change
 	$effect(() => {
 		if (matches.length > 0 && currentIndex >= matches.length) {
@@ -52,12 +49,9 @@
 	$effect(() => {
 		if (matches.length > 0 && currentIndex < matches.length) {
 			const match = matches[currentIndex];
-			// Treat first match appearance as explicit so it gets highlighted
-			const shouldBeExplicit = isExplicitNavigation || (prevMatchCount === 0 && matches.length > 0);
-			onNavigate(currentIndex, match.start, match.end, shouldBeExplicit);
+			onNavigate(currentIndex, match.start, match.end, isExplicitNavigation);
 			isExplicitNavigation = false;
 		}
-		prevMatchCount = matches.length;
 	});
 
 	// Focus input when search bar becomes visible
