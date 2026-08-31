@@ -93,6 +93,15 @@ impl ApiError {
             message: message.into(),
         }
     }
+
+    /// An upstream server (e.g., LanguageTool) is unreachable or returned an error.
+    pub fn bad_gateway(message: impl Into<String>) -> Self {
+        Self {
+            status: StatusCode::BAD_GATEWAY,
+            code: "bad_gateway",
+            message: message.into(),
+        }
+    }
 }
 
 impl IntoResponse for ApiError {

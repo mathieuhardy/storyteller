@@ -66,6 +66,12 @@ pub fn router(state: SharedState) -> Router {
             "/books/replacements",
             get(books::get_replacements).put(books::set_replacements),
         )
+        .route(
+            "/books/languagetool/config",
+            get(books::get_lt_config).put(books::set_lt_config),
+        )
+        .route("/books/languagetool/check", post(books::lt_check))
+        .route("/books/languagetool/test", post(books::lt_test))
         // Its own fallback: an unmatched path *under* `/api/v1` is a JSON
         // 404, never the frontend shell below it.
         .fallback(not_found)

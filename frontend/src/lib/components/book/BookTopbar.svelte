@@ -5,8 +5,9 @@
 	import AutoSaveSettings from './AutoSaveSettings.svelte';
 	import DisplaySettings from './DisplaySettings.svelte';
 	import ReplacementsSettings from './ReplacementsSettings.svelte';
+	import LanguageToolSettings from './LanguageToolSettings.svelte';
 	import { t, formatDate } from '$i18n/index.svelte';
-	import type { ReplacementRule } from '$api/client';
+	import type { ReplacementRule, LTConfig } from '$api/client';
 
 	let {
 		fileName = null,
@@ -21,10 +22,18 @@
 		editorWidth = 'full' as 'medium' | 'wide' | 'full',
 		replacementRules = [],
 		replacementsError = null,
+		ltConfig = { server_url: 'http://localhost:8081', language: 'fr' },
+		ltConnected = null,
+		ltTesting = false,
+		ltError = null,
+		ltDrawerOpen = false,
 		onSave,
 		onAutoSaveChange,
 		onDisplayChange,
-		onReplacementsChange
+		onReplacementsChange,
+		onLTConfigChange,
+		onLTTest,
+		onLTDrawerToggle
 	}: {
 		fileName?: string | null;
 		wordCount?: number;
@@ -38,10 +47,18 @@
 		editorWidth?: 'medium' | 'wide' | 'full';
 		replacementRules?: ReplacementRule[];
 		replacementsError?: string | null;
+		ltConfig?: LTConfig;
+		ltConnected?: boolean | null;
+		ltTesting?: boolean;
+		ltError?: string | null;
+		ltDrawerOpen?: boolean;
 		onSave?: () => void;
 		onAutoSaveChange?: (enabled: boolean, interval: number) => void;
 		onDisplayChange?: (showLineBreaks: boolean, lineHeight: 'compact' | 'normal' | 'spacious', editorWidth: 'medium' | 'wide' | 'full') => void;
 		onReplacementsChange?: (rules: ReplacementRule[]) => void;
+		onLTConfigChange?: (config: LTConfig) => void;
+		onLTTest?: () => void;
+		onLTDrawerToggle?: () => void;
 	} = $props();
 
 	const displayName = $derived(fileName ? fileName.split('/').pop() : null);
@@ -111,6 +128,24 @@
 		error={replacementsError}
 		onChange={(rules) => onReplacementsChange?.(rules)}
 	/>
+
+	<LanguageToolSettings
+		config={ltConfig}
+		isConnected={ltConnected}
+		isTesting={ltTesting}
+		error={ltError}
+		onChange={(config) => onLTConfigChange?.(config)}
+		onTest={() => onLTTest?.()}
+	/>
+
+	<button
+		class="drawer-toggle"
+		class:active={ltDrawerOpen}
+		onclick={() => onLTDrawerToggle?.()}
+		title={t('book.ltDrawerTitle')}
+	>
+		<Icon name="spell-check" size={16} />
+	</button>
 </header>
 
 <style>
@@ -215,5 +250,30 @@
 	.save-btn:disabled {
 		opacity: 0.5;
 		cursor: not-allowed;
+	}
+
+	.drawer-toggle {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 32px;
+		height: 32px;
+		border: 1px solid var(--border);
+		border-radius: var(--radius-sm);
+		background: transparent;
+		color: var(--muted);
+		cursor: pointer;
+		margin-left: 4px;
+	}
+
+	.drawer-toggle:hover {
+		background: var(--surface-2);
+		color: var(--text);
+	}
+
+	.drawer-toggle.active {
+		background: var(--accent);
+		border-color: var(--accent);
+		color: var(--accent-fg);
 	}
 </style>

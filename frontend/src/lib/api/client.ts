@@ -292,3 +292,55 @@ export const setBookReplacements = (
 	fetchImpl: Fetch = fetch
 ): Promise<ReplacementsResponse> =>
 	request('/books/replacements', { ...json({ rules }), method: 'PUT' }, fetchImpl);
+
+// --- LanguageTool (Book Mode) ------------------------------------------------
+
+/** LanguageTool configuration for a book. */
+export interface LTConfig {
+	server_url: string;
+	language: string;
+}
+
+/** Response for `GET`/`PUT /books/languagetool/config`. */
+export interface LTConfigResponse extends LTConfig {
+	errors: Diagnostic[];
+}
+
+/** A single match from LanguageTool. */
+export interface LTMatch {
+	message: string;
+	short_message?: string;
+	offset: number;
+	length: number;
+	replacements: { value: string }[];
+	rule: { id: string; description?: string };
+	context?: { text: string; offset: number; length: number };
+}
+
+/** Response for `POST /books/languagetool/check`. */
+export interface LTCheckResponse {
+	matches: LTMatch[];
+}
+
+/** Reads the active book's LanguageTool configuration. */
+export const getLTConfig = (fetchImpl: Fetch = fetch): Promise<LTConfigResponse> =>
+	request('/books/languagetool/config', undefined, fetchImpl);
+
+/** Saves the active book's LanguageTool configuration. */
+export const setLTConfig = (
+	config: LTConfig,
+	fetchImpl: Fetch = fetch
+): Promise<LTConfigResponse> =>
+	request('/books/languagetool/config', { ...json(config), method: 'PUT' }, fetchImpl);
+
+/** Tests connection to the LanguageTool server. */
+export const testLTConnection = (fetchImpl: Fetch = fetch): Promise<{ ok: boolean }> =>
+	request('/books/languagetool/test', json({}), fetchImpl);
+
+/** Checks text with LanguageTool. */
+export const checkLT = (
+	text: string,
+	language?: string,
+	fetchImpl: Fetch = fetch
+): Promise<LTCheckResponse> =>
+	request('/books/languagetool/check', json({ text, language }), fetchImpl);

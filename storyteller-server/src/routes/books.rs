@@ -306,6 +306,108 @@ fn contains_markdown(path: &Path) -> bool {
     false
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// LanguageTool integration
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Response for `GET /api/v1/books/languagetool/config`.
+#[derive(Debug, Serialize)]
+pub struct LTConfigResponse {
+    pub server_url: String,
+    pub language: String,
+    pub errors: Vec<storyteller_core::error::Diagnostic>,
+}
+
+/// Body for `PUT /api/v1/books/languagetool/config`.
+#[derive(Debug, Deserialize)]
+pub struct SetLTConfigBody {
+    pub server_url: String,
+    pub language: String,
+}
+
+/// `GET /api/v1/books/languagetool/config` — get LanguageTool configuration.
+pub async fn get_lt_config(State(state): State<SharedState>) -> ApiResult<Json<LTConfigResponse>> {
+    let book = state.require_book()?;
+    let loaded = crate::languagetool::LoadedConfig::load(book.root());
+    Ok(Json(LTConfigResponse {
+        server_url: loaded.config.server_url,
+        language: loaded.config.language,
+        errors: loaded.errors,
+    }))
+}
+
+/// `PUT /api/v1/books/languagetool/config` — save LanguageTool configuration.
+pub async fn set_lt_config(
+    State(state): State<SharedState>,
+    Json(body): Json<SetLTConfigBody>,
+) -> ApiResult<Json<LTConfigResponse>> {
+    if body.server_url.is_empty() {
+        return Err(ApiError::bad_request("server_url cannot be empty"));
+    }
+    if body.language.is_empty() {
+        return Err(ApiError::bad_request("language cannot be empty"));
+    }
+
+    let book = state.require_book()?;
+    let config = crate::languagetool::LanguageToolConfig {
+        server_url: body.server_url.clone(),
+        language: body.language.clone(),
+    };
+    crate::languagetool::LoadedConfig::save(&config, book.root())
+        .map_err(|e| ApiError::internal(format!("failed to save config: {e}")))?;
+
+    Ok(Json(LTConfigResponse {
+        server_url: body.server_url,
+        language: body.language,
+        errors: Vec::new(),
+    }))
+}
+
+/// Body for `POST /api/v1/books/languagetool/check`.
+#[derive(Debug, Deserialize)]
+pub struct LTCheckBody {
+    pub text: String,
+    #[serde(default)]
+    pub language: Option<String>,
+}
+
+/// Response for `POST /api/v1/books/languagetool/check`.
+#[derive(Debug, Serialize)]
+pub struct LTCheckResponse {
+    pub matches: Vec<crate::languagetool::LTMatch>,
+}
+
+/// `POST /api/v1/books/languagetool/check` — check text with LanguageTool.
+pub async fn lt_check(
+    State(state): State<SharedState>,
+    Json(body): Json<LTCheckBody>,
+) -> ApiResult<Json<LTCheckResponse>> {
+    let book = state.require_book()?;
+    let loaded = crate::languagetool::LoadedConfig::load(book.root());
+
+    let language = body.language.unwrap_or(loaded.config.language);
+
+    let result = crate::languagetool::check_text(&loaded.config.server_url, &body.text, &language)
+        .await
+        .map_err(|e| ApiError::bad_gateway(e))?;
+
+    Ok(Json(LTCheckResponse {
+        matches: result.matches,
+    }))
+}
+
+/// `POST /api/v1/books/languagetool/test` — test connection to LanguageTool server.
+pub async fn lt_test(State(state): State<SharedState>) -> ApiResult<Json<serde_json::Value>> {
+    let book = state.require_book()?;
+    let loaded = crate::languagetool::LoadedConfig::load(book.root());
+
+    crate::languagetool::test_connection(&loaded.config.server_url)
+        .await
+        .map_err(|e| ApiError::bad_gateway(e))?;
+
+    Ok(Json(serde_json::json!({ "ok": true })))
+}
+
 /// Validates that a path does not escape the book root via `..` or symlinks.
 fn validate_path(root: &Path, target: &Path) -> ApiResult<()> {
     let canonical_root = root

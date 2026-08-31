@@ -24,7 +24,9 @@
 		| 'file'
 		| 'network'
 		| 'settings'
-		| 'book-open';
+		| 'book-open'
+		| 'spell-check'
+		| 'check';
 
 	const PATHS: Record<IconName, string[]> = {
 		search: ['M11 11m-8 0a8 8 0 1 0 16 0a8 8 0 1 0 -16 0', 'M21 21l-4.3-4.3'],
@@ -77,7 +79,13 @@
 		'book-open': [
 			'M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z',
 			'M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z'
-		]
+		],
+		'spell-check': [
+			'M6 16l6-12 6 12',
+			'M8 12h8',
+			'M16 20l2 2 4-4'
+		],
+		check: ['M20 6 9 17l-5-5']
 	};
 </script>
 

@@ -6,14 +6,19 @@
 	import BookTopbar from '$components/book/BookTopbar.svelte';
 	import FileTree from '$components/book/FileTree.svelte';
 	import RawEditor from '$components/book/RawEditor.svelte';
+	import LanguageToolDrawer from '$components/book/LanguageToolDrawer.svelte';
 	import {
 		listBookFiles,
 		readBookFile,
 		writeBookFile,
 		getBookReplacements,
-		setBookReplacements
+		setBookReplacements,
+		getLTConfig,
+		setLTConfig,
+		testLTConnection,
+		checkLT
 	} from '$api/client';
-	import type { ReplacementRule } from '$api/client';
+	import type { ReplacementRule, LTConfig, LTMatch } from '$api/client';
 
 	// State
 	let currentFile = $state<string | null>(null);
@@ -40,12 +45,30 @@
 	let replacementRules = $state<ReplacementRule[]>([]);
 	let replacementsError = $state<string | null>(null);
 
+	// LanguageTool config (persisted server-side, .storyteller/languagetool.yaml)
+	let ltConfig = $state<LTConfig>({ server_url: 'http://localhost:8081', language: 'fr' });
+	let ltConnected = $state<boolean | null>(null);
+	let ltTesting = $state(false);
+	let ltError = $state<string | null>(null);
+
+	// LanguageTool drawer state
+	let ltDrawerOpen = $state(false);
+	let ltMatches = $state<LTMatch[]>([]);
+	let ltChecking = $state(false);
+
 	onMount(async () => {
 		try {
 			const res = await getBookReplacements();
 			replacementRules = res.rules;
 		} catch (err) {
 			console.error('Failed to load replacement rules:', err);
+		}
+
+		try {
+			const res = await getLTConfig();
+			ltConfig = { server_url: res.server_url, language: res.language };
+		} catch (err) {
+			console.error('Failed to load LanguageTool config:', err);
 		}
 	});
 
@@ -63,6 +86,76 @@
 			replacementRules = previous;
 			replacementsError = err instanceof Error ? err.message : String(err);
 			console.error('Failed to save replacement rules:', err);
+		}
+	}
+
+	async function updateLTConfig(config: LTConfig) {
+		const previous = ltConfig;
+		ltConfig = config;
+		ltConnected = null; // Reset connection status on config change
+		try {
+			await setLTConfig(config);
+			ltError = null;
+		} catch (err) {
+			ltConfig = previous;
+			ltError = err instanceof Error ? err.message : String(err);
+			console.error('Failed to save LanguageTool config:', err);
+		}
+	}
+
+	async function testLT() {
+		ltTesting = true;
+		ltError = null;
+		try {
+			await testLTConnection();
+			ltConnected = true;
+		} catch (err) {
+			ltConnected = false;
+			ltError = err instanceof Error ? err.message : String(err);
+			console.error('LanguageTool connection test failed:', err);
+		} finally {
+			ltTesting = false;
+		}
+	}
+
+	async function checkDocument() {
+		if (!content) return;
+		ltChecking = true;
+		ltMatches = [];
+		try {
+			const result = await checkLT(content, ltConfig.language);
+			ltMatches = result.matches;
+			ltConnected = true;
+		} catch (err) {
+			ltConnected = false;
+			console.error('LanguageTool check failed:', err);
+		} finally {
+			ltChecking = false;
+		}
+	}
+
+	function applyFix(match: LTMatch, replacement: string) {
+		// Replace the text at the match offset with the replacement
+		const before = content.slice(0, match.offset);
+		const after = content.slice(match.offset + match.length);
+		content = before + replacement + after;
+
+		// Remove this match and adjust offsets of subsequent matches
+		const delta = replacement.length - match.length;
+		ltMatches = ltMatches
+			.filter((m) => m !== match)
+			.map((m) => {
+				if (m.offset > match.offset) {
+					return { ...m, offset: m.offset + delta };
+				}
+				return m;
+			});
+	}
+
+	function toggleLTDrawer() {
+		ltDrawerOpen = !ltDrawerOpen;
+		if (ltDrawerOpen && ltMatches.length === 0 && content && !ltChecking) {
+			checkDocument();
 		}
 	}
 
@@ -206,6 +299,10 @@
 		{editorWidth}
 		{replacementRules}
 		{replacementsError}
+		{ltConfig}
+		{ltConnected}
+		{ltTesting}
+		{ltError}
 		onSave={save}
 		onAutoSaveChange={(enabled, interval) => {
 			autoSaveEnabled = enabled;
@@ -217,6 +314,10 @@
 			editorWidth = width;
 		}}
 		onReplacementsChange={updateReplacementRules}
+		onLTConfigChange={updateLTConfig}
+		onLTTest={testLT}
+		{ltDrawerOpen}
+		onLTDrawerToggle={toggleLTDrawer}
 	/>
 </div>
 
@@ -239,6 +340,15 @@
 		placeholder={currentFile ? '' : 'Select a file from the sidebar to start editing.'}
 	/>
 </div>
+
+<LanguageToolDrawer
+	open={ltDrawerOpen}
+	matches={ltMatches}
+	isChecking={ltChecking}
+	onClose={() => (ltDrawerOpen = false)}
+	onCheck={checkDocument}
+	onApplyFix={applyFix}
+/>
 
 <style>
 	.topbar-row {

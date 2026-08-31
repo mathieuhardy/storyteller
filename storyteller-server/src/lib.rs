@@ -28,6 +28,7 @@
 pub mod error;
 pub mod events;
 mod frontend;
+pub mod languagetool;
 pub mod params;
 pub mod registry;
 mod replacements;
