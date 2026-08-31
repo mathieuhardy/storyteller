@@ -173,6 +173,18 @@ Local undo stack for the markdown editor:
 - Stack capped at 100 entries to bound memory.
 - Scope: in-editor changes only (not cross-session or server-side history).
 
+### LanguageTool integration (book mode)
+
+Grammar and spelling check via a local LanguageTool server, displayed in a right drawer:
+
+- **Drawer panel** (300px, toggle): lists detected issues with message, context, and suggestions.
+- **Apply suggestion**: click replaces text at the error offset, marks file dirty.
+- **Settings popover**: server URL (e.g. `http://localhost:8081`), language selector (fr, en-US, …), "Test connection" button.
+- **Config persistence**: `.storyteller/languagetool.yaml` (shared if project synced).
+- **Scope**: book mode only (no storyteller entry editor).
+
+MVP excludes: in-editor highlighting, auto-check on idle, click-to-navigate. Deferred to a later phase.
+
 ## Critical Path
 
 The milestone order is not arbitrary: each stage builds on invariants set by the previous one.
