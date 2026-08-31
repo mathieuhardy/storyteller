@@ -110,18 +110,23 @@
 		const mirror = document.createElement('div');
 		const style = getComputedStyle(textarea);
 		mirror.style.cssText = `
-			position: absolute; visibility: hidden; white-space: pre-wrap; word-wrap: break-word;
-			width: ${textarea.clientWidth}px; padding: ${style.padding};
-			font: ${style.font}; line-height: ${style.lineHeight};
+			position: absolute; left: -9999px; top: 0;
+			visibility: hidden; white-space: pre-wrap; word-wrap: break-word;
+			width: ${textarea.clientWidth}px;
+			padding: ${style.padding};
+			font-family: ${style.fontFamily};
+			font-size: ${style.fontSize};
+			line-height: ${style.lineHeight};
+			box-sizing: border-box;
 		`;
 		const textBefore = body.substring(0, start);
-		mirror.textContent = textBefore;
+		mirror.appendChild(document.createTextNode(textBefore));
 		const marker = document.createElement('span');
-		marker.textContent = '\u200b';
+		marker.textContent = '|';
 		mirror.appendChild(marker);
 		document.body.appendChild(mirror);
 
-		const markerTop = marker.offsetTop;
+		const markerTop = marker.getBoundingClientRect().top - mirror.getBoundingClientRect().top;
 		document.body.removeChild(mirror);
 
 		// Scroll to center the match

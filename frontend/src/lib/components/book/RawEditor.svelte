@@ -165,7 +165,7 @@
 	}
 
 	function handleSearchNavigate(_index: number, start: number, end: number, explicit: boolean) {
-		if (!textareaEl || !mirrorEl) return;
+		if (!textareaEl) return;
 		// Only focus textarea on explicit navigation (prev/next buttons, Enter key)
 		// This shows the selection highlight while keeping focus in search input when typing
 		if (explicit) {
@@ -173,22 +173,31 @@
 		}
 		textareaEl.setSelectionRange(start, end);
 
-		// Use mirror element to calculate exact scroll position (handles word wrap correctly)
+		// Create temporary mirror to calculate exact scroll position
+		const mirror = document.createElement('div');
+		const style = getComputedStyle(textareaEl);
+		mirror.style.cssText = `
+			position: absolute; left: -9999px; top: 0;
+			visibility: hidden; white-space: pre-wrap; word-wrap: break-word;
+			width: ${textareaEl.clientWidth}px;
+			padding: ${style.padding};
+			font-family: ${style.fontFamily};
+			font-size: ${style.fontSize};
+			line-height: ${style.lineHeight};
+			box-sizing: border-box;
+		`;
 		const textBefore = content.substring(0, start);
-		mirrorEl.innerHTML = '';
-		const textNode = document.createTextNode(textBefore);
+		mirror.appendChild(document.createTextNode(textBefore));
 		const marker = document.createElement('span');
-		marker.textContent = '\u200b';
-		mirrorEl.appendChild(textNode);
-		mirrorEl.appendChild(marker);
+		marker.textContent = '|';
+		mirror.appendChild(marker);
+		document.body.appendChild(mirror);
 
-		// Get marker position relative to mirror
-		const markerRect = marker.getBoundingClientRect();
-		const mirrorRect = mirrorEl.getBoundingClientRect();
-		const relativeTop = markerRect.top - mirrorRect.top + textareaEl.scrollTop;
+		const markerTop = marker.getBoundingClientRect().top - mirror.getBoundingClientRect().top;
+		document.body.removeChild(mirror);
 
 		// Scroll to center the match in the viewport
-		const targetScroll = relativeTop - textareaEl.clientHeight / 2;
+		const targetScroll = markerTop - textareaEl.clientHeight / 2;
 		textareaEl.scrollTop = Math.max(0, targetScroll);
 
 		if (explicit) {
