@@ -105,12 +105,27 @@
 			textarea.focus();
 		}
 		textarea.setSelectionRange(start, end);
-		// Scroll selection into view
+
+		// Calculate scroll position using a temporary mirror element
+		const mirror = document.createElement('div');
+		const style = getComputedStyle(textarea);
+		mirror.style.cssText = `
+			position: absolute; visibility: hidden; white-space: pre-wrap; word-wrap: break-word;
+			width: ${textarea.clientWidth}px; padding: ${style.padding};
+			font: ${style.font}; line-height: ${style.lineHeight};
+		`;
 		const textBefore = body.substring(0, start);
-		const lines = textBefore.split('\n');
-		const lineNumber = lines.length - 1;
-		const lineHeightPx = parseFloat(getComputedStyle(textarea).lineHeight) || 22;
-		const targetScroll = lineNumber * lineHeightPx - textarea.clientHeight / 2;
+		mirror.textContent = textBefore;
+		const marker = document.createElement('span');
+		marker.textContent = '\u200b';
+		mirror.appendChild(marker);
+		document.body.appendChild(mirror);
+
+		const markerTop = marker.offsetTop;
+		document.body.removeChild(mirror);
+
+		// Scroll to center the match
+		const targetScroll = markerTop - textarea.clientHeight / 2;
 		textarea.scrollTop = Math.max(0, targetScroll);
 	}
 
