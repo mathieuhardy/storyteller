@@ -30,6 +30,7 @@ pub mod events;
 mod frontend;
 pub mod params;
 pub mod registry;
+mod replacements;
 pub mod routes;
 pub mod state;
 pub mod watcher;

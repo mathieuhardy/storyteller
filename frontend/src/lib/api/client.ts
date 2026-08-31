@@ -7,6 +7,7 @@
 import type {
 	AssetInfo,
 	BookResponse,
+	Diagnostic,
 	Entry,
 	EntrySummary,
 	Frontmatter,
@@ -251,14 +252,43 @@ export const listBookFiles = (path?: string, fetchImpl: Fetch = fetch): Promise<
 export const readBookFile = (path: string, fetchImpl: Fetch = fetch): Promise<FileContent> =>
 	request(`/books/files/${path.split('/').map(encodeURIComponent).join('/')}`, undefined, fetchImpl);
 
-/** Writes raw content to a file in the active book. Only .md files are allowed. */
+/**
+ * Writes raw content to a file in the active book. Only .md files are
+ * allowed. Returns the saved content, which may differ from what was sent:
+ * post-save replacement rules (`.storyteller/replacements.yaml`) are applied
+ * server-side before writing, and books have no watcher/SSE to otherwise
+ * notify the editor of the change.
+ */
 export const writeBookFile = (
 	path: string,
 	content: string,
 	fetchImpl: Fetch = fetch
-): Promise<void> =>
+): Promise<FileContent> =>
 	request(
 		`/books/files/${path.split('/').map(encodeURIComponent).join('/')}`,
 		{ ...json({ content }), method: 'PUT' },
 		fetchImpl
 	);
+
+/** A book's post-save replacement rule: a literal find/replace pair. */
+export interface ReplacementRule {
+	find: string;
+	replace: string;
+}
+
+/** Response for `GET`/`PUT /books/replacements`. */
+export interface ReplacementsResponse {
+	rules: ReplacementRule[];
+	errors: Diagnostic[];
+}
+
+/** Reads the active book's post-save replacement rules. */
+export const getBookReplacements = (fetchImpl: Fetch = fetch): Promise<ReplacementsResponse> =>
+	request('/books/replacements', undefined, fetchImpl);
+
+/** Replaces the active book's post-save replacement rules. */
+export const setBookReplacements = (
+	rules: ReplacementRule[],
+	fetchImpl: Fetch = fetch
+): Promise<ReplacementsResponse> =>
+	request('/books/replacements', { ...json({ rules }), method: 'PUT' }, fetchImpl);

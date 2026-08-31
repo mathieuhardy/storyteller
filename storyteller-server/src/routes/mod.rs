@@ -56,10 +56,16 @@ pub fn router(state: SharedState) -> Router {
         .route("/files", get(files::list))
         .route("/files/{*path}", get(files::read).put(files::write))
         .route("/pick-folder", get(dialog::pick_folder))
-        // Book mode endpoints (standalone markdown folders, no .storyteller/).
+        // Book mode endpoints (standalone markdown folders; the only
+        // .storyteller/ file they use is replacements.yaml, see
+        // crate::replacements).
         .route("/books/open", post(books::open))
         .route("/books/files", get(books::list))
         .route("/books/files/{*path}", get(books::read).put(books::write))
+        .route(
+            "/books/replacements",
+            get(books::get_replacements).put(books::set_replacements),
+        )
         // Its own fallback: an unmatched path *under* `/api/v1` is a JSON
         // 404, never the frontend shell below it.
         .fallback(not_found)

@@ -4,7 +4,9 @@
 	import WordCount from './WordCount.svelte';
 	import AutoSaveSettings from './AutoSaveSettings.svelte';
 	import DisplaySettings from './DisplaySettings.svelte';
+	import ReplacementsSettings from './ReplacementsSettings.svelte';
 	import { t, formatDate } from '$i18n/index.svelte';
+	import type { ReplacementRule } from '$api/client';
 
 	let {
 		fileName = null,
@@ -17,9 +19,12 @@
 		showLineBreaks = false,
 		lineHeight = 'normal' as 'compact' | 'normal' | 'spacious',
 		editorWidth = 'full' as 'medium' | 'wide' | 'full',
+		replacementRules = [],
+		replacementsError = null,
 		onSave,
 		onAutoSaveChange,
-		onDisplayChange
+		onDisplayChange,
+		onReplacementsChange
 	}: {
 		fileName?: string | null;
 		wordCount?: number;
@@ -31,9 +36,12 @@
 		showLineBreaks?: boolean;
 		lineHeight?: 'compact' | 'normal' | 'spacious';
 		editorWidth?: 'medium' | 'wide' | 'full';
+		replacementRules?: ReplacementRule[];
+		replacementsError?: string | null;
 		onSave?: () => void;
 		onAutoSaveChange?: (enabled: boolean, interval: number) => void;
 		onDisplayChange?: (showLineBreaks: boolean, lineHeight: 'compact' | 'normal' | 'spacious', editorWidth: 'medium' | 'wide' | 'full') => void;
+		onReplacementsChange?: (rules: ReplacementRule[]) => void;
 	} = $props();
 
 	const displayName = $derived(fileName ? fileName.split('/').pop() : null);
@@ -96,6 +104,12 @@
 		{lineHeight}
 		{editorWidth}
 		onChange={(breaks, height, width) => onDisplayChange?.(breaks, height, width)}
+	/>
+
+	<ReplacementsSettings
+		rules={replacementRules}
+		error={replacementsError}
+		onChange={(rules) => onReplacementsChange?.(rules)}
 	/>
 </header>
 

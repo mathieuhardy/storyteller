@@ -1,13 +1,15 @@
 //! Book endpoints for standalone markdown folder editing.
 //!
 //! Books are plain folders of markdown files without Storyteller's project
-//! structure (no `.storyteller/` directory, no index, no snapshot). They use
-//! simpler file listing and editing endpoints.
+//! structure (no index, no snapshot, no `.storyteller/config.yaml` or
+//! `types.yaml`). They use simpler file listing and editing endpoints. The one
+//! deliberate exception: an optional `.storyteller/replacements.yaml` holding
+//! post-save find/replace rules ([`crate::replacements`]) — still no
+//! index/snapshot machinery, just a small config file read on demand.
 
 use std::path::{Path, PathBuf};
 
 use axum::extract::{Path as AxumPath, RawQuery, State};
-use axum::http::StatusCode;
 use axum::Json;
 use serde::{Deserialize, Serialize};
 
@@ -170,12 +172,15 @@ pub struct WriteBody {
 
 /// `PUT /api/v1/books/files/{*path}` — write raw file content to the active book.
 ///
-/// Restricted to `.md` files for security.
+/// Restricted to `.md` files for security. Post-save replacement rules
+/// (`.storyteller/replacements.yaml`, [`crate::replacements`]) are applied
+/// before writing; the resulting content is returned so the editor can pick
+/// up the transformation without a watcher/SSE round-trip (books have none).
 pub async fn write(
     State(state): State<SharedState>,
     AxumPath(file_path): AxumPath<String>,
     Json(body): Json<WriteBody>,
-) -> ApiResult<StatusCode> {
+) -> ApiResult<Json<FileContent>> {
     // Only allow .md files for writing.
     if !file_path.ends_with(".md") {
         return Err(ApiError::bad_request(
@@ -196,10 +201,63 @@ pub async fn write(
         }
     }
 
-    std::fs::write(&target_path, &body.content)
+    let content = crate::replacements::BookReplacements::load(&root).apply(&body.content);
+
+    std::fs::write(&target_path, &content)
         .map_err(|e| ApiError::internal(format!("failed to write file: {e}")))?;
 
-    Ok(StatusCode::NO_CONTENT)
+    Ok(Json(FileContent {
+        path: file_path,
+        content,
+    }))
+}
+
+/// Response for `GET`/`PUT /api/v1/books/replacements`.
+#[derive(Debug, Serialize)]
+pub struct ReplacementsResponse {
+    pub rules: Vec<crate::replacements::ReplacementRule>,
+    pub errors: Vec<storyteller_core::error::Diagnostic>,
+}
+
+/// Body for `PUT /api/v1/books/replacements`.
+#[derive(Debug, Deserialize)]
+pub struct SetReplacementsBody {
+    pub rules: Vec<crate::replacements::ReplacementRule>,
+}
+
+/// `GET /api/v1/books/replacements` — the active book's post-save replacement rules.
+pub async fn get_replacements(
+    State(state): State<SharedState>,
+) -> ApiResult<Json<ReplacementsResponse>> {
+    let book = state.require_book()?;
+    let loaded = crate::replacements::BookReplacements::load(book.root());
+    Ok(Json(ReplacementsResponse {
+        rules: loaded.rules,
+        errors: loaded.errors,
+    }))
+}
+
+/// `PUT /api/v1/books/replacements` — replace the active book's post-save replacement rules.
+pub async fn set_replacements(
+    State(state): State<SharedState>,
+    Json(body): Json<SetReplacementsBody>,
+) -> ApiResult<Json<ReplacementsResponse>> {
+    for rule in &body.rules {
+        if rule.find.is_empty() {
+            return Err(ApiError::bad_request(
+                "a replacement rule's `find` cannot be empty",
+            ));
+        }
+    }
+
+    let book = state.require_book()?;
+    crate::replacements::BookReplacements::save(&body.rules, book.root())
+        .map_err(|e| ApiError::internal(format!("failed to save replacements: {e}")))?;
+
+    Ok(Json(ReplacementsResponse {
+        rules: body.rules,
+        errors: Vec::new(),
+    }))
 }
 
 /// Parses the query string for the list endpoint.

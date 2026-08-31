@@ -129,6 +129,30 @@ M6 is done (Docker verified live; Nix authored to standard nixpkgs patterns but 
 
 M7 is done.
 
+### Book mode — What Landed
+
+A distraction-free manuscript editor, alongside the existing "storyteller" worldbuilding mode:
+opening a plain folder of markdown files as a "book" (`POST /books/open`) switches the interface to
+a focused writing environment, entirely separate from the indexed project/link machinery above.
+
+- **Standalone book mode**: backend (`storyteller-server/src/routes/books.rs`, `BookState` in
+  `state.rs`) serves a folder of `.md` files with no `.storyteller/config.yaml`, no index, no
+  snapshot, and no watcher/SSE. Frontend at `/book`.
+- **Left panel**: a filesystem tree showing only `.md` files (and folders that contain at least
+  one, recursively) — `FileTree.svelte`.
+- **Center**: a raw markdown editor (`RawEditor.svelte`) with resizable width presets — `medium`
+  (90ch), `wide` (110ch), `full` — plus line-height and line-break display settings.
+- **Word count**: live, derived from editor content, shown in the topbar (`WordCount.svelte`).
+- **Post-save replacements**: literal find/replace rules (e.g. `--` → `—`, `...` → `…`), authored
+  through a settings popover (`ReplacementsSettings.svelte`) and persisted server-side in the one
+  deliberate exception to "no `.storyteller/`": an optional `.storyteller/replacements.yaml`
+  (`crate::replacements` in `storyteller-server`). Applied server-side on every save, before the
+  file is written; since books have no watcher/SSE to otherwise notify the editor, `PUT
+  /books/files/{path}` returns the post-replacement content and the frontend syncs its buffer from
+  that response — no external script, no polling.
+
+Book mode is done.
+
 ## Critical Path
 
 The milestone order is not arbitrary: each stage builds on invariants set by the previous one.
@@ -141,27 +165,6 @@ The milestone order is not arbitrary: each stage builds on invariants set by the
 - **M6 assumes the front (M4).** MVP packaging (Docker/Nix) packages a complete application: `storyteller-server` serves the built front. Desktop packaging via `storyteller-tauri` (AppImage/.deb), which embeds the same front in a webview, is v2 (M7).
 
 In summary, the critical path is **M1 → M2 → M3 → M4 → M6**, with **M5** grafted onto M1's index and delivered via M4's front.
-
-## Planned Next
-
-Items approved for implementation, in priority order.
-
-### 1. Book mode — distraction-free manuscript editor
-
-A new project type alongside the existing "storyteller" worldbuilding mode. When opening a project
-as "book" instead of "storyteller", the interface switches to a focused writing environment:
-
-- **Left panel**: filesystem tree showing only `.md` files
-- **Center**: markdown editor with resizable width (preset sizes: narrow, medium, wide)
-- **Word count**: live count displayed in the UI
-- **Post-save scripts**: user-defined text replacements applied on save
-  - Replacements defined in a config file (e.g., `.storyteller/replacements.yaml`)
-  - Backend applies find/replace natively, no external script needed
-  - File watcher detects the modification and reloads the editor content automatically
-
-This is a significant feature that will need its own ADR to scope the backend changes (new project
-mode, replacement engine, different API surface) vs. what can reuse existing infrastructure
-(watcher, file serving).
 
 ## Ideas Under Investigation
 

@@ -1,11 +1,19 @@
 <script lang="ts">
 	// Book mode: raw markdown editor with file tree sidebar.
 	// Works standalone — no Storyteller project required.
+	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 	import BookTopbar from '$components/book/BookTopbar.svelte';
 	import FileTree from '$components/book/FileTree.svelte';
 	import RawEditor from '$components/book/RawEditor.svelte';
-	import { listBookFiles, readBookFile, writeBookFile } from '$api/client';
+	import {
+		listBookFiles,
+		readBookFile,
+		writeBookFile,
+		getBookReplacements,
+		setBookReplacements
+	} from '$api/client';
+	import type { ReplacementRule } from '$api/client';
 
 	// State
 	let currentFile = $state<string | null>(null);
@@ -27,6 +35,36 @@
 
 	// Folders to show in file tree (persisted to localStorage)
 	let visibleFolders = $state<string[]>(['chapters']);
+
+	// Post-save replacement rules (persisted server-side, .storyteller/replacements.yaml)
+	let replacementRules = $state<ReplacementRule[]>([]);
+	let replacementsError = $state<string | null>(null);
+
+	onMount(async () => {
+		try {
+			const res = await getBookReplacements();
+			replacementRules = res.rules;
+		} catch (err) {
+			console.error('Failed to load replacement rules:', err);
+		}
+	});
+
+	async function updateReplacementRules(rules: ReplacementRule[]) {
+		const previous = replacementRules;
+		// Show every row immediately, including a freshly-added one still
+		// missing its `find` text — but only persist the rules that are
+		// actually complete (the backend rejects an empty `find`), so typing
+		// into a new row's fields doesn't get wiped out by a failed save.
+		replacementRules = rules;
+		try {
+			await setBookReplacements(rules.filter((rule) => rule.find !== ''));
+			replacementsError = null;
+		} catch (err) {
+			replacementRules = previous;
+			replacementsError = err instanceof Error ? err.message : String(err);
+			console.error('Failed to save replacement rules:', err);
+		}
+	}
 
 	// Initialize from localStorage
 	if (browser) {
@@ -131,8 +169,9 @@
 
 		isSaving = true;
 		try {
-			await writeBookFile(currentFile, content);
-			originalContent = content;
+			const saved = await writeBookFile(currentFile, content);
+			content = saved.content;
+			originalContent = saved.content;
 			lastSaved = new Date();
 		} catch (err) {
 			console.error('Failed to save file:', err);
@@ -165,6 +204,8 @@
 		{showLineBreaks}
 		{lineHeight}
 		{editorWidth}
+		{replacementRules}
+		{replacementsError}
 		onSave={save}
 		onAutoSaveChange={(enabled, interval) => {
 			autoSaveEnabled = enabled;
@@ -175,6 +216,7 @@
 			lineHeight = height;
 			editorWidth = width;
 		}}
+		onReplacementsChange={updateReplacementRules}
 	/>
 </div>
 

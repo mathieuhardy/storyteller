@@ -271,7 +271,14 @@ export const en = {
 	'book.selectFolders': 'Select folders',
 	'book.noFolders': 'No folders found',
 	'book.noFiles': 'No files to display',
-	'book.loading': 'Loading...'
+	'book.loading': 'Loading...',
+	'book.replacements': 'Replacements',
+	'book.replacementsHint': 'Text replaced automatically on save (e.g. -- becomes —).',
+	'book.replacementsFind': 'Find',
+	'book.replacementsReplace': 'Replace with',
+	'book.replacementsAdd': 'Add rule',
+	'book.replacementsRemove': 'Remove rule',
+	'book.replacementsEmpty': 'No replacement rules yet.'
 };
 
 export type MessageKey = keyof typeof en;

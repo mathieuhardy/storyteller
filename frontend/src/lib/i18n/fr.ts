@@ -270,5 +270,12 @@ export const fr: Messages = {
 	'book.selectFolders': 'Choisir les dossiers',
 	'book.noFolders': 'Aucun dossier trouvé',
 	'book.noFiles': 'Aucun fichier à afficher',
-	'book.loading': 'Chargement...'
+	'book.loading': 'Chargement...',
+	'book.replacements': 'Remplacements',
+	'book.replacementsHint': "Texte remplacé automatiquement à l'enregistrement (ex. -- devient —).",
+	'book.replacementsFind': 'Rechercher',
+	'book.replacementsReplace': 'Remplacer par',
+	'book.replacementsAdd': 'Ajouter une règle',
+	'book.replacementsRemove': 'Supprimer la règle',
+	'book.replacementsEmpty': 'Aucune règle de remplacement.'
 };
