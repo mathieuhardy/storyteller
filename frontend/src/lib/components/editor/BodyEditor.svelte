@@ -97,13 +97,11 @@
 		}
 	}
 
-	function handleSearchNavigate(_index: number, start: number, end: number, explicit: boolean) {
+	function handleSearchNavigate(_index: number, start: number, end: number) {
 		if (!textarea) return;
-		// Only focus textarea on explicit navigation (prev/next buttons, Enter key)
-		// This shows the selection highlight while keeping focus in search input when typing
-		if (explicit) {
-			textarea.focus();
-		}
+
+		// Focus textarea to show selection highlight
+		textarea.focus();
 		textarea.setSelectionRange(start, end);
 
 		// Calculate scroll position using a temporary mirror element

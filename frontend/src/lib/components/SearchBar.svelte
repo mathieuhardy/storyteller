@@ -1,5 +1,5 @@
 <script lang="ts">
-	// In-editor search bar with occurrence count and navigation.
+	// In-editor search bar. Search triggers on Enter only.
 	// Shows on Ctrl+F, hides on Escape.
 	import { t } from '$i18n/index.svelte';
 	import Icon from './Icon.svelte';
@@ -7,22 +7,38 @@
 	let {
 		content = '',
 		visible = $bindable(false),
-		onNavigate = (_index: number, _start: number, _end: number, _explicit: boolean) => {}
+		onNavigate = (_index: number, _start: number, _end: number) => {}
 	}: {
 		content?: string;
 		visible?: boolean;
-		// explicit: true when user clicks prev/next or presses Enter, false when typing
-		onNavigate?: (index: number, start: number, end: number, explicit: boolean) => void;
+		onNavigate?: (index: number, start: number, end: number) => void;
 	} = $props();
 
 	let query = $state('');
 	let inputEl: HTMLInputElement | undefined = $state();
+	let matches: { start: number; end: number }[] = $state([]);
 	let currentIndex = $state(0);
-	let isExplicitNavigation = false;
+	let hasSearched = $state(false);
 
-	// Find all matches
-	const matches = $derived.by(() => {
-		if (!query || query.length === 0) return [];
+	// Focus input when search bar becomes visible
+	$effect(() => {
+		if (visible && inputEl) {
+			inputEl.focus();
+			inputEl.select();
+		}
+	});
+
+	// Reset when query changes (user is typing new search)
+	$effect(() => {
+		query; // Subscribe to query changes
+		hasSearched = false;
+	});
+
+	function findMatches() {
+		if (!query || query.length === 0) {
+			matches = [];
+			return;
+		}
 		const results: { start: number; end: number }[] = [];
 		const lowerContent = content.toLowerCase();
 		const lowerQuery = query.toLowerCase();
@@ -33,51 +49,45 @@
 			results.push({ start: idx, end: idx + query.length });
 			pos = idx + 1;
 		}
-		return results;
-	});
+		matches = results;
+	}
 
-	const matchCount = $derived(matches.length);
-
-	// Reset current index when matches change
-	$effect(() => {
-		if (matches.length > 0 && currentIndex >= matches.length) {
+	function search() {
+		if (!hasSearched) {
+			// First Enter: find matches and go to first
+			findMatches();
+			hasSearched = true;
 			currentIndex = 0;
+			if (matches.length > 0) {
+				const match = matches[0];
+				onNavigate(0, match.start, match.end);
+			}
+		} else {
+			// Subsequent Enter: go to next
+			goToNext();
 		}
-	});
-
-	// Navigate to current match when it changes
-	$effect(() => {
-		if (matches.length > 0 && currentIndex < matches.length) {
-			const match = matches[currentIndex];
-			onNavigate(currentIndex, match.start, match.end, isExplicitNavigation);
-			isExplicitNavigation = false;
-		}
-	});
-
-	// Focus input when search bar becomes visible
-	$effect(() => {
-		if (visible && inputEl) {
-			inputEl.focus();
-			inputEl.select();
-		}
-	});
+	}
 
 	function goToNext() {
-		if (matchCount === 0) return;
-		isExplicitNavigation = true;
-		currentIndex = (currentIndex + 1) % matchCount;
+		if (matches.length === 0) return;
+		currentIndex = (currentIndex + 1) % matches.length;
+		const match = matches[currentIndex];
+		onNavigate(currentIndex, match.start, match.end);
 	}
 
 	function goToPrev() {
-		if (matchCount === 0) return;
-		isExplicitNavigation = true;
-		currentIndex = (currentIndex - 1 + matchCount) % matchCount;
+		if (matches.length === 0) return;
+		currentIndex = (currentIndex - 1 + matches.length) % matches.length;
+		const match = matches[currentIndex];
+		onNavigate(currentIndex, match.start, match.end);
 	}
 
 	function close() {
 		visible = false;
 		query = '';
+		matches = [];
 		currentIndex = 0;
+		hasSearched = false;
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -87,17 +97,16 @@
 		} else if (e.key === 'Enter') {
 			e.preventDefault();
 			if (e.shiftKey) {
-				goToPrev();
+				if (hasSearched) goToPrev();
+				else search();
 			} else {
-				goToNext();
+				search();
 			}
 		} else if (e.key === 'F3') {
 			e.preventDefault();
-			if (e.shiftKey) {
-				goToPrev();
-			} else {
-				goToNext();
-			}
+			if (!hasSearched) search();
+			else if (e.shiftKey) goToPrev();
+			else goToNext();
 		}
 	}
 </script>
@@ -117,11 +126,11 @@
 		</div>
 
 		<div class="search-info">
-			{#if query.length > 0}
-				{#if matchCount === 0}
+			{#if hasSearched}
+				{#if matches.length === 0}
 					<span class="no-results">{t('editorSearch.noResults')}</span>
 				{:else}
-					<span class="count">{currentIndex + 1} / {matchCount}</span>
+					<span class="count">{currentIndex + 1} / {matches.length}</span>
 				{/if}
 			{/if}
 		</div>
@@ -131,7 +140,7 @@
 				type="button"
 				class="nav-btn"
 				onclick={goToPrev}
-				disabled={matchCount === 0}
+				disabled={!hasSearched || matches.length === 0}
 				title={t('editorSearch.previous')}
 			>
 				<Icon name="chevron-up" size={14} />
@@ -140,7 +149,7 @@
 				type="button"
 				class="nav-btn"
 				onclick={goToNext}
-				disabled={matchCount === 0}
+				disabled={!hasSearched || matches.length === 0}
 				title={t('editorSearch.next')}
 			>
 				<Icon name="chevron-down" size={14} />

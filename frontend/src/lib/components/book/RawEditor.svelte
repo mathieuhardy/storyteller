@@ -164,13 +164,11 @@
 		});
 	}
 
-	function handleSearchNavigate(_index: number, start: number, end: number, explicit: boolean) {
+	function handleSearchNavigate(_index: number, start: number, end: number) {
 		if (!textareaEl) return;
-		// Only focus textarea on explicit navigation (prev/next buttons, Enter key)
-		// This shows the selection highlight while keeping focus in search input when typing
-		if (explicit) {
-			textareaEl.focus();
-		}
+
+		// Focus textarea to show selection highlight
+		textareaEl.focus();
 		textareaEl.setSelectionRange(start, end);
 
 		// Create temporary mirror to calculate exact scroll position
@@ -200,9 +198,7 @@
 		const targetScroll = markerTop - textareaEl.clientHeight / 2;
 		textareaEl.scrollTop = Math.max(0, targetScroll);
 
-		if (explicit) {
-			updateCursorPosition();
-		}
+		updateCursorPosition();
 	}
 
 	function onClick() {
