@@ -166,17 +166,15 @@
 
 	function handleSearchNavigate(_index: number, start: number, end: number) {
 		if (!textareaEl) return;
-		textareaEl.focus();
+		// Don't focus textarea - keep focus in search input so user can continue typing
 		textareaEl.setSelectionRange(start, end);
 		// Scroll the selection into view
-		// We need to calculate scroll position based on character offset
 		const textBefore = content.substring(0, start);
 		const lines = textBefore.split('\n');
 		const lineNumber = lines.length - 1;
 		const lineHeightPx = parseFloat(getComputedStyle(textareaEl).lineHeight) || 22;
 		const targetScroll = lineNumber * lineHeightPx - textareaEl.clientHeight / 2;
 		textareaEl.scrollTop = Math.max(0, targetScroll);
-		updateCursorPosition();
 	}
 
 	function onClick() {
@@ -195,8 +193,9 @@
 	});
 
 	// Re-init undo stack when content is loaded externally (file change)
+	// Only reinit if textarea is NOT focused (user not actively editing)
 	$effect(() => {
-		if (content !== lastContent && !isUndoRedo) {
+		if (content !== lastContent && !isUndoRedo && document.activeElement !== textareaEl) {
 			// Content changed externally (e.g., file loaded), reinit the stack
 			undoStack.init({ content, selectionStart: 0, selectionEnd: 0 });
 			lastContent = content;

@@ -37,8 +37,9 @@
 	});
 
 	// Re-init undo stack when body is loaded externally
+	// Only reinit if textarea is NOT focused (user not actively editing)
 	$effect(() => {
-		if (body !== lastBody && !isUndoRedo) {
+		if (body !== lastBody && !isUndoRedo && document.activeElement !== textarea) {
 			undoStack.init({ content: body, selectionStart: 0, selectionEnd: 0 });
 			lastBody = body;
 		}
@@ -98,7 +99,7 @@
 
 	function handleSearchNavigate(_index: number, start: number, end: number) {
 		if (!textarea) return;
-		textarea.focus();
+		// Don't focus textarea - keep focus in search input so user can continue typing
 		textarea.setSelectionRange(start, end);
 		// Scroll selection into view
 		const textBefore = body.substring(0, start);
