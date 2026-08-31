@@ -153,6 +153,26 @@ a focused writing environment, entirely separate from the indexed project/link m
 
 Book mode is done.
 
+## Backlog
+
+Features planned for implementation, not yet scheduled.
+
+### Editor search (Ctrl+F)
+
+In-editor text search for markdown editing (both storyteller entry editor and book mode):
+
+- Toolbar appears on `Ctrl+F`, showing: occurrence count, current match index, Previous/Next buttons.
+- Highlights all matches in the editor, scrolls to the current one.
+- Available everywhere markdown is edited: entry body editor (`/entry/{slug}/edit`) and book raw editor (`/book`).
+
+### Undo/redo (Ctrl+Z / Ctrl+Shift+Z)
+
+Local undo stack for the markdown editor:
+
+- `Ctrl+Z` undoes the last modification, `Ctrl+Shift+Z` (or `Ctrl+Y`) redoes.
+- Stack capped at 100 entries to bound memory.
+- Scope: in-editor changes only (not cross-session or server-side history).
+
 ## Critical Path
 
 The milestone order is not arbitrary: each stage builds on invariants set by the previous one.
