@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { UndoStack, type UndoState } from '$lib/utils/undoStack';
+	import SearchBar from '$components/SearchBar.svelte';
 
 	// Raw markdown editor textarea for book mode. Full-page monospace editing.
 	let {
@@ -17,6 +19,14 @@
 		disabled?: boolean;
 		placeholder?: string;
 	} = $props();
+
+	// Undo/redo stack
+	const undoStack = new UndoStack(100);
+	let lastContent = '';
+	let isUndoRedo = false;
+
+	// Search state
+	let searchVisible = $state(false);
 
 	const lineHeightValues = {
 		compact: '1.4',
@@ -98,11 +108,75 @@
 
 	function onInput() {
 		updateCursorPosition();
+		// Push to undo stack after changes (debounced by checking if content actually changed)
+		if (!isUndoRedo && textareaEl && content !== lastContent) {
+			undoStack.push({
+				content,
+				selectionStart: textareaEl.selectionStart,
+				selectionEnd: textareaEl.selectionEnd
+			});
+			lastContent = content;
+		}
 	}
 
-	function onKeydown() {
+	function onKeydown(e: KeyboardEvent) {
+		const isMod = e.ctrlKey || e.metaKey;
+
+		// Ctrl+F: open search
+		if (isMod && e.key === 'f') {
+			e.preventDefault();
+			searchVisible = true;
+			return;
+		}
+
+		// Ctrl+Z: undo
+		if (isMod && e.key === 'z' && !e.shiftKey) {
+			e.preventDefault();
+			const state = undoStack.undo();
+			if (state) {
+				applyUndoState(state);
+			}
+			return;
+		}
+
+		// Ctrl+Shift+Z or Ctrl+Y: redo
+		if ((isMod && e.key === 'z' && e.shiftKey) || (isMod && e.key === 'y')) {
+			e.preventDefault();
+			const state = undoStack.redo();
+			if (state) {
+				applyUndoState(state);
+			}
+			return;
+		}
+
 		// Defer to allow selection to update
 		requestAnimationFrame(updateCursorPosition);
+	}
+
+	function applyUndoState(state: UndoState) {
+		isUndoRedo = true;
+		content = state.content;
+		lastContent = state.content;
+		queueMicrotask(() => {
+			textareaEl?.setSelectionRange(state.selectionStart, state.selectionEnd);
+			updateCursorPosition();
+			isUndoRedo = false;
+		});
+	}
+
+	function handleSearchNavigate(_index: number, start: number, end: number) {
+		if (!textareaEl) return;
+		textareaEl.focus();
+		textareaEl.setSelectionRange(start, end);
+		// Scroll the selection into view
+		// We need to calculate scroll position based on character offset
+		const textBefore = content.substring(0, start);
+		const lines = textBefore.split('\n');
+		const lineNumber = lines.length - 1;
+		const lineHeightPx = parseFloat(getComputedStyle(textareaEl).lineHeight) || 22;
+		const targetScroll = lineNumber * lineHeightPx - textareaEl.clientHeight / 2;
+		textareaEl.scrollTop = Math.max(0, targetScroll);
+		updateCursorPosition();
 	}
 
 	function onClick() {
@@ -112,6 +186,20 @@
 	onMount(() => {
 		if (textareaEl && document.activeElement === textareaEl) {
 			updateCursorPosition();
+		}
+		// Initialize undo stack with initial content
+		if (content) {
+			undoStack.init({ content, selectionStart: 0, selectionEnd: 0 });
+			lastContent = content;
+		}
+	});
+
+	// Re-init undo stack when content is loaded externally (file change)
+	$effect(() => {
+		if (content !== lastContent && !isUndoRedo) {
+			// Content changed externally (e.g., file loaded), reinit the stack
+			undoStack.init({ content, selectionStart: 0, selectionEnd: 0 });
+			lastContent = content;
 		}
 	});
 
@@ -128,6 +216,7 @@
 	style:--line-height={lineHeightValues[lineHeight]}
 	style:--max-width={editorWidthValues[editorWidth]}
 >
+	<SearchBar {content} bind:visible={searchVisible} onNavigate={handleSearchNavigate} />
 	<div class="editor-wrap">
 		<textarea
 			class="editor"
@@ -168,7 +257,7 @@
 		min-height: 0;
 		overflow: hidden;
 		display: flex;
-		justify-content: center;
+		flex-direction: column;
 	}
 
 	.editor-wrap {
@@ -176,6 +265,9 @@
 		width: 100%;
 		max-width: var(--max-width, none);
 		height: 100%;
+		margin: 0 auto;
+		flex: 1;
+		min-height: 0;
 	}
 
 	.editor {

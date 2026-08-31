@@ -4,8 +4,11 @@
 	// raw-text-with-highlighted-wikilinks rendering as the entry detail screen
 	// (`BodySection.svelte`) — full HTML rendering waits on `?render=html`
 	// (docs/api.md, M4 remaining work), so the editor does not get ahead of it.
+	import { onMount } from 'svelte';
 	import type { OutgoingLink } from '$api/types';
 	import { t } from '$i18n/index.svelte';
+	import { UndoStack, type UndoState } from '$lib/utils/undoStack';
+	import SearchBar from '$components/SearchBar.svelte';
 
 	let {
 		body = $bindable(''),
@@ -18,11 +21,100 @@
 	let mode = $state<'edit' | 'preview'>('edit');
 	let textarea: HTMLTextAreaElement | undefined = $state();
 
+	// Undo/redo stack
+	const undoStack = new UndoStack(100);
+	let lastBody = '';
+	let isUndoRedo = false;
+
+	// Search state
+	let searchVisible = $state(false);
+
+	onMount(() => {
+		if (body) {
+			undoStack.init({ content: body, selectionStart: 0, selectionEnd: 0 });
+			lastBody = body;
+		}
+	});
+
+	// Re-init undo stack when body is loaded externally
+	$effect(() => {
+		if (body !== lastBody && !isUndoRedo) {
+			undoStack.init({ content: body, selectionStart: 0, selectionEnd: 0 });
+			lastBody = body;
+		}
+	});
+
+	function pushUndo() {
+		if (!isUndoRedo && textarea && body !== lastBody) {
+			undoStack.push({
+				content: body,
+				selectionStart: textarea.selectionStart,
+				selectionEnd: textarea.selectionEnd
+			});
+			lastBody = body;
+		}
+	}
+
+	function applyUndoState(state: UndoState) {
+		isUndoRedo = true;
+		body = state.content;
+		lastBody = state.content;
+		queueMicrotask(() => {
+			textarea?.setSelectionRange(state.selectionStart, state.selectionEnd);
+			isUndoRedo = false;
+		});
+	}
+
+	function handleKeydown(e: KeyboardEvent) {
+		const isMod = e.ctrlKey || e.metaKey;
+
+		// Ctrl+F: open search (only in edit mode)
+		if (isMod && e.key === 'f' && mode === 'edit') {
+			e.preventDefault();
+			searchVisible = true;
+			return;
+		}
+
+		// Ctrl+Z: undo
+		if (isMod && e.key === 'z' && !e.shiftKey) {
+			e.preventDefault();
+			const state = undoStack.undo();
+			if (state) {
+				applyUndoState(state);
+			}
+			return;
+		}
+
+		// Ctrl+Shift+Z or Ctrl+Y: redo
+		if ((isMod && e.key === 'z' && e.shiftKey) || (isMod && e.key === 'y')) {
+			e.preventDefault();
+			const state = undoStack.redo();
+			if (state) {
+				applyUndoState(state);
+			}
+			return;
+		}
+	}
+
+	function handleSearchNavigate(_index: number, start: number, end: number) {
+		if (!textarea) return;
+		textarea.focus();
+		textarea.setSelectionRange(start, end);
+		// Scroll selection into view
+		const textBefore = body.substring(0, start);
+		const lines = textBefore.split('\n');
+		const lineNumber = lines.length - 1;
+		const lineHeightPx = parseFloat(getComputedStyle(textarea).lineHeight) || 22;
+		const targetScroll = lineNumber * lineHeightPx - textarea.clientHeight / 2;
+		textarea.scrollTop = Math.max(0, targetScroll);
+	}
+
 	function wrapSelection(before: string, after: string = before) {
 		if (!textarea) return;
 		const { selectionStart, selectionEnd, value } = textarea;
 		const selected = value.slice(selectionStart, selectionEnd);
 		body = value.slice(0, selectionStart) + before + selected + after + value.slice(selectionEnd);
+		pushUndo();
 		queueMicrotask(() => {
 			textarea?.focus();
 			textarea?.setSelectionRange(selectionStart + before.length, selectionEnd + before.length);
@@ -34,6 +126,7 @@
 		const { selectionStart, value } = textarea;
 		const lineStart = value.lastIndexOf('\n', selectionStart - 1) + 1;
 		body = value.slice(0, lineStart) + prefix + value.slice(lineStart);
+		pushUndo();
 		queueMicrotask(() => {
 			textarea?.focus();
 			textarea?.setSelectionRange(selectionStart + prefix.length, selectionStart + prefix.length);
@@ -97,9 +190,20 @@
 		</div>
 	</div>
 
+	{#if mode === 'edit'}
+		<SearchBar content={body} bind:visible={searchVisible} onNavigate={handleSearchNavigate} />
+	{/if}
+
 	<div class="editor-box">
 		{#if mode === 'edit'}
-			<textarea class="src" bind:this={textarea} bind:value={body} spellcheck="false"></textarea>
+			<textarea
+				class="src"
+				bind:this={textarea}
+				bind:value={body}
+				oninput={pushUndo}
+				onkeydown={handleKeydown}
+				spellcheck="false"
+			></textarea>
 		{:else}
 			<pre class="preview">{#each segments as seg}{#if seg.type === 'text'}{seg.content}{:else}{@const state = seg.resolution?.resolution ?? 'stub'}<span
 							class="wl {state}">{linkLabel(seg.content)}</span

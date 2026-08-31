@@ -278,7 +278,13 @@ export const en = {
 	'book.replacementsReplace': 'Replace with',
 	'book.replacementsAdd': 'Add rule',
 	'book.replacementsRemove': 'Remove rule',
-	'book.replacementsEmpty': 'No replacement rules yet.'
+	'book.replacementsEmpty': 'No replacement rules yet.',
+
+	'editorSearch.placeholder': 'Find in text…',
+	'editorSearch.noResults': 'No results',
+	'editorSearch.previous': 'Previous (Shift+Enter)',
+	'editorSearch.next': 'Next (Enter)',
+	'editorSearch.close': 'Close (Escape)'
 };
 
 export type MessageKey = keyof typeof en;

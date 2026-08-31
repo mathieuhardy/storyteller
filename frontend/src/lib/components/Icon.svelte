@@ -15,6 +15,7 @@
 		| 'chevron-right'
 		| 'chevron-left'
 		| 'chevron-down'
+		| 'chevron-up'
 		| 'square-plus'
 		| 'alert-triangle'
 		| 'edit'
@@ -50,6 +51,7 @@
 		'chevron-right': ['M9 6l6 6-6 6'],
 		'chevron-left': ['M15 6l-6 6 6 6'],
 		'chevron-down': ['M6 9l6 6 6-6'],
+		'chevron-up': ['M6 15l6-6 6 6'],
 		'square-plus': ['M4 4h16v16H4z', 'M12 8v8', 'M8 12h8'],
 		'alert-triangle': ['M12 9v4', 'M12 17h.01', 'M10.3 3.2L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.2a2 2 0 0 0-3.4 0z'],
 		edit: ['M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z', 'M15 5l4 4'],

@@ -277,5 +277,11 @@ export const fr: Messages = {
 	'book.replacementsReplace': 'Remplacer par',
 	'book.replacementsAdd': 'Ajouter une règle',
 	'book.replacementsRemove': 'Supprimer la règle',
-	'book.replacementsEmpty': 'Aucune règle de remplacement.'
+	'book.replacementsEmpty': 'Aucune règle de remplacement.',
+
+	'editorSearch.placeholder': 'Rechercher dans le texte…',
+	'editorSearch.noResults': 'Aucun résultat',
+	'editorSearch.previous': 'Précédent (Maj+Entrée)',
+	'editorSearch.next': 'Suivant (Entrée)',
+	'editorSearch.close': 'Fermer (Échap)'
 };
