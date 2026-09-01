@@ -55,6 +55,10 @@
 	let ltDrawerOpen = $state(false);
 	let ltMatches = $state<LTMatch[]>([]);
 	let ltChecking = $state(false);
+	let ltSelectionOffset = $state(0); // Offset to add when applying fixes to selected text
+
+	// Editor reference for selection access
+	let editorRef = $state<{ getSelection?: () => { text: string; start: number; end: number } | null }>();
 
 	onMount(async () => {
 		try {
@@ -122,8 +126,14 @@
 		if (!content) return;
 		ltChecking = true;
 		ltMatches = [];
+		ltSelectionOffset = 0;
 		try {
-			const result = await checkLT(content, ltConfig.language);
+			// Check if there's selected text - if so, only check the selection
+			const selection = editorRef?.getSelection?.();
+			const textToCheck = selection ? selection.text : content;
+			ltSelectionOffset = selection ? selection.start : 0;
+
+			const result = await checkLT(textToCheck, ltConfig.language);
 			ltMatches = result.matches;
 			ltConnected = true;
 		} catch (err) {
@@ -136,8 +146,10 @@
 
 	function applyFix(match: LTMatch, replacement: string) {
 		// Replace the text at the match offset with the replacement
-		const before = content.slice(0, match.offset);
-		const after = content.slice(match.offset + match.length);
+		// Account for selection offset when only selected text was checked
+		const actualOffset = match.offset + ltSelectionOffset;
+		const before = content.slice(0, actualOffset);
+		const after = content.slice(actualOffset + match.length);
 		content = before + replacement + after;
 
 		// Remove this match and adjust offsets of subsequent matches
@@ -332,6 +344,7 @@
 
 <div class="editor">
 	<RawEditor
+		bind:this={editorRef}
 		bind:content
 		{showLineBreaks}
 		{lineHeight}

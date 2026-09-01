@@ -243,8 +243,9 @@
 		font-size: 11px;
 		font-family: var(--font-mono);
 		color: var(--muted);
-		overflow-x: auto;
-		white-space: nowrap;
+		white-space: pre-wrap;
+		word-wrap: break-word;
+		overflow-wrap: break-word;
 	}
 
 	.context mark {

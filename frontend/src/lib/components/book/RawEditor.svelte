@@ -232,6 +232,15 @@
 	const breaksOverlay = $derived(
 		showLineBreaks ? content.replace(/[^\n]/g, ' ').replace(/\n/g, '\u00b6\n') : ''
 	);
+
+	// Expose selection info for external use (e.g., LanguageTool)
+	export function getSelection(): { text: string; start: number; end: number } | null {
+		if (!textareaEl) return null;
+		const start = textareaEl.selectionStart;
+		const end = textareaEl.selectionEnd;
+		if (start === end) return null; // No selection
+		return { text: content.substring(start, end), start, end };
+	}
 </script>
 
 <div
