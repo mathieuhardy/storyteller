@@ -70,7 +70,7 @@
 
 		try {
 			const res = await getLTConfig();
-			ltConfig = { server_url: res.server_url, language: res.language };
+			ltConfig = { server_url: res.server_url, language: res.language, server_binary: res.server_binary };
 		} catch (err) {
 			console.error('Failed to load LanguageTool config:', err);
 		}

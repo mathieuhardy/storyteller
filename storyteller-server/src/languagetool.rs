@@ -23,6 +23,9 @@ pub struct LanguageToolConfig {
     /// Default language code (e.g., "fr", "en-US").
     #[serde(default = "default_language")]
     pub language: String,
+    /// Optional path to a binary to launch if the server is not running.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub server_binary: Option<String>,
 }
 
 fn default_server_url() -> String {
@@ -38,6 +41,7 @@ impl Default for LanguageToolConfig {
         Self {
             server_url: default_server_url(),
             language: default_language(),
+            server_binary: None,
         }
     }
 }
@@ -191,6 +195,7 @@ fn test_connection_blocking(server_url: &str) -> Result<(), String> {
             "-X", "POST",
             "-d", "language=en",
             "-d", "text=test",
+            "--max-time", "5",
             &url,
         ])
         .output()
@@ -201,7 +206,73 @@ fn test_connection_blocking(server_url: &str) -> Result<(), String> {
         return Err(format!("curl failed: {}", stderr));
     }
 
+    // Check if we got a valid JSON response (not an error page)
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    if stdout.is_empty() || !stdout.contains("matches") {
+        return Err("server returned invalid response".to_string());
+    }
+
     Ok(())
+}
+
+/// Launch the server binary as a background process.
+fn launch_server_binary(binary_path: &str) -> Result<(), String> {
+    use std::process::{Command, Stdio};
+
+    // Launch the binary detached so it keeps running
+    Command::new(binary_path)
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .map_err(|e| format!("failed to launch server binary '{}': {e}", binary_path))?;
+
+    Ok(())
+}
+
+/// Ensure the LanguageTool server is running, launching binary if needed.
+fn ensure_server_running_blocking(server_url: &str, server_binary: Option<&str>) -> Result<(), String> {
+    // First, try to connect
+    if test_connection_blocking(server_url).is_ok() {
+        return Ok(());
+    }
+
+    // Connection failed - try to launch binary if configured
+    let binary_path = match server_binary {
+        Some(path) if !path.is_empty() => path,
+        _ => return Err("server not reachable and no binary configured".to_string()),
+    };
+
+    // Launch the server
+    launch_server_binary(binary_path)?;
+
+    // Wait for server to start (retry a few times with delay)
+    for attempt in 1..=10 {
+        std::thread::sleep(std::time::Duration::from_millis(500));
+        if test_connection_blocking(server_url).is_ok() {
+            return Ok(());
+        }
+        if attempt == 10 {
+            return Err(format!(
+                "server binary launched but server not responding after {}s",
+                attempt as f32 * 0.5
+            ));
+        }
+    }
+
+    Ok(())
+}
+
+/// Ensure server is running, launching binary if needed.
+pub async fn ensure_server_running(server_url: &str, server_binary: Option<&str>) -> Result<(), String> {
+    let server_url = server_url.to_string();
+    let server_binary = server_binary.map(|s| s.to_string());
+
+    tokio::task::spawn_blocking(move || {
+        ensure_server_running_blocking(&server_url, server_binary.as_deref())
+    })
+    .await
+    .map_err(|e| format!("task failed: {e}"))?
 }
 
 /// Test connection to a LanguageTool server.

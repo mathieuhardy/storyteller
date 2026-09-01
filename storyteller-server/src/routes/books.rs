@@ -315,6 +315,8 @@ fn contains_markdown(path: &Path) -> bool {
 pub struct LTConfigResponse {
     pub server_url: String,
     pub language: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub server_binary: Option<String>,
     pub errors: Vec<storyteller_core::error::Diagnostic>,
 }
 
@@ -323,6 +325,8 @@ pub struct LTConfigResponse {
 pub struct SetLTConfigBody {
     pub server_url: String,
     pub language: String,
+    #[serde(default)]
+    pub server_binary: Option<String>,
 }
 
 /// `GET /api/v1/books/languagetool/config` — get LanguageTool configuration.
@@ -332,6 +336,7 @@ pub async fn get_lt_config(State(state): State<SharedState>) -> ApiResult<Json<L
     Ok(Json(LTConfigResponse {
         server_url: loaded.config.server_url,
         language: loaded.config.language,
+        server_binary: loaded.config.server_binary,
         errors: loaded.errors,
     }))
 }
@@ -352,6 +357,7 @@ pub async fn set_lt_config(
     let config = crate::languagetool::LanguageToolConfig {
         server_url: body.server_url.clone(),
         language: body.language.clone(),
+        server_binary: body.server_binary.clone(),
     };
     crate::languagetool::LoadedConfig::save(&config, book.root())
         .map_err(|e| ApiError::internal(format!("failed to save config: {e}")))?;
@@ -359,6 +365,7 @@ pub async fn set_lt_config(
     Ok(Json(LTConfigResponse {
         server_url: body.server_url,
         language: body.language,
+        server_binary: body.server_binary,
         errors: Vec::new(),
     }))
 }
@@ -385,6 +392,14 @@ pub async fn lt_check(
     let book = state.require_book()?;
     let loaded = crate::languagetool::LoadedConfig::load(book.root());
 
+    // Ensure server is running (launch binary if configured and needed)
+    crate::languagetool::ensure_server_running(
+        &loaded.config.server_url,
+        loaded.config.server_binary.as_deref(),
+    )
+    .await
+    .map_err(|e| ApiError::bad_gateway(e))?;
+
     let language = body.language.unwrap_or(loaded.config.language);
 
     let result = crate::languagetool::check_text(&loaded.config.server_url, &body.text, &language)
@@ -397,13 +412,18 @@ pub async fn lt_check(
 }
 
 /// `POST /api/v1/books/languagetool/test` — test connection to LanguageTool server.
+/// If server is not running and a binary is configured, it will be launched.
 pub async fn lt_test(State(state): State<SharedState>) -> ApiResult<Json<serde_json::Value>> {
     let book = state.require_book()?;
     let loaded = crate::languagetool::LoadedConfig::load(book.root());
 
-    crate::languagetool::test_connection(&loaded.config.server_url)
-        .await
-        .map_err(|e| ApiError::bad_gateway(e))?;
+    // Ensure server is running (launch binary if configured and needed)
+    crate::languagetool::ensure_server_running(
+        &loaded.config.server_url,
+        loaded.config.server_binary.as_deref(),
+    )
+    .await
+    .map_err(|e| ApiError::bad_gateway(e))?;
 
     Ok(Json(serde_json::json!({ "ok": true })))
 }

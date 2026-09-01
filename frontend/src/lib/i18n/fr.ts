@@ -283,6 +283,8 @@ export const fr: Messages = {
 	'book.languageToolHint': 'Vérificateur de grammaire et d\'orthographe via un serveur LanguageTool local.',
 	'book.ltServerUrl': 'URL du serveur',
 	'book.ltLanguage': 'Langue',
+	'book.ltServerBinary': 'Binaire du serveur',
+	'book.ltServerBinaryHint': 'Chemin à lancer si le serveur n\'est pas actif',
 	'book.ltTestConnection': 'Tester la connexion',
 	'book.ltTesting': 'Test en cours…',
 	'book.ltConnected': 'Connecté',

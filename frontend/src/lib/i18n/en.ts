@@ -284,6 +284,8 @@ export const en = {
 	'book.languageToolHint': 'Grammar and spelling checker via a local LanguageTool server.',
 	'book.ltServerUrl': 'Server URL',
 	'book.ltLanguage': 'Language',
+	'book.ltServerBinary': 'Server binary',
+	'book.ltServerBinaryHint': 'Path to launch if the server is not running',
 	'book.ltTestConnection': 'Test connection',
 	'book.ltTesting': 'Testing…',
 	'book.ltConnected': 'Connected',

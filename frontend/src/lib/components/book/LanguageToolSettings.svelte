@@ -24,7 +24,7 @@
 
 	let open = $state(false);
 
-	function updateField(field: keyof LTConfig, value: string) {
+	function updateField(field: keyof LTConfig, value: string | undefined) {
 		onChange({ ...config, [field]: value });
 	}
 </script>
@@ -66,6 +66,18 @@
 				placeholder="fr"
 				onchange={(e) => updateField('language', e.currentTarget.value)}
 			/>
+		</div>
+
+		<div class="field">
+			<label for="lt-binary">{t('book.ltServerBinary')}</label>
+			<input
+				id="lt-binary"
+				type="text"
+				value={config.server_binary ?? ''}
+				placeholder="/path/to/languagetool-server"
+				onchange={(e) => updateField('server_binary', e.currentTarget.value || undefined)}
+			/>
+			<span class="field-hint">{t('book.ltServerBinaryHint')}</span>
 		</div>
 
 		<div class="actions">
@@ -161,6 +173,13 @@
 	.field input:focus {
 		outline: none;
 		border-color: var(--accent);
+	}
+	.field-hint {
+		display: block;
+		margin-top: 3px;
+		padding: 0 4px;
+		font-size: 10px;
+		color: var(--faint);
 	}
 	.actions {
 		display: flex;

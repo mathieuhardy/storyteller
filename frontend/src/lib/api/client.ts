@@ -299,6 +299,7 @@ export const setBookReplacements = (
 export interface LTConfig {
 	server_url: string;
 	language: string;
+	server_binary?: string;
 }
 
 /** Response for `GET`/`PUT /books/languagetool/config`. */
